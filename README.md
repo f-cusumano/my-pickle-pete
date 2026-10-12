@@ -1,7 +1,7 @@
 # My Pickle Pete
 
-App personale per gestire gli item di Pickle Pete: Survivor: inventario (Items), set completi (Full Sets) e,
-nella prossima versione, set personalizzati (Custom Sets).
+App personale per gestire gli item di Pickle Pete: Survivor: inventario (Items), set completi (Full Sets) e
+set personalizzati (Custom Sets), costruiti da zero o partendo dai set migliori (Best now e Best potential).
 
 Specifica e decisioni prese: [docs/specifica.md](docs/specifica.md), [docs/decisioni.md](docs/decisioni.md).
 
