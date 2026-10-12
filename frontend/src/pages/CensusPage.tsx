@@ -67,7 +67,7 @@ function ItemCensus({ constants }: { constants: GameConstants }) {
   const confirmDelete = (item: Item) =>
     modals.openConfirmModal({
       title: 'Elimina item',
-      children: `${item.name} verrà eliminato con i suoi potenziamenti e la sua immagine.`,
+      children: `${item.name} verrà eliminato con i suoi potenziamenti e tolto dai set custom che lo indossano.`,
       labels: { confirm: 'Elimina', cancel: 'Annulla' },
       confirmProps: { color: 'red' },
       onConfirm: () => census.remove.mutate(item.id),

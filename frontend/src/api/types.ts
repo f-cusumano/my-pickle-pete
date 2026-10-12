@@ -102,6 +102,35 @@ export interface FullSet {
   stats: StatComparison[];
 }
 
+/** Set custom (id e nome null se non salvato): bonusArmorSet è il set con almeno 4 pezzi, se c'è. */
+export interface CustomSet {
+  id: number | null;
+  name: string | null;
+  bonusArmorSet: ArmorSet | null;
+  bonusDescription: string | null;
+  pieces: Item[];
+  stats: StatComparison[];
+}
+
+export interface CustomSetRequest {
+  name: string;
+  itemIds: number[];
+}
+
+/** Caratteristica con la sua unità ("+5% Fortuna" e "+5 Fortuna" sono caratteristiche diverse). */
+export interface StatKey {
+  stat: Stat;
+  unit: StatUnit;
+}
+
+export interface BestSetRequest {
+  primary: StatKey;
+  secondary: StatKey | null;
+}
+
+/** Best now (rarità e livello attuali) o Best potential (rarità e livello massimi). */
+export type BestSetMode = 'now' | 'potential';
+
 export interface GameConstants {
   rarities: { code: Rarity; maxLevel: number }[];
   itemTypes: { code: ItemType; specified: boolean; partOfArmorSet: boolean }[];
@@ -121,7 +150,10 @@ export type InternalErrorCode =
   | 'ITEM_NAME_ALREADY_EXISTS'
   | 'ARMOR_SLOT_ALREADY_TAKEN'
   | 'MAX_RARITY_REACHED'
-  | 'LEVEL_OUT_OF_RANGE';
+  | 'LEVEL_OUT_OF_RANGE'
+  | 'CUSTOM_SET_NOT_FOUND'
+  | 'CUSTOM_SET_NAME_ALREADY_EXISTS'
+  | 'CUSTOM_SET_INVALID_PIECES';
 
 export interface ErrorResponse {
   key: string;
