@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!-- Bonus a 4 pezzi trovati online (touchtapplay.com, rarita' Leggendaria); Bandito, Cavaliere e Vampiro da censire -->
+    <changeSet id="20261012_insert_mpp_armor_set" author="f.cusumano">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM mpp_armor_set</sqlCheck>
+        </preConditions>
+        <insert tableName="mpp_armor_set"><column name="code" value="BANDIT"/></insert>
+        <insert tableName="mpp_armor_set"><column name="code" value="KNIGHT"/></insert>
+        <insert tableName="mpp_armor_set"><column name="code" value="VAMPIRE"/></insert>
+        <insert tableName="mpp_armor_set">
+            <column name="code" value="MECHANIC"/>
+            <column name="bonus_description" value="Scintille elettriche colpiscono i nemici vicini quando vieni colpito"/>
+        </insert>
+        <insert tableName="mpp_armor_set">
+            <column name="code" value="BANKER"/>
+            <column name="bonus_description" value="10% di probabilità che i nemici lascino una moneta quando muoiono"/>
+        </insert>
+        <insert tableName="mpp_armor_set">
+            <column name="code" value="TRAVELER"/>
+            <column name="bonus_description" value="10% di probabilità di ottenere +30% velocità di movimento per 2 s quando vieni colpito"/>
+        </insert>
+        <insert tableName="mpp_armor_set">
+            <column name="code" value="WIZARD"/>
+            <column name="bonus_description" value="1% di probabilità di ottenere +10 danno elementale per 5 s quando attacchi"/>
+        </insert>
+        <insert tableName="mpp_armor_set">
+            <column name="code" value="SUPERMAN"/>
+            <column name="bonus_description" value="15% di probabilità di diventare invincibile per 2 s quando vieni colpito"/>
+        </insert>
+        <insert tableName="mpp_armor_set">
+            <column name="code" value="COWBOY"/>
+            <column name="bonus_description" value="+30% velocità d'attacco sotto il 30% di HP"/>
+        </insert>
+        <insert tableName="mpp_armor_set">
+            <column name="code" value="JESTER"/>
+            <column name="bonus_description" value="Sconto del 10% nel negozio"/>
+        </insert>
+        <insert tableName="mpp_armor_set">
+            <column name="code" value="VIKING"/>
+            <column name="bonus_description" value="+10% velocità d'attacco e +5% probabilità di critico per le armi ravvicinate"/>
+        </insert>
+    </changeSet>
+
+</databaseChangeLog>
