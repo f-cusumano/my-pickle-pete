@@ -1,0 +1,35 @@
+# Database H2 locale
+data/
+**/data/
+*.mv.db
+*.trace.db
+*.lock.db
+
+# Build
+**/target/
+**/node_modules/
+**/dist/
+**/coverage/
+.mvn/wrapper/maven-wrapper.jar
+backend/.mvn/wrapper/maven-wrapper.jar
+
+# Ambiente locale
+.env
+.env.*
+!.env.example
+
+# IDE e sistema operativo
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+.factorypath
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Log
+*.log
+logs/
