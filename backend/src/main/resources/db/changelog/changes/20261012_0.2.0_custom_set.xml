@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!-- Set costruiti dall'utente: solo il nome, i pezzi stanno in mpp_custom_set_piece -->
+    <changeSet id="20261012_create_mpp_custom_set" author="f.cusumano">
+        <preConditions onFail="MARK_RAN">
+            <not><tableExists tableName="mpp_custom_set"/></not>
+        </preConditions>
+        <createTable tableName="mpp_custom_set">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="mpp_custom_set_pkey"/>
+            </column>
+            <column name="name" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addUniqueConstraint tableName="mpp_custom_set" columnNames="name" constraintName="uk1_mpp_custom_set_name"/>
+    </changeSet>
+
+    <!-- Pezzi di un set custom: al massimo uno per slot (lo controlla il servizio, lo slot e' quello dell'item) -->
+    <changeSet id="20261012_create_mpp_custom_set_piece" author="f.cusumano">
+        <preConditions onFail="MARK_RAN">
+            <not><tableExists tableName="mpp_custom_set_piece"/></not>
+        </preConditions>
+        <createTable tableName="mpp_custom_set_piece">
+            <column name="id_mpp_custom_set" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="id_mpp_item" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addPrimaryKey tableName="mpp_custom_set_piece" columnNames="id_mpp_custom_set, id_mpp_item" constraintName="mpp_custom_set_piece_pkey"/>
+        <addForeignKeyConstraint baseTableName="mpp_custom_set_piece" baseColumnNames="id_mpp_custom_set" constraintName="mpp_custom_set_piece_fk1"
+                                 referencedTableName="mpp_custom_set" referencedColumnNames="id" onDelete="NO ACTION"/>
+        <addForeignKeyConstraint baseTableName="mpp_custom_set_piece" baseColumnNames="id_mpp_item" constraintName="mpp_custom_set_piece_fk2"
+                                 referencedTableName="mpp_item" referencedColumnNames="id" onDelete="NO ACTION"/>
+        <createIndex tableName="mpp_custom_set_piece" indexName="mpp_custom_set_piece_id_mpp_item_idx">
+            <column name="id_mpp_item"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

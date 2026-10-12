@@ -11,6 +11,9 @@ public final class Constants {
     public static final int ARMOR_SET_BONUS_THRESHOLD = 4;
     public static final int MAX_ITEM_NAME_LENGTH = 100;
     public static final int MAX_BONUS_DESCRIPTION_LENGTH = 500;
+    public static final int MAX_CUSTOM_SET_NAME_LENGTH = 100;
+    /** Proposte restituite da Best now e Best potential. */
+    public static final int BEST_SET_PROPOSALS = 3;
 
 
     private Constants() {}

@@ -1,6 +1,10 @@
 import type {
   ArmorSet,
   ArmorSetInfo,
+  BestSetMode,
+  BestSetRequest,
+  CustomSet,
+  CustomSetRequest,
   ErrorResponse,
   FullSet,
   GameConstants,
@@ -69,6 +73,15 @@ export function createApi(fetchApi: FetchApi = (input, init) => fetch(input, ini
     updateArmorSet: (armorSet: ArmorSet, bonusDescription: string) =>
       call<ArmorSetInfo>(`/armor-set?armorSet=${armorSet}`, json('PUT', { bonusDescription })),
     fullSets: () => call<FullSet[]>('/armor-set/full-set/list'),
+    customSets: () => call<CustomSet[]>('/custom-set/list'),
+    createCustomSet: (request: CustomSetRequest) => call<CustomSet>('/custom-set', json('POST', request)),
+    updateCustomSet: (setId: number, request: CustomSetRequest) =>
+      call<CustomSet>(`/custom-set?${id(setId)}`, json('PUT', request)),
+    deleteCustomSet: (setId: number) => call<undefined>(`/custom-set?${id(setId)}`, { method: 'DELETE' }),
+    evaluateCustomSet: (itemIds: number[]) =>
+      call<CustomSet>('/custom-set/evaluate', json('POST', { itemIds })),
+    bestCustomSets: (mode: BestSetMode, request: BestSetRequest) =>
+      call<CustomSet[]>(`/custom-set/calculate-best-${mode}`, json('POST', request)),
   };
 }
 

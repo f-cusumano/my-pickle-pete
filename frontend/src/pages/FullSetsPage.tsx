@@ -1,44 +1,15 @@
-import {
-  Accordion,
-  Alert,
-  Badge,
-  Group,
-  Loader,
-  Paper,
-  Stack,
-  Table,
-  Text,
-  Title,
-  Tooltip,
-  UnstyledButton,
-} from '@mantine/core';
-import { IconSparkles } from '@tabler/icons-react';
+import { Accordion, Alert, Badge, Group, Loader, Stack, Text, Title } from '@mantine/core';
 import { useMemo, useState } from 'react';
 import { useFullSets, useGameConstants } from '../api/queries';
-import type {
-  ArmorSet,
-  FullSet,
-  GameConstants,
-  Highlight,
-  Rarity,
-  Specification,
-  Stat,
-  StatUnit,
-} from '../api/types';
-import { ItemThumbnail } from '../components/ItemThumbnail';
-import { thumbnailOf } from '../domain/itemImages';
+import type { ArmorSet, FullSet, GameConstants, Rarity, Specification, Stat, StatUnit } from '../api/types';
 import { ItemFormModal } from '../components/ItemFormModal';
 import { ItemModal } from '../components/ItemModal';
-import { formatLevel, formatStatValue } from '../domain/format';
+import { SetBonusCard } from '../components/SetBonusCard';
+import { SetPieces } from '../components/SetPieces';
+import { SetStatsTable } from '../components/SetStatsTable';
+import { armorSlots } from '../domain/customSets';
 import { statUnits } from '../domain/units';
-import { ARMOR_SET_LABELS, SPECIFICATION_LABELS, STAT_LABELS, STAT_UNIT_LABELS } from '../i18n/labels';
-import classes from './FullSetsPage.module.css';
-
-const HIGHLIGHT_CLASSES: Record<Highlight, string | undefined> = {
-  BEST: classes.best,
-  WORST: classes.worst,
-  NONE: undefined,
-};
+import { ARMOR_SET_LABELS, SPECIFICATION_LABELS } from '../i18n/labels';
 
 /** Set completi: righe espandibili (anche più di una) con bonus, pezzi e confronto attuale/top delle caratteristiche. */
 export function FullSetsPage() {
@@ -71,10 +42,7 @@ function FullSetList({ constants, fullSets }: { constants: GameConstants; fullSe
   const [adding, setAdding] = useState<MissingSlot | null>(null);
   // L'item aperto si rilegge dai set aggiornati, così la modale segue rarità e livello
   const opened = fullSets.flatMap((fullSet) => fullSet.pieces).find((piece) => piece.id === openedId) ?? null;
-  const slots = useMemo(
-    () => constants.specifications.filter((spec) => spec.itemType === 'ARMOR').map((spec) => spec.code),
-    [constants],
-  );
+  const slots = useMemo(() => armorSlots(constants), [constants]);
   return (
     <>
       <Title order={2} mb="md">
@@ -131,89 +99,19 @@ interface DetailProps {
 function FullSetDetail({ fullSet, slots, units, threshold, onOpen, onAdd }: DetailProps) {
   return (
     <Stack gap="md">
-      <Paper withBorder p="sm" radius="md" bg={fullSet.bonusActive ? 'pickle.0' : 'gray.0'}>
-        <Group gap="xs" mb={4}>
-          <IconSparkles size={18} />
-          <Text fw={700}>Bonus del set ({threshold} pezzi su 5)</Text>
-          <Badge size="sm" color={fullSet.bonusActive ? 'pickle' : 'gray'}>
-            {fullSet.bonusActive ? 'Attivo' : 'Non attivo'}
-          </Badge>
-        </Group>
-        <Text size="sm" c={fullSet.bonusDescription ? undefined : 'dimmed'}>
-          {fullSet.bonusDescription ?? 'Effetto non ancora censito.'}
-        </Text>
-      </Paper>
-
-      <div className={classes.pieces}>
-        {slots.map((slot) => {
-          const piece = fullSet.pieces.find((item) => item.specification === slot);
-          return (
-            <div key={slot} className={classes.piece}>
-              {piece ? (
-                <Tooltip label={piece.name} events={{ hover: true, focus: true, touch: false }}>
-                  <UnstyledButton onClick={() => onOpen(piece.id)} aria-label={`Apri ${piece.name}`}>
-                    <ItemThumbnail {...thumbnailOf(piece)} size={64} />
-                  </UnstyledButton>
-                </Tooltip>
-              ) : (
-                <Tooltip
-                  label={`Aggiungi ${SPECIFICATION_LABELS[slot].toLowerCase()}`}
-                  events={{ hover: true, focus: true, touch: false }}
-                >
-                  <UnstyledButton
-                    onClick={() => onAdd(slot)}
-                    aria-label={`Aggiungi ${SPECIFICATION_LABELS[slot]} ${ARMOR_SET_LABELS[fullSet.armorSet]}`}
-                  >
-                    <ItemThumbnail
-                      type="ARMOR"
-                      specification={slot}
-                      label={SPECIFICATION_LABELS[slot]}
-                      size={64}
-                      action="add"
-                    />
-                  </UnstyledButton>
-                </Tooltip>
-              )}
-              <Text size="xs" fw={700}>
-                {piece ? formatLevel(piece.level, piece.maxLevel) : '-'}
-              </Text>
-            </div>
-          );
-        })}
-      </div>
-
-      <Table withTableBorder withColumnBorders verticalSpacing={6} fz="sm">
-        <Table.Thead>
-          <Table.Tr>
-            <Table.Th>Caratteristica</Table.Th>
-            <Table.Th ta="right">Attuale</Table.Th>
-            <Table.Th ta="right">Top</Table.Th>
-          </Table.Tr>
-        </Table.Thead>
-        <Table.Tbody>
-          {fullSet.stats.map((row) => (
-            <Table.Tr key={`${row.stat}-${row.unit}`}>
-              <Table.Td>
-                {STAT_LABELS[row.stat]}
-                {/* La stessa caratteristica nell'altra unità ha una riga sua: si indica l'unità */}
-                {row.unit !== units[row.stat] && (
-                  <Text span size="xs" c="dimmed">
-                    {' '}
-                    ({row.unit === 'PERCENT' ? STAT_UNIT_LABELS.PERCENT : STAT_UNIT_LABELS.FLAT.toLowerCase()}
-                    )
-                  </Text>
-                )}
-              </Table.Td>
-              <Table.Td ta="right" className={HIGHLIGHT_CLASSES[row.currentHighlight]}>
-                {formatStatValue(row.current, row.unit)}
-              </Table.Td>
-              <Table.Td ta="right" className={HIGHLIGHT_CLASSES[row.topHighlight]}>
-                {formatStatValue(row.top, row.unit)}
-              </Table.Td>
-            </Table.Tr>
-          ))}
-        </Table.Tbody>
-      </Table>
+      <SetBonusCard
+        title={`Bonus del set (${String(threshold)} pezzi su 5)`}
+        active={fullSet.bonusActive}
+        description={fullSet.bonusDescription}
+      />
+      <SetPieces
+        slots={slots}
+        pieces={fullSet.pieces}
+        onPiece={(piece) => onOpen(piece.id)}
+        onEmpty={onAdd}
+        emptyLabel={(slot) => `Aggiungi ${SPECIFICATION_LABELS[slot]} ${ARMOR_SET_LABELS[fullSet.armorSet]}`}
+      />
+      <SetStatsTable stats={fullSet.stats} units={units} />
     </Stack>
   );
 }

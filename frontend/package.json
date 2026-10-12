@@ -1,7 +1,7 @@
 {
   "name": "my-pickle-pete-frontend",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "description": "SPA di My Pickle Pete (React + TypeScript + Vite + Mantine)",
   "engines": {

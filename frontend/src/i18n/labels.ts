@@ -1,5 +1,6 @@
 import type {
   ArmorSet,
+  BestSetMode,
   InternalErrorCode,
   ItemSortOrder,
   ItemType,
@@ -87,6 +88,11 @@ export const SORT_ORDER_LABELS: Record<ItemSortOrder, string> = {
   RARITY: 'Rarity',
 };
 
+export const BEST_SET_TITLES: Record<BestSetMode, string> = {
+  now: 'Best now',
+  potential: 'Best potential',
+};
+
 export const ERROR_MESSAGES: Record<InternalErrorCode, string> = {
   GENERIC: 'Si è verificato un errore inatteso.',
   VALIDATION_FAILED: 'Alcuni dati non sono validi.',
@@ -95,4 +101,7 @@ export const ERROR_MESSAGES: Record<InternalErrorCode, string> = {
   ARMOR_SLOT_ALREADY_TAKEN: 'Questo set ha già un pezzo per lo slot scelto.',
   MAX_RARITY_REACHED: "L'item è già alla rarità massima.",
   LEVEL_OUT_OF_RANGE: 'Il livello è fuori dai limiti della rarità.',
+  CUSTOM_SET_NOT_FOUND: 'Il set non esiste più.',
+  CUSTOM_SET_NAME_ALREADY_EXISTS: 'Esiste già un set con questo nome.',
+  CUSTOM_SET_INVALID_PIECES: 'Il set può contenere solo armature, al massimo una per slot.',
 };

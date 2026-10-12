@@ -25,6 +25,15 @@ Il prompt è chiaro nella struttura generale (header, menu, Items, Full Sets, Cu
 14. ✅ **Composizione dei set.** Full Set e Custom Set contengono solo armature; armi e abilità compaiono solo in Items.
 15. ✅ **Best now / Best potential.** La caratteristica principale pesa di più e la secondaria fa da spareggio; si mostrano al massimo 3 proposte.
 
+### Scelte fatte nello sviluppo dei Custom Sets (0.2.0)
+- Un set custom può avere slot vuoti, ma per salvarlo serve almeno un pezzo; il nome è unico (senza distinzione di maiuscole).
+- Il bonus è quello del set di cui si indossano almeno 4 pezzi (con 5 slot ce n'è al massimo uno).
+- Best now e Best potential riempiono tutti gli slot che hanno pezzi censiti. Ordine delle proposte: caratteristica principale,
+  poi secondaria, poi bonus di set attivo, poi somma di Danno/HP base dei pezzi. "Fortuna" e "Fortuna (%)" sono caratteristiche distinte.
+- La proposta scelta si apre in modifica: a sinistra la proposta, a destra la copia da cambiare, con le frecce verdi e rosse
+  su ogni valore (attuale e top) migliorato o peggiorato.
+- Cancellando un item, o cambiandone tipologia o slot nel censimento, lo si toglie dai set custom che lo indossano.
+
 ## 5. Aspetti tecnici
 16. ✅ **Architettura.** App solo per te con database H2. Regole da Dropbox/MyClaudeProjects/MyCodingStyle (vedi sotto).
 17. ✅ **Lingua.** Interfaccia in italiano.

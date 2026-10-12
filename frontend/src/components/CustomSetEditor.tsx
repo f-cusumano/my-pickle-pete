@@ -1,0 +1,269 @@
+import {
+  Button,
+  Group,
+  Loader,
+  Modal,
+  Paper,
+  SegmentedControl,
+  SimpleGrid,
+  Stack,
+  Text,
+  TextInput,
+  Title,
+} from '@mantine/core';
+import { useMediaQuery } from '@mantine/hooks';
+import { notifications } from '@mantine/notifications';
+import { IconCopy, IconDeviceFloppy } from '@tabler/icons-react';
+import { useMemo, useState } from 'react';
+import { errorMessage, useCustomSetCensus, useSetEvaluation } from '../api/queries';
+import type { CustomSet, Item, Specification, Stat, StatUnit } from '../api/types';
+import { itemIdsOf, sameSelection, selectionOf, statTrends, type SlotSelection } from '../domain/customSets';
+import { useFullScreenModal } from '../hooks/useFullScreenModal';
+import { SPECIFICATION_LABELS } from '../i18n/labels';
+import { CustomSetBonus } from './CustomSetBonus';
+import { SetPieces } from './SetPieces';
+import { SetStatsTable } from './SetStatsTable';
+import { SlotPickerModal } from './SlotPickerModal';
+
+/** Set da modificare: id null se non è ancora salvato; original è il set di partenza (null per "Da zero"). */
+export interface SetDraft {
+  id: number | null;
+  name: string;
+  original: CustomSet | null;
+}
+
+interface Props {
+  draft: SetDraft;
+  items: Item[];
+  slots: Specification[];
+  units: Record<Stat, StatUnit>;
+  threshold: number;
+  onClose: () => void;
+}
+
+const MAX_NAME_LENGTH = 100;
+
+/**
+ * Costruzione o modifica di un set custom. In modifica a sinistra resta il set di partenza e a destra quello modificato,
+ * con le frecce sulle caratteristiche cambiate; si salva sovrascrivendo o come nuovo set.
+ */
+export function CustomSetEditor({ draft, items, slots, units, threshold, onClose }: Props) {
+  const fullScreen = useFullScreenModal();
+  const sideBySide = useMediaQuery('(min-width: 62em)', true, { getInitialValueInEffect: false });
+  const census = useCustomSetCensus();
+  const initialSelection = useMemo(() => selectionOf(draft.original?.pieces ?? []), [draft.original]);
+  const [name, setName] = useState(draft.name);
+  const [selection, setSelection] = useState<SlotSelection>(initialSelection);
+  const [picking, setPicking] = useState<Specification | null>(null);
+  const [view, setView] = useState<'modified' | 'original'>('modified');
+  const [askingNewName, setAskingNewName] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
+  const itemIds = itemIdsOf(selection, slots);
+  const evaluation = useSetEvaluation(itemIds);
+  const original = draft.original;
+  const trends = useMemo(
+    () => (original && evaluation.data ? statTrends(original.stats, evaluation.data.stats) : undefined),
+    [original, evaluation.data],
+  );
+  const unchanged =
+    draft.id !== null && name.trim() === draft.name && sameSelection(selection, initialSelection, slots);
+  const nameError = name.trim() === '' ? 'Dai un nome al set' : null;
+
+  const save = (id: number | null, targetName: string) => {
+    setServerError(null);
+    census.save.mutate(
+      { id, request: { name: targetName.trim(), itemIds } },
+      {
+        onSuccess: (saved) => {
+          notifications.show({ color: 'pickle', message: `Set "${saved.name ?? targetName}" salvato.` });
+          onClose();
+        },
+        onError: (error) => setServerError(errorMessage(error)),
+      },
+    );
+  };
+
+  const pick = (item: Item | null) => {
+    if (picking) {
+      const slot = picking;
+      setSelection((current) => {
+        const others = Object.fromEntries(
+          Object.entries(current).filter(([key]) => key !== slot),
+        ) as SlotSelection;
+        return item ? { ...others, [slot]: item } : others;
+      });
+    }
+    setPicking(null);
+  };
+
+  const editable = (
+    <Stack gap="md">
+      <SetPieces
+        slots={slots}
+        pieces={Object.values(selection)}
+        onPiece={(piece) => piece.specification && setPicking(piece.specification)}
+        onEmpty={setPicking}
+        pieceAction="edit"
+        emptyLabel={(slot) => `Aggiungi ${SPECIFICATION_LABELS[slot]}`}
+        showNames
+      />
+      {evaluation.data ? (
+        <>
+          <CustomSetBonus set={evaluation.data} threshold={threshold} />
+          <SetStatsTable stats={evaluation.data.stats} units={units} trends={trends} />
+        </>
+      ) : (
+        <Loader />
+      )}
+    </Stack>
+  );
+  const fixed = original && (
+    <Stack gap="md">
+      <SetPieces slots={slots} pieces={original.pieces} showNames />
+      <CustomSetBonus set={original} threshold={threshold} />
+      <SetStatsTable stats={original.stats} units={units} />
+    </Stack>
+  );
+
+  return (
+    <Modal
+      opened
+      onClose={onClose}
+      title={draft.id === null ? 'Nuovo set' : `Modifica ${draft.name}`}
+      size={original ? 1100 : 'lg'}
+      fullScreen={fullScreen}
+      centered={!fullScreen}
+    >
+      <Stack gap="md">
+        <TextInput
+          label="Nome del set"
+          withAsterisk
+          value={name}
+          onChange={(event) => setName(event.currentTarget.value)}
+          maxLength={MAX_NAME_LENGTH}
+          error={name === '' ? undefined : nameError}
+        />
+        {!original && editable}
+        {original && sideBySide && (
+          <SimpleGrid cols={2} spacing="lg">
+            <Paper withBorder p="sm" radius="md" bg="gray.0">
+              <Title order={4} mb="sm">
+                Set di partenza
+              </Title>
+              {fixed}
+            </Paper>
+            <Paper withBorder p="sm" radius="md">
+              <Title order={4} mb="sm">
+                Modificato
+              </Title>
+              {editable}
+            </Paper>
+          </SimpleGrid>
+        )}
+        {original && !sideBySide && (
+          <>
+            <SegmentedControl
+              fullWidth
+              value={view}
+              onChange={setView}
+              data={[
+                { value: 'modified', label: 'Modificato' },
+                { value: 'original', label: 'Set di partenza' },
+              ]}
+            />
+            {view === 'modified' ? editable : fixed}
+          </>
+        )}
+
+        {serverError && (
+          <Text c="red" size="sm">
+            {serverError}
+          </Text>
+        )}
+        <Group justify="flex-end" gap="sm">
+          <Button variant="default" onClick={onClose}>
+            Annulla
+          </Button>
+          {draft.id !== null && (
+            <Button
+              variant="light"
+              leftSection={<IconCopy size={18} />}
+              disabled={itemIds.length === 0}
+              onClick={() => setAskingNewName(true)}
+            >
+              Salva come nuovo
+            </Button>
+          )}
+          <Button
+            leftSection={<IconDeviceFloppy size={18} />}
+            disabled={nameError !== null || itemIds.length === 0 || unchanged}
+            loading={census.save.isPending && !askingNewName}
+            onClick={() => save(draft.id, name)}
+          >
+            {draft.id === null ? 'Salva' : 'Sovrascrivi'}
+          </Button>
+        </Group>
+      </Stack>
+
+      <SlotPickerModal
+        slot={picking}
+        items={items}
+        selectedId={picking ? (selection[picking]?.id ?? null) : null}
+        onPick={pick}
+        onClose={() => setPicking(null)}
+      />
+      {askingNewName && (
+        <NewNameModal
+          initialName={`${name.trim()} (copia)`}
+          saving={census.save.isPending}
+          error={serverError}
+          onSave={(newName) => save(null, newName)}
+          onClose={() => setAskingNewName(false)}
+        />
+      )}
+    </Modal>
+  );
+}
+
+interface NewNameProps {
+  initialName: string;
+  saving: boolean;
+  error: string | null;
+  onSave: (name: string) => void;
+  onClose: () => void;
+}
+
+/** Nome del nuovo set quando si salva una modifica senza sovrascrivere l'originale. */
+function NewNameModal({ initialName, saving, error, onSave, onClose }: NewNameProps) {
+  const [name, setName] = useState(initialName.slice(0, MAX_NAME_LENGTH));
+  return (
+    <Modal opened onClose={onClose} title="Salva come nuovo set" centered zIndex={300}>
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          onSave(name);
+        }}
+      >
+        <Stack gap="md">
+          <TextInput
+            label="Nome del nuovo set"
+            withAsterisk
+            data-autofocus
+            value={name}
+            onChange={(event) => setName(event.currentTarget.value)}
+            maxLength={MAX_NAME_LENGTH}
+            error={error ?? undefined}
+          />
+          <Group justify="flex-end" gap="sm">
+            <Button variant="default" onClick={onClose}>
+              Annulla
+            </Button>
+            <Button type="submit" disabled={name.trim() === ''} loading={saving}>
+              Salva
+            </Button>
+          </Group>
+        </Stack>
+      </form>
+    </Modal>
+  );
+}
