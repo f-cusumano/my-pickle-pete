@@ -1,5 +1,6 @@
 package com.fcusumano.mpp.core.utils;
 
+import com.fcusumano.mpp.core.enums.ArmorSet;
 import com.fcusumano.mpp.core.model.Item;
 import com.fcusumano.mpp.core.model.StatKey;
 import com.fcusumano.mpp.core.utils.bo.StatComparison;
@@ -8,13 +9,16 @@ import com.fcusumano.mpp.core.utils.bo.StatHighlights;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.SortedMap;
 import java.util.TreeSet;
 
 import static com.fcusumano.mpp.core.Constants.ARMOR_SET_BONUS_THRESHOLD;
 
-/** Calcoli sulle caratteristiche di un gruppo di armature indossate insieme (Full Set e, in futuro, Custom Set). */
+/** Calcoli sulle caratteristiche di un gruppo di armature indossate insieme (Full Set e Custom Set). */
 public final class SetStatisticsCalculator {
 
     private SetStatisticsCalculator() {}
@@ -47,5 +51,14 @@ public final class SetStatisticsCalculator {
     /** Il bonus del set si attiva indossando almeno 4 pezzi dello stesso set. */
     public static boolean bonusActive(int piecesOfSameSet) {
         return piecesOfSameSet >= ARMOR_SET_BONUS_THRESHOLD;
+    }
+
+    /** Set con almeno 4 pezzi tra quelli indossati: con 5 slot ce ne può essere al massimo uno. */
+    public static Optional<ArmorSet> activeBonus(Collection<Item> pieces) {
+        final Map<ArmorSet, Integer> set2count = new EnumMap<>(ArmorSet.class);
+        for (Item piece : pieces) { //Al massimo 5 pezzi: ciclo classico (R30)
+            if (piece.armorSet() != null) set2count.merge(piece.armorSet(), 1, Integer::sum);
+        }
+        return set2count.entrySet().stream().filter(entry -> bonusActive(entry.getValue())).map(Map.Entry::getKey).findFirst();
     }
 }

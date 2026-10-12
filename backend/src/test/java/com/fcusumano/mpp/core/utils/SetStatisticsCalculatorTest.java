@@ -80,6 +80,15 @@ class SetStatisticsCalculatorTest {
         Assertions.assertTrue(SetStatisticsCalculator.bonusActive(5));
     }
 
+    @Test
+    void activeBonusIsTheSetWithFourPieces() {
+        Assertions.assertEquals(ArmorSet.COWBOY, SetStatisticsCalculator.activeBonus(COWBOY).orElseThrow());
+        final Item vikingBoots = armor(7, "Stivali vichinghi", ArmorSet.VIKING, Specification.BOOTS, Rarity.COMMON, 1);
+        Assertions.assertEquals(ArmorSet.COWBOY, SetStatisticsCalculator.activeBonus(List.of(COWBOY.get(0), COWBOY.get(1), COWBOY.get(2), COWBOY.get(3), vikingBoots))
+                .orElseThrow());
+        Assertions.assertTrue(SetStatisticsCalculator.activeBonus(List.of(COWBOY.get(0), COWBOY.get(1), COWBOY.get(2), vikingBoots)).isEmpty());
+    }
+
     private static StatComparison row(List<StatComparison> rows, Stat stat) {
         return rows.stream().filter(r -> r.key().equals(StatKey.defaultOf(stat))).findFirst().orElseThrow();
     }

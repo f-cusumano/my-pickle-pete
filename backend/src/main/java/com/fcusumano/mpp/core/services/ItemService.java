@@ -3,6 +3,7 @@ package com.fcusumano.mpp.core.services;
 import com.fcusumano.mpp.core.enums.ItemSortOrder;
 import com.fcusumano.mpp.core.model.Item;
 import com.fcusumano.mpp.core.model.ItemDefinition;
+import com.fcusumano.mpp.core.repository.CustomSetRepository;
 import com.fcusumano.mpp.core.repository.ItemRepository;
 import com.fcusumano.mpp.infrastructure.exception.BadRequestException;
 import com.fcusumano.mpp.infrastructure.exception.ObjectAlreadyExistsException;
@@ -26,10 +27,12 @@ public class ItemService {
     private static final Logger log = LoggerFactory.getLogger(ItemService.class);
 
     private final ItemRepository itemRepository;
+    private final CustomSetRepository customSetRepository;
 
 
-    public ItemService(ItemRepository itemRepository) {
+    public ItemService(ItemRepository itemRepository, CustomSetRepository customSetRepository) {
         this.itemRepository = itemRepository;
+        this.customSetRepository = customSetRepository;
     }
 
     @Transactional(readOnly = true)
@@ -58,8 +61,10 @@ public class ItemService {
 
     @Transactional
     public Item update(long id, ItemDefinition definition) {
-        single(id);
+        final Item current = single(id);
         checkUniqueness(definition, id);
+        //Cambiando slot (o tipologia) l'item non può più stare nei set custom che lo indossavano
+        if (current.type() != definition.type() || current.specification() != definition.specification()) removeFromCustomSets(id);
         itemRepository.update(id, definition);
         log.info("Item '{}' updated with name '{}'", id, definition.name());
         return single(id);
@@ -68,6 +73,7 @@ public class ItemService {
     @Transactional
     public void delete(long id) {
         single(id);
+        removeFromCustomSets(id);
         itemRepository.delete(id);
         log.info("Item '{}' deleted", id);
     }
@@ -85,6 +91,11 @@ public class ItemService {
     @Transactional
     public Item updateLevel(long id, int level) {
         return saveProgress(single(id).withLevel(level));
+    }
+
+    private void removeFromCustomSets(long id) {
+        final int removed = customSetRepository.deletePiecesOfItem(id);
+        if (removed > 0) log.info("Item '{}' removed from {} custom sets", id, removed);
     }
 
     private Item saveProgress(Item item) {
