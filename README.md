@@ -20,6 +20,12 @@ Specifica e decisioni prese: [docs/specifica.md](docs/specifica.md), [docs/decis
 
 ## Avvio
 
+Su Windows basta un doppio clic su `avvia.bat`: compila il frontend se serve, avvia il backend e apre il browser.
+Per usare un JDK 25 diverso da quello di sistema copia `.env.example` in `.env` e imposta `JAVA_HOME`:
+il file vale solo per l'avvio ed è escluso da git.
+
+A mano:
+
 ```bash
 # 1. Frontend: build servita direttamente dal backend
 cd frontend
