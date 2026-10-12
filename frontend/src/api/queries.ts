@@ -5,8 +5,10 @@ import type {
   BestSetMode,
   BestSetRequest,
   CustomSetRequest,
+  Item,
   ItemRequest,
   ItemSortOrder,
+  Rarity,
 } from './types';
 import { useApi } from './context';
 import { ApiError } from './client';
@@ -86,18 +88,40 @@ function useInvalidateItems() {
     ]);
 }
 
-export function useItemProgress() {
+/**
+ * Rarità e livello dell'item aperto in modale: si rilegge subito solo l'elenco degli item,
+ * i set si aggiornano con useRefreshSets alla chiusura della modale.
+ */
+export function useItemProgress(onSaved: (item: Item) => void) {
   const api = useApi();
-  const invalidate = useInvalidateItems();
-  const options = { onSuccess: invalidate, onError: notifyError };
+  const queryClient = useQueryClient();
+  const options = {
+    onSuccess: (item: Item) => {
+      onSaved(item);
+      return queryClient.invalidateQueries({ queryKey: KEYS.items });
+    },
+    onError: notifyError,
+  };
   return {
-    promote: useMutation({ mutationFn: (id: number) => api.promoteRarity(id), ...options }),
-    reset: useMutation({ mutationFn: (id: number) => api.resetRarity(id), ...options }),
+    rarity: useMutation({
+      mutationFn: ({ id, rarity }: { id: number; rarity: Rarity }) => api.updateRarity(id, rarity),
+      ...options,
+    }),
     level: useMutation({
       mutationFn: ({ id, level }: { id: number; level: number }) => api.updateLevel(id, level),
       ...options,
     }),
   };
+}
+
+/** Rilettura dei set che possono contenere un item cambiato (Full Sets e Custom Sets). */
+export function useRefreshSets() {
+  const queryClient = useQueryClient();
+  return () =>
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: KEYS.fullSets }),
+      queryClient.invalidateQueries({ queryKey: KEYS.customSets }),
+    ]);
 }
 
 export function useItemCensus() {

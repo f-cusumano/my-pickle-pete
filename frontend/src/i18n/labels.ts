@@ -99,7 +99,6 @@ export const ERROR_MESSAGES: Record<InternalErrorCode, string> = {
   ITEM_NOT_FOUND: "L'item non esiste più.",
   ITEM_NAME_ALREADY_EXISTS: 'Esiste già un item con questo nome.',
   ARMOR_SLOT_ALREADY_TAKEN: 'Questo set ha già un pezzo per lo slot scelto.',
-  MAX_RARITY_REACHED: "L'item è già alla rarità massima.",
   LEVEL_OUT_OF_RANGE: 'Il livello è fuori dai limiti della rarità.',
   CUSTOM_SET_NOT_FOUND: 'Il set non esiste più.',
   CUSTOM_SET_NAME_ALREADY_EXISTS: 'Esiste già un set con questo nome.',

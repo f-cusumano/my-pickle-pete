@@ -11,6 +11,7 @@ import type {
   Item,
   ItemRequest,
   ItemSortOrder,
+  Rarity,
 } from './types';
 
 /** Errore restituito dal backend, con il codice applicativo da tradurre per l'utente. */
@@ -65,8 +66,8 @@ export function createApi(fetchApi: FetchApi = (input, init) => fetch(input, ini
     updateItem: (itemId: number, request: ItemRequest) =>
       call<Item>(`/item?${id(itemId)}`, json('PUT', request)),
     deleteItem: (itemId: number) => call<undefined>(`/item?${id(itemId)}`, { method: 'DELETE' }),
-    promoteRarity: (itemId: number) => call<Item>(`/item/promote-rarity?${id(itemId)}`, { method: 'POST' }),
-    resetRarity: (itemId: number) => call<Item>(`/item/reset-rarity?${id(itemId)}`, { method: 'POST' }),
+    updateRarity: (itemId: number, rarity: Rarity) =>
+      call<Item>(`/item/rarity?${id(itemId)}&rarity=${rarity}`, { method: 'PUT' }),
     updateLevel: (itemId: number, level: number) =>
       call<Item>(`/item/level?${id(itemId)}&level=${String(level)}`, { method: 'PUT' }),
     armorSets: () => call<ArmorSetInfo[]>('/armor-set/list'),
