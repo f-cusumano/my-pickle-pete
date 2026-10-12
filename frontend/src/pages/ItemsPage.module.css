@@ -1,0 +1,70 @@
+.row {
+  cursor: pointer;
+}
+
+/* Immagine e nome restano visibili scorrendo la tabella in orizzontale (cellulare) */
+.stickyImage,
+.stickyName {
+  position: sticky;
+  z-index: 1;
+  background: var(--mantine-color-body);
+}
+
+.stickyImage {
+  left: 0;
+  width: 64px;
+  min-width: 64px;
+}
+
+.stickyName {
+  left: 64px;
+  min-width: 150px;
+  box-shadow: 4px 0 6px -4px rgba(0, 0, 0, 0.18);
+}
+
+.row:hover .stickyImage,
+.row:hover .stickyName {
+  background: var(--table-hover-color, var(--mantine-color-gray-1));
+}
+
+.selectionHeader {
+  position: relative;
+  width: 96px;
+  min-width: 96px;
+}
+
+.selectionHeaderInner {
+  display: flex;
+  justify-content: center;
+  pointer-events: none; /* solo la checkbox è cliccabile, l'occhietto resta raggiungibile */
+}
+
+.selectionHeaderInner > * {
+  pointer-events: auto;
+}
+
+.eye {
+  position: absolute;
+  z-index: 2;
+  right: 4px;
+  top: 50%;
+  margin-top: -14px; /* niente transform: l'effetto "premuto" di Mantine lo sovrascriverebbe spostando il bottone */
+}
+
+.selectionCell {
+  width: 96px;
+  min-width: 96px;
+}
+
+.selectionCellInner {
+  display: flex;
+  justify-content: center;
+}
+
+.headerWithFilter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  white-space: nowrap;
+}
