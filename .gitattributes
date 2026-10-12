@@ -5,4 +5,3 @@ mvnw text eol=lf
 *.bat text eol=crlf
 *.pdf binary
 *.png binary
-*.bat text eol=crlf
