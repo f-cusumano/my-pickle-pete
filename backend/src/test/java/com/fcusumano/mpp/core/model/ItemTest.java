@@ -69,26 +69,20 @@ class ItemTest {
     }
 
     @Test
-    void promotionKeepsLevel() {
-        final Item promoted = BOOTS.promoted();
-        Assertions.assertEquals(Rarity.EPIC, promoted.rarity());
+    void higherRarityKeepsLevel() {
+        final Item promoted = BOOTS.withRarity(Rarity.LEGENDARY);
+        Assertions.assertEquals(Rarity.LEGENDARY, promoted.rarity());
         Assertions.assertEquals(25, promoted.level());
-        Assertions.assertEquals(40, promoted.maxLevel());
+        Assertions.assertEquals(50, promoted.maxLevel());
     }
 
     @Test
-    void promotionBeyondArtifactFails() {
-        final Item artifact = armor(4, "Petto", ArmorSet.VIKING, Specification.CHEST, Rarity.ARTIFACT, 99);
-        final BadRequestException exception = Assertions.assertThrows(BadRequestException.class, artifact::promoted);
-        Assertions.assertEquals(InternalErrorCode.MAX_RARITY_REACHED, exception.internalErrorCode());
-    }
-
-    @Test
-    void resetCapsLevelToCommonMaximum() {
-        Assertions.assertEquals(Rarity.COMMON, BOOTS.reset().rarity());
-        Assertions.assertEquals(10, BOOTS.reset().level());
-        final Item lowLevel = BOOTS.withLevel(7).reset();
-        Assertions.assertEquals(7, lowLevel.level());
+    void lowerRarityCapsLevelToNewMaximum() {
+        final Item uncommon = BOOTS.withRarity(Rarity.UNCOMMON);
+        Assertions.assertEquals(Rarity.UNCOMMON, uncommon.rarity());
+        Assertions.assertEquals(20, uncommon.level());
+        Assertions.assertEquals(10, BOOTS.withRarity(Rarity.COMMON).level());
+        Assertions.assertEquals(7, BOOTS.withLevel(7).withRarity(Rarity.COMMON).level());
     }
 
     @Test

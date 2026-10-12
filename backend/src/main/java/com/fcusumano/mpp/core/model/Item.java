@@ -16,7 +16,6 @@ import java.util.TreeMap;
 import static com.fcusumano.mpp.core.Constants.BASE_STAT_PER_LEVEL;
 import static com.fcusumano.mpp.core.enums.Stat.DAMAGE;
 import static com.fcusumano.mpp.infrastructure.exception.InternalErrorCode.LEVEL_OUT_OF_RANGE;
-import static com.fcusumano.mpp.infrastructure.exception.InternalErrorCode.MAX_RARITY_REACHED;
 
 /**
  * Item censito con la sua configurazione effettiva (rarità e livello dell'inventario).
@@ -89,17 +88,12 @@ public record Item(Long id,
         return stats;
     }
 
-    /** Rarità successiva con lo stesso livello: sale solo il massimo. */
-    public Item promoted() {
-        if (rarity.isTop()) {
-            throw new BadRequestException(MAX_RARITY_REACHED, "Item '%s' already has the maximum rarity '%s'.", id, rarity);
-        }
-        return withProgress(rarity.next(), level);
-    }
-
-    /** Ritorno a Comune: il livello scende al massimo di Comune se lo superava. */
-    public Item reset() {
-        return withProgress(Rarity.base(), Math.min(level, Rarity.base().maxLevel()));
+    /**
+     * Rarità impostata direttamente (sono raggiunte anche tutte le inferiori):
+     * il livello resta invariato e scende al nuovo massimo solo se lo superava.
+     */
+    public Item withRarity(Rarity newRarity) {
+        return withProgress(newRarity, Math.min(level, newRarity.maxLevel()));
     }
 
     public Item withLevel(int newLevel) {
