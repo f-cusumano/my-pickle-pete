@@ -37,10 +37,10 @@ cd ../backend
 ./mvnw spring-boot:run        # su Windows: mvnw.cmd spring-boot:run
 ```
 
-Poi apri <http://localhost:8080>.
+Poi apri <http://localhost:8080/my-pickle-pete/>.
 
 Per sviluppare sul frontend con il ricaricamento automatico: backend avviato e `npm run dev` in `frontend/`
-(apre <http://localhost:5173>, le chiamate `/api` vanno al backend).
+(apre <http://localhost:5173/my-pickle-pete/>, le chiamate alle API vanno al backend).
 
 ### Dal cellulare
 
@@ -50,7 +50,7 @@ Di default il backend ascolta solo su `127.0.0.1`. Per usarlo dal telefono sulla
 MPP_SERVER_ADDRESS=0.0.0.0 ./mvnw spring-boot:run
 ```
 
-e apri `http://<ip-del-pc>:8080` dal telefono (su Windows potrebbe servire consentire Java nel firewall).
+e apri `http://<ip-del-pc>:8080/my-pickle-pete/` dal telefono (su Windows potrebbe servire consentire Java nel firewall).
 
 ## Configurazione
 
@@ -63,16 +63,17 @@ e apri `http://<ip-del-pc>:8080` dal telefono (su Windows potrebbe servire conse
 
 I dati restano in `backend/data/` (esclusa da git): per un backup basta copiare quella cartella a backend fermo.
 
-Documentazione API: <http://localhost:8080/swagger-ui.html>.
+Documentazione API: <http://localhost:8080/my-pickle-pete/swagger-ui.html>.
 
 ## Primo utilizzo
 
 Non esiste un database online degli item: si parte dalla pagina **Censimento**, dove si creano gli item
-(nome, tipologia, specifica, set, immagine e i 5 potenziamenti per rarità) e si inseriscono i testi dei bonus
+(nome, tipologia, specifica, set e i 5 potenziamenti per rarità, ciascuno a valore o in percentuale; l'immagine è quella
+predefinita della categoria) e si inseriscono i testi dei bonus
 dei set. Bandito, Cavaliere e Vampiro non hanno ancora il testo del bonus.
 
-Le unità delle caratteristiche (percentuale o valore assoluto) sono un'ipotesi da verificare nel gioco:
-si trovano in `backend/src/main/java/com/fcusumano/mpp/core/enums/Stat.java`.
+Ogni caratteristica ha un'unità predefinita (in `backend/src/main/java/com/fcusumano/mpp/core/enums/Stat.java`), usata per la
+statistica base del livello e proposta in censimento; la stessa caratteristica in unità diverse resta su righe separate.
 
 ## Test
 

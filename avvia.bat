@@ -22,13 +22,13 @@ if not exist "frontend\dist\index.html" (
 echo Avvio del backend in una nuova finestra...
 start "My Pickle Pete - backend" cmd /k "cd /d "%~dp0backend" && mvnw.cmd spring-boot:run"
 
-echo Attendo che l'app risponda su http://localhost:%MPP_PORT% ...
+echo Attendo che l'app risponda su http://localhost:%MPP_PORT%/my-pickle-pete/ ...
 :wait
 timeout /t 3 /nobreak >nul
-powershell -NoProfile -Command "try { Invoke-WebRequest -UseBasicParsing http://localhost:%MPP_PORT%/api/constants/game -TimeoutSec 2 | Out-Null; exit 0 } catch { exit 1 }"
+powershell -NoProfile -Command "try { Invoke-WebRequest -UseBasicParsing http://localhost:%MPP_PORT%/my-pickle-pete/api/constants/game -TimeoutSec 2 | Out-Null; exit 0 } catch { exit 1 }"
 if errorlevel 1 goto :wait
 
-start "" %MPP_BROWSER% "http://localhost:%MPP_PORT%"
+start "" %MPP_BROWSER% "http://localhost:%MPP_PORT%/my-pickle-pete/"
 exit /b 0
 
 :error
