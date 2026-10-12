@@ -1,0 +1,58 @@
+# =====================================================================================================
+# My Pickle Pete - app personale, nessun login.
+# Le variabili MPP_* (d'ambiente) cambiano i default senza toccare questo file.
+# =====================================================================================================
+
+spring:
+  application:
+    name: my-pickle-pete
+
+  threads:
+    virtual:
+      enabled: true
+
+  # H2 su file nella cartella di avvio del backend (esclusa da git)
+  datasource:
+    url: jdbc:h2:file:${mpp.database.path}
+    username: sa
+    password:
+
+  liquibase:
+    change-log: classpath:db/changelog/master.xml
+
+  jooq:
+    sql-dialect: H2
+
+  # Immagini degli item: fino a 2MB
+  servlet:
+    multipart:
+      max-file-size: 2MB
+      max-request-size: 3MB
+
+  # Il backend serve anche il frontend compilato (npm run build), così basta un solo indirizzo, anche da cellulare
+  web:
+    resources:
+      static-locations: classpath:/static/,file:${mpp.frontend.dist-path}/
+
+server:
+  port: ${MPP_PORT:8080}
+  # Solo locale di default: per aprire l'app dal cellulare sulla stessa rete Wi-Fi impostare MPP_SERVER_ADDRESS=0.0.0.0
+  address: ${MPP_SERVER_ADDRESS:127.0.0.1}
+  error:
+    include-stacktrace: never
+    include-message: never
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+  paths-to-match: /api/**
+
+mpp:
+  database:
+    # Percorso del file H2 (senza estensione), relativo alla cartella di avvio del backend
+    path: ${MPP_DB_PATH:./data/my-pickle-pete}
+  frontend:
+    # Cartella del frontend compilato, relativa alla cartella di avvio del backend
+    dist-path: ${MPP_FRONTEND_DIST:../frontend/dist}

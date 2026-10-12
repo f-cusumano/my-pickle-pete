@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!-- Set di armatura: chiave naturale = codice dell'enum ArmorSet -->
+    <changeSet id="20261012_create_mpp_armor_set" author="f.cusumano">
+        <preConditions onFail="MARK_RAN">
+            <not><tableExists tableName="mpp_armor_set"/></not>
+        </preConditions>
+        <createTable tableName="mpp_armor_set">
+            <column name="code" type="VARCHAR(20)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="mpp_armor_set_pkey"/>
+            </column>
+            <column name="bonus_description" type="VARCHAR(500)"/>
+        </createTable>
+    </changeSet>
+
+    <!-- Item censiti: rarita' e livello sono quelli effettivi dell'inventario -->
+    <changeSet id="20261012_create_mpp_item" author="f.cusumano">
+        <preConditions onFail="MARK_RAN">
+            <not><tableExists tableName="mpp_item"/></not>
+        </preConditions>
+        <createTable tableName="mpp_item">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="mpp_item_pkey"/>
+            </column>
+            <column name="name" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="item_type" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="specification" type="VARCHAR(20)"/>
+            <column name="id_mpp_armor_set" type="VARCHAR(20)"/>
+            <column name="rarity" type="VARCHAR(20)" defaultValue="COMMON">
+                <constraints nullable="false"/>
+            </column>
+            <column name="level" type="INT" defaultValueNumeric="1">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addUniqueConstraint tableName="mpp_item" columnNames="name" constraintName="uk1_mpp_item_name"/>
+        <!-- Un solo pezzo per slot in ogni set (i NULL di armi e abilita' non collidono) -->
+        <addUniqueConstraint tableName="mpp_item" columnNames="id_mpp_armor_set, specification" constraintName="uk2_mpp_item_armor_set_specification"/>
+        <addForeignKeyConstraint baseTableName="mpp_item" baseColumnNames="id_mpp_armor_set" constraintName="mpp_armor_set_fk"
+                                 referencedTableName="mpp_armor_set" referencedColumnNames="code" onDelete="NO ACTION"/>
+        <createIndex tableName="mpp_item" indexName="mpp_item_id_mpp_armor_set_idx">
+            <column name="id_mpp_armor_set"/>
+        </createIndex>
+        <createIndex tableName="mpp_item" indexName="mpp_item_item_type_idx">
+            <column name="item_type"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- Potenziamento sbloccato da ogni promozione di rarita' (Comune non ne ha) -->
+    <changeSet id="20261012_create_mpp_item_rarity_bonus" author="f.cusumano">
+        <preConditions onFail="MARK_RAN">
+            <not><tableExists tableName="mpp_item_rarity_bonus"/></not>
+        </preConditions>
+        <createTable tableName="mpp_item_rarity_bonus">
+            <column name="id_mpp_item" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="rarity" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="stat" type="VARCHAR(30)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="amount" type="NUMERIC(7,2)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addPrimaryKey tableName="mpp_item_rarity_bonus" columnNames="id_mpp_item, rarity" constraintName="mpp_item_rarity_bonus_pkey"/>
+        <addForeignKeyConstraint baseTableName="mpp_item_rarity_bonus" baseColumnNames="id_mpp_item" constraintName="mpp_item_rarity_bonus_fk1"
+                                 referencedTableName="mpp_item" referencedColumnNames="id" onDelete="NO ACTION"/>
+    </changeSet>
+
+    <!-- Immagine dell'item, separata per non appesantire le letture dell'elenco -->
+    <changeSet id="20261012_create_mpp_item_image" author="f.cusumano">
+        <preConditions onFail="MARK_RAN">
+            <not><tableExists tableName="mpp_item_image"/></not>
+        </preConditions>
+        <createTable tableName="mpp_item_image">
+            <column name="id_mpp_item" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="mpp_item_image_pkey"/>
+            </column>
+            <column name="content_type" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="data" type="BLOB">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addForeignKeyConstraint baseTableName="mpp_item_image" baseColumnNames="id_mpp_item" constraintName="mpp_item_image_fk1"
+                                 referencedTableName="mpp_item" referencedColumnNames="id" onDelete="NO ACTION"/>
+    </changeSet>
+
+</databaseChangeLog>
