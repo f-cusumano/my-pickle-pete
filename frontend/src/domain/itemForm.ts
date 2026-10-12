@@ -7,10 +7,13 @@ import type {
   Rarity,
   Specification,
   Stat,
+  StatUnit,
 } from '../api/types';
 
 export interface BonusRow {
   stat: Stat | null;
+  /** Valore o percentuale: alla scelta della caratteristica si propone la sua unità predefinita. */
+  unit: StatUnit | null;
   amount: number | string;
 }
 
@@ -34,7 +37,10 @@ export function formOf(item: Item): ItemFormValues {
     specification: item.specification,
     armorSet: item.armorSet,
     bonuses: Object.fromEntries(
-      item.bonuses.map((bonus) => [bonus.rarity, { stat: bonus.stat, amount: bonus.amount }]),
+      item.bonuses.map((bonus) => [
+        bonus.rarity,
+        { stat: bonus.stat, unit: bonus.unit, amount: bonus.amount },
+      ]),
     ),
   };
 }
@@ -74,6 +80,9 @@ export function validateForm(values: ItemFormValues, constants: GameConstants): 
     if (row.stat === null) {
       errors[`bonuses.${rarity}.stat`] = 'Scegli la caratteristica';
     }
+    if (row.unit === null) {
+      errors[`bonuses.${rarity}.unit`] = 'Scegli valore o percentuale';
+    }
     if (amount === null || amount <= 0) {
       errors[`bonuses.${rarity}.amount`] = 'Valore maggiore di 0';
     }
@@ -92,7 +101,9 @@ export function toRequest(values: ItemFormValues, constants: GameConstants): Ite
     .flatMap((rarity) => {
       const row = values.bonuses[rarity];
       const amount = row ? amountOf(row) : null;
-      return row?.stat && amount !== null ? [{ rarity, stat: row.stat, amount }] : [];
+      return row?.stat && row.unit && amount !== null
+        ? [{ rarity, stat: row.stat, unit: row.unit, amount }]
+        : [];
     });
   return {
     name: values.name.trim(),

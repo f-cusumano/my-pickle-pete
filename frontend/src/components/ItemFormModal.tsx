@@ -1,19 +1,16 @@
 import {
-  ActionIcon,
   Button,
-  FileInput,
   Group,
   Modal,
   NumberInput,
+  SegmentedControl,
   Select,
   Stack,
   Text,
   TextInput,
-  Tooltip,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
-import { useMediaQuery } from '@mantine/hooks';
-import { IconPhoto, IconTrash } from '@tabler/icons-react';
+import { useFullScreenModal } from '../hooks/useFullScreenModal';
 import { useState, type ReactNode } from 'react';
 import { errorMessage, useItemCensus } from '../api/queries';
 import type { GameConstants, Item, ItemType, Rarity, Stat, StatUnit } from '../api/types';
@@ -26,7 +23,13 @@ import {
   type ItemFormValues,
 } from '../domain/itemForm';
 import { statUnits } from '../domain/units';
-import { ARMOR_SET_LABELS, ITEM_TYPE_LABELS, SPECIFICATION_LABELS, STAT_LABELS } from '../i18n/labels';
+import {
+  ARMOR_SET_LABELS,
+  ITEM_TYPE_LABELS,
+  SPECIFICATION_LABELS,
+  STAT_LABELS,
+  STAT_UNIT_LABELS,
+} from '../i18n/labels';
 import { ItemThumbnail } from './ItemThumbnail';
 import { RarityBadge } from './RarityBadge';
 import classes from './ItemFormModal.module.css';
@@ -35,18 +38,19 @@ interface Props {
   constants: GameConstants;
   /** null = nuovo item, altrimenti l'item da modificare. */
   item: Item | null;
+  /** Valori di partenza di un nuovo item (es. set e slot del pezzo mancante da aggiungere). */
+  preset?: Partial<ItemFormValues>;
   onClose: () => void;
 }
 
-/** Censimento di un item: dati fissi, immagine e potenziamento sbloccato da ogni rarità. */
-export function ItemFormModal({ constants, item, onClose }: Props) {
-  const fullScreen = useMediaQuery('(max-width: 48em)');
+/** Censimento di un item: dati fissi e potenziamento sbloccato da ogni rarità; l'immagine è quella della categoria. */
+export function ItemFormModal({ constants, item, preset, onClose }: Props) {
+  const fullScreen = useFullScreenModal();
   const census = useItemCensus();
-  const [image, setImage] = useState<File | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
   const units = statUnits(constants);
   const form = useForm<ItemFormValues>({
-    initialValues: item ? formOf(item) : emptyForm(),
+    initialValues: item ? formOf(item) : { ...emptyForm(), ...preset },
     validate: (values) => validateForm(values, constants),
   });
   const type = constants.itemTypes.find((t) => t.code === form.values.type);
@@ -57,7 +61,7 @@ export function ItemFormModal({ constants, item, onClose }: Props) {
   const submit = form.onSubmit((values) => {
     setServerError(null);
     census.save.mutate(
-      { id: item?.id ?? null, request: toRequest(values, constants), image },
+      { id: item?.id ?? null, request: toRequest(values, constants) },
       { onSuccess: onClose, onError: (error) => setServerError(errorMessage(error)) },
     );
   });
@@ -75,7 +79,7 @@ export function ItemFormModal({ constants, item, onClose }: Props) {
       title={item ? `Modifica ${item.name}` : 'Crea item'}
       size="lg"
       fullScreen={fullScreen}
-      centered
+      centered={!fullScreen}
     >
       <form onSubmit={submit}>
         <Stack gap="sm">
@@ -112,33 +116,18 @@ export function ItemFormModal({ constants, item, onClose }: Props) {
             />
           )}
 
-          <Group align="flex-end" wrap="nowrap">
-            {item && <ItemThumbnail item={item} size={56} />}
-            <FileInput
-              label="Immagine"
-              placeholder={item?.imageVersion ? 'Sostituisci immagine' : 'Scegli immagine (max 2 MB)'}
-              accept="image/png,image/jpeg,image/webp,image/gif"
-              leftSection={<IconPhoto size={18} />}
-              value={image}
-              onChange={setImage}
-              clearable
-              style={{ flex: 1 }}
+          <Group gap="sm" wrap="nowrap">
+            <ItemThumbnail
+              type={form.values.type}
+              specification={form.values.specification}
+              rarity={item?.rarity ?? null}
+              label="Immagine della categoria"
+              size={56}
             />
-            {item?.imageVersion && (
-              <Tooltip label="Rimuovi immagine">
-                <ActionIcon
-                  variant="light"
-                  color="red"
-                  size="lg"
-                  mb={2}
-                  loading={census.removeImage.isPending}
-                  onClick={() => census.removeImage.mutate(item.id)}
-                  aria-label="Rimuovi immagine"
-                >
-                  <IconTrash size={18} />
-                </ActionIcon>
-              </Tooltip>
-            )}
+            <Text size="xs" c="dimmed">
+              L&apos;immagine è quella predefinita della categoria e si aggiorna da sola scegliendo tipologia
+              e specifica.
+            </Text>
           </Group>
 
           <Text fw={700} mt="sm">
@@ -151,8 +140,9 @@ export function ItemFormModal({ constants, item, onClose }: Props) {
             <BonusRowInput
               key={rarity}
               rarity={rarity}
-              row={form.values.bonuses[rarity] ?? { stat: null, amount: '' }}
+              row={form.values.bonuses[rarity] ?? { stat: null, unit: null, amount: '' }}
               statError={form.errors[`bonuses.${rarity}.stat`]}
+              unitError={form.errors[`bonuses.${rarity}.unit`]}
               amountError={form.errors[`bonuses.${rarity}.amount`]}
               onChange={(row) => form.setFieldValue(`bonuses.${rarity}`, row)}
               units={units}
@@ -183,13 +173,28 @@ interface BonusRowProps {
   rarity: Rarity;
   row: BonusRow;
   statError: ReactNode;
+  unitError: ReactNode;
   amountError: ReactNode;
   onChange: (row: BonusRow) => void;
   units: Record<Stat, StatUnit>;
   constants: GameConstants;
 }
 
-function BonusRowInput({ rarity, row, statError, amountError, onChange, units, constants }: BonusRowProps) {
+function BonusRowInput({
+  rarity,
+  row,
+  statError,
+  unitError,
+  amountError,
+  onChange,
+  units,
+  constants,
+}: BonusRowProps) {
+  // Scegliendo la caratteristica si propone la sua unità predefinita, poi modificabile
+  const changeStat = (value: string | null) => {
+    const stat = value as Stat | null;
+    onChange({ ...row, stat, unit: stat ? units[stat] : row.unit });
+  };
   return (
     <div className={classes.bonusRow}>
       <div className={classes.bonusBadge}>
@@ -200,22 +205,41 @@ function BonusRowInput({ rarity, row, statError, amountError, onChange, units, c
         placeholder="Caratteristica"
         data={constants.stats.map((stat) => ({ value: stat.code, label: STAT_LABELS[stat.code] }))}
         value={row.stat}
-        onChange={(value) => onChange({ ...row, stat: value })}
+        onChange={changeStat}
         error={statError}
         searchable
         clearable
+        className={classes.bonusStat}
       />
+      <div className={classes.bonusUnit}>
+        <SegmentedControl
+          aria-label={`Unità ${rarity}`}
+          data={(['FLAT', 'PERCENT'] as const).map((unit) => ({
+            value: unit,
+            label: STAT_UNIT_LABELS[unit],
+          }))}
+          value={row.unit ?? ''}
+          onChange={(value) => onChange({ ...row, unit: value as StatUnit })}
+          fullWidth
+        />
+        {unitError && (
+          <Text c="red" size="xs" mt={2}>
+            {unitError}
+          </Text>
+        )}
+      </div>
       <NumberInput
-        aria-label={`Valore ${rarity}`}
-        placeholder="Valore"
+        aria-label={`Quantità ${rarity}`}
+        placeholder="Quantità"
         value={row.amount}
         onChange={(value) => onChange({ ...row, amount: value })}
         error={amountError}
         min={0}
         decimalScale={2}
         decimalSeparator=","
-        suffix={row.stat && units[row.stat] === 'PERCENT' ? '%' : undefined}
+        suffix={row.unit === 'PERCENT' ? '%' : undefined}
         inputMode="decimal"
+        className={classes.bonusAmount}
       />
     </div>
   );

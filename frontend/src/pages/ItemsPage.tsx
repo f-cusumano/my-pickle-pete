@@ -19,6 +19,7 @@ import type { GameConstants, Item, ItemSortOrder } from '../api/types';
 import { ColumnFilter } from '../components/ColumnFilter';
 import { ItemModal } from '../components/ItemModal';
 import { ItemThumbnail } from '../components/ItemThumbnail';
+import { thumbnailOf } from '../domain/itemImages';
 import { RarityBadge } from '../components/RarityBadge';
 import { SelectedItemsModal } from '../components/SelectedItemsModal';
 import { SpecificationLabel } from '../components/SpecificationLabel';
@@ -196,7 +197,7 @@ function ItemsTable({ constants, items, sortOrder, onSortOrderChange, onGoToCens
                 {visible.map((item) => (
                   <Table.Tr key={item.id} className={classes.row} onClick={() => setOpenItemId(item.id)}>
                     <Table.Td className={classes.stickyImage}>
-                      <ItemThumbnail item={item} />
+                      <ItemThumbnail {...thumbnailOf(item)} />
                     </Table.Td>
                     <Table.Td className={classes.stickyName}>
                       <Text fw={700} size="sm">

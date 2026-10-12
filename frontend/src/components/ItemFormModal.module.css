@@ -1,23 +1,41 @@
-/* Riga potenziamento: badge, caratteristica e valore sulla stessa riga */
+/* Riga potenziamento: badge, caratteristica, unità (valore o %) e valore sulla stessa riga */
 .bonusRow {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) 110px;
+  grid-template-columns: auto minmax(0, 1fr) 118px 96px;
+  grid-template-areas: 'badge stat unit amount';
   gap: var(--mantine-spacing-xs);
   align-items: start;
 }
 
 .bonusBadge {
+  grid-area: badge;
   padding-top: 6px;
 }
 
-/* Su cellulare il badge va sopra, caratteristica e valore restano affiancati */
+.bonusStat {
+  grid-area: stat;
+}
+
+.bonusUnit {
+  grid-area: unit;
+  padding-top: 1px;
+}
+
+.bonusAmount {
+  grid-area: amount;
+}
+
+/* Su cellulare: badge, poi caratteristica a tutta larghezza, poi unità e valore affiancati */
 @media (max-width: $mantine-breakpoint-xs) {
   .bonusRow {
     grid-template-columns: minmax(0, 1fr) 110px;
+    grid-template-areas:
+      'badge badge'
+      'stat stat'
+      'unit amount';
   }
 
   .bonusBadge {
-    grid-column: 1 / -1;
     padding-top: 0;
   }
 }

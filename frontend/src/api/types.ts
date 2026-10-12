@@ -46,6 +46,7 @@ export type Highlight = 'BEST' | 'WORST' | 'NONE';
 export interface RarityBonus {
   rarity: Rarity;
   stat: Stat;
+  unit: StatUnit;
   amount: number;
   unlocked: boolean;
 }
@@ -62,12 +63,12 @@ export interface Item {
   baseStat: Stat;
   baseStatValue: number;
   bonuses: RarityBonus[];
-  imageVersion: number | null;
 }
 
 export interface RarityBonusRequest {
   rarity: Rarity;
   stat: Stat;
+  unit: StatUnit;
   amount: number;
 }
 
@@ -86,6 +87,7 @@ export interface ArmorSetInfo {
 
 export interface StatComparison {
   stat: Stat;
+  unit: StatUnit;
   current: number;
   top: number;
   currentHighlight: Highlight;
@@ -105,7 +107,8 @@ export interface GameConstants {
   itemTypes: { code: ItemType; specified: boolean; partOfArmorSet: boolean }[];
   specifications: { code: Specification; itemType: ItemType; baseStat: Stat }[];
   armorSets: ArmorSet[];
-  stats: { code: Stat; unit: StatUnit }[];
+  statUnits: StatUnit[];
+  stats: { code: Stat; defaultUnit: StatUnit }[];
   sortOrders: { code: ItemSortOrder; typeOrder: ItemType[]; preselected: boolean }[];
   baseStatPerLevel: number;
   armorSetBonusThreshold: number;
@@ -118,10 +121,7 @@ export type InternalErrorCode =
   | 'ITEM_NAME_ALREADY_EXISTS'
   | 'ARMOR_SLOT_ALREADY_TAKEN'
   | 'MAX_RARITY_REACHED'
-  | 'LEVEL_OUT_OF_RANGE'
-  | 'IMAGE_NOT_FOUND'
-  | 'IMAGE_NOT_VALID'
-  | 'IMAGE_TOO_LARGE';
+  | 'LEVEL_OUT_OF_RANGE';
 
 export interface ErrorResponse {
   key: string;

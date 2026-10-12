@@ -10,16 +10,28 @@ import {
   Text,
   Title,
   Tooltip,
+  UnstyledButton,
 } from '@mantine/core';
 import { IconSparkles } from '@tabler/icons-react';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useFullSets, useGameConstants } from '../api/queries';
-import type { FullSet, GameConstants, Highlight, Specification, Stat, StatUnit } from '../api/types';
+import type {
+  ArmorSet,
+  FullSet,
+  GameConstants,
+  Highlight,
+  Rarity,
+  Specification,
+  Stat,
+  StatUnit,
+} from '../api/types';
 import { ItemThumbnail } from '../components/ItemThumbnail';
-import { SPECIFICATION_ICONS } from '../components/icons';
+import { thumbnailOf } from '../domain/itemImages';
+import { ItemFormModal } from '../components/ItemFormModal';
+import { ItemModal } from '../components/ItemModal';
 import { formatLevel, formatStatValue } from '../domain/format';
 import { statUnits } from '../domain/units';
-import { ARMOR_SET_LABELS, SPECIFICATION_LABELS, STAT_LABELS } from '../i18n/labels';
+import { ARMOR_SET_LABELS, SPECIFICATION_LABELS, STAT_LABELS, STAT_UNIT_LABELS } from '../i18n/labels';
 import classes from './FullSetsPage.module.css';
 
 const HIGHLIGHT_CLASSES: Record<Highlight, string | undefined> = {
@@ -46,8 +58,19 @@ export function FullSetsPage() {
   return <FullSetList constants={constants.data} fullSets={fullSets.data} />;
 }
 
+/** Pezzo mancante da censire: set e slot già scelti nel modulo. */
+interface MissingSlot {
+  armorSet: ArmorSet;
+  slot: Specification;
+}
+
 function FullSetList({ constants, fullSets }: { constants: GameConstants; fullSets: FullSet[] }) {
   const units = useMemo(() => statUnits(constants), [constants]);
+  const rarities = useMemo<Rarity[]>(() => constants.rarities.map((rarity) => rarity.code), [constants]);
+  const [openedId, setOpenedId] = useState<number | null>(null);
+  const [adding, setAdding] = useState<MissingSlot | null>(null);
+  // L'item aperto si rilegge dai set aggiornati, così la modale segue rarità e livello
+  const opened = fullSets.flatMap((fullSet) => fullSet.pieces).find((piece) => piece.id === openedId) ?? null;
   const slots = useMemo(
     () => constants.specifications.filter((spec) => spec.itemType === 'ARMOR').map((spec) => spec.code),
     [constants],
@@ -76,11 +99,22 @@ function FullSetList({ constants, fullSets }: { constants: GameConstants; fullSe
                 slots={slots}
                 units={units}
                 threshold={constants.armorSetBonusThreshold}
+                onOpen={setOpenedId}
+                onAdd={(slot) => setAdding({ armorSet: fullSet.armorSet, slot })}
               />
             </Accordion.Panel>
           </Accordion.Item>
         ))}
       </Accordion>
+      <ItemModal item={opened} rarities={rarities} units={units} onClose={() => setOpenedId(null)} />
+      {adding && (
+        <ItemFormModal
+          constants={constants}
+          item={null}
+          preset={{ type: 'ARMOR', specification: adding.slot, armorSet: adding.armorSet }}
+          onClose={() => setAdding(null)}
+        />
+      )}
     </>
   );
 }
@@ -90,9 +124,11 @@ interface DetailProps {
   slots: Specification[];
   units: Record<Stat, StatUnit>;
   threshold: number;
+  onOpen: (itemId: number) => void;
+  onAdd: (slot: Specification) => void;
 }
 
-function FullSetDetail({ fullSet, slots, units, threshold }: DetailProps) {
+function FullSetDetail({ fullSet, slots, units, threshold, onOpen, onAdd }: DetailProps) {
   return (
     <Stack gap="md">
       <Paper withBorder p="sm" radius="md" bg={fullSet.bonusActive ? 'pickle.0' : 'gray.0'}>
@@ -111,23 +147,31 @@ function FullSetDetail({ fullSet, slots, units, threshold }: DetailProps) {
       <div className={classes.pieces}>
         {slots.map((slot) => {
           const piece = fullSet.pieces.find((item) => item.specification === slot);
-          const SlotIcon = SPECIFICATION_ICONS[slot];
           return (
             <div key={slot} className={classes.piece}>
               {piece ? (
-                <Tooltip label={piece.name} events={{ hover: true, focus: true, touch: true }}>
-                  <div>
-                    <ItemThumbnail item={piece} size={64} />
-                  </div>
+                <Tooltip label={piece.name} events={{ hover: true, focus: true, touch: false }}>
+                  <UnstyledButton onClick={() => onOpen(piece.id)} aria-label={`Apri ${piece.name}`}>
+                    <ItemThumbnail {...thumbnailOf(piece)} size={64} />
+                  </UnstyledButton>
                 </Tooltip>
               ) : (
                 <Tooltip
-                  label={`${SPECIFICATION_LABELS[slot]}: non censito`}
-                  events={{ hover: true, focus: true, touch: true }}
+                  label={`Aggiungi ${SPECIFICATION_LABELS[slot].toLowerCase()}`}
+                  events={{ hover: true, focus: true, touch: false }}
                 >
-                  <div className={classes.missing}>
-                    <SlotIcon size={26} />
-                  </div>
+                  <UnstyledButton
+                    onClick={() => onAdd(slot)}
+                    aria-label={`Aggiungi ${SPECIFICATION_LABELS[slot]} ${ARMOR_SET_LABELS[fullSet.armorSet]}`}
+                  >
+                    <ItemThumbnail
+                      type="ARMOR"
+                      specification={slot}
+                      label={SPECIFICATION_LABELS[slot]}
+                      size={64}
+                      action="add"
+                    />
+                  </UnstyledButton>
                 </Tooltip>
               )}
               <Text size="xs" fw={700}>
@@ -148,13 +192,23 @@ function FullSetDetail({ fullSet, slots, units, threshold }: DetailProps) {
         </Table.Thead>
         <Table.Tbody>
           {fullSet.stats.map((row) => (
-            <Table.Tr key={row.stat}>
-              <Table.Td>{STAT_LABELS[row.stat]}</Table.Td>
+            <Table.Tr key={`${row.stat}-${row.unit}`}>
+              <Table.Td>
+                {STAT_LABELS[row.stat]}
+                {/* La stessa caratteristica nell'altra unità ha una riga sua: si indica l'unità */}
+                {row.unit !== units[row.stat] && (
+                  <Text span size="xs" c="dimmed">
+                    {' '}
+                    ({row.unit === 'PERCENT' ? STAT_UNIT_LABELS.PERCENT : STAT_UNIT_LABELS.FLAT.toLowerCase()}
+                    )
+                  </Text>
+                )}
+              </Table.Td>
               <Table.Td ta="right" className={HIGHLIGHT_CLASSES[row.currentHighlight]}>
-                {formatStatValue(row.current, units[row.stat])}
+                {formatStatValue(row.current, row.unit)}
               </Table.Td>
               <Table.Td ta="right" className={HIGHLIGHT_CLASSES[row.topHighlight]}>
-                {formatStatValue(row.top, units[row.stat])}
+                {formatStatValue(row.top, row.unit)}
               </Table.Td>
             </Table.Tr>
           ))}

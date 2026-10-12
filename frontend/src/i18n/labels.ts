@@ -6,6 +6,7 @@ import type {
   Rarity,
   Specification,
   Stat,
+  StatUnit,
 } from '../api/types';
 
 export const RARITY_LABELS: Record<Rarity, string> = {
@@ -49,6 +50,12 @@ export const ARMOR_SET_LABELS: Record<ArmorSet, string> = {
   VIKING: 'Vichingo',
 };
 
+/** Unità del potenziamento: a valore ("+3 Fortuna") o in percentuale ("+3% Fortuna"). */
+export const STAT_UNIT_LABELS: Record<StatUnit, string> = {
+  FLAT: 'Valore',
+  PERCENT: '%',
+};
+
 export const STAT_LABELS: Record<Stat, string> = {
   DAMAGE: 'Danno',
   MAX_HP: 'HP',
@@ -88,7 +95,4 @@ export const ERROR_MESSAGES: Record<InternalErrorCode, string> = {
   ARMOR_SLOT_ALREADY_TAKEN: 'Questo set ha già un pezzo per lo slot scelto.',
   MAX_RARITY_REACHED: "L'item è già alla rarità massima.",
   LEVEL_OUT_OF_RANGE: 'Il livello è fuori dai limiti della rarità.',
-  IMAGE_NOT_FOUND: "L'item non ha un'immagine.",
-  IMAGE_NOT_VALID: "L'immagine deve essere un file PNG, JPEG, WebP o GIF.",
-  IMAGE_TOO_LARGE: "L'immagine supera i 2 MB.",
 };

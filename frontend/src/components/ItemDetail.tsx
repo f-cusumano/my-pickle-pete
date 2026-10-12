@@ -5,6 +5,7 @@ import type { Item, Rarity, Stat, StatUnit } from '../api/types';
 import { formatLevel, formatStatBonus } from '../domain/format';
 import { ARMOR_SET_LABELS, ITEM_TYPE_LABELS } from '../i18n/labels';
 import { ItemThumbnail } from './ItemThumbnail';
+import { thumbnailOf } from '../domain/itemImages';
 import { RarityBadge } from './RarityBadge';
 import { SpecificationLabel } from './SpecificationLabel';
 
@@ -21,7 +22,7 @@ export function ItemDetail({ item, rarities, units, onLevelChange }: Props) {
   return (
     <Stack gap="md">
       <Group wrap="nowrap" align="flex-start">
-        <ItemThumbnail item={item} size={112} />
+        <ItemThumbnail {...thumbnailOf(item)} size={112} />
         <Stack gap={4} style={{ minWidth: 0 }}>
           <Title order={3} style={{ overflowWrap: 'anywhere' }}>
             {item.name}
@@ -54,7 +55,7 @@ export function ItemDetail({ item, rarities, units, onLevelChange }: Props) {
       <Stack gap={6}>
         <Text fw={700}>Rarità e potenziamenti</Text>
         {rarities.map((rarity) => (
-          <RarityRow key={rarity} item={item} rarity={rarity} rarities={rarities} units={units} />
+          <RarityRow key={rarity} item={item} rarity={rarity} rarities={rarities} />
         ))}
       </Stack>
 
@@ -80,24 +81,12 @@ export function ItemDetail({ item, rarities, units, onLevelChange }: Props) {
   );
 }
 
-function RarityRow({
-  item,
-  rarity,
-  rarities,
-  units,
-}: {
-  item: Item;
-  rarity: Rarity;
-  rarities: Rarity[];
-  units: Record<Stat, StatUnit>;
-}) {
+function RarityRow({ item, rarity, rarities }: { item: Item; rarity: Rarity; rarities: Rarity[] }) {
   const reached = rarities.indexOf(rarity) <= rarities.indexOf(item.rarity);
   const bonus = item.bonuses.find((b) => b.rarity === rarity);
   let description = '-';
   if (rarity !== 'COMMON') {
-    description = bonus
-      ? formatStatBonus(bonus.stat, bonus.amount, units[bonus.stat])
-      : 'Potenziamento non censito';
+    description = bonus ? formatStatBonus(bonus.stat, bonus.amount, bonus.unit) : 'Potenziamento non censito';
   }
   return (
     <Group gap="sm" wrap="nowrap" style={{ opacity: reached ? 1 : 0.45 }}>

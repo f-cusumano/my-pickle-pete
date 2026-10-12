@@ -1,5 +1,5 @@
 import { Button, Group, Modal } from '@mantine/core';
-import { useMediaQuery } from '@mantine/hooks';
+import { useFullScreenModal } from '../hooks/useFullScreenModal';
 import { modals } from '@mantine/modals';
 import { IconArrowUp, IconRefresh } from '@tabler/icons-react';
 import { useItemProgress } from '../api/queries';
@@ -15,7 +15,7 @@ interface Props {
 
 /** Modale di un item: promozione di rarità, reset a Comune e livello modificabile. */
 export function ItemModal({ item, rarities, units, onClose }: Props) {
-  const fullScreen = useMediaQuery('(max-width: 48em)');
+  const fullScreen = useFullScreenModal();
   const progress = useItemProgress();
   const busy = progress.promote.isPending || progress.reset.isPending || progress.level.isPending;
 
@@ -35,7 +35,7 @@ export function ItemModal({ item, rarities, units, onClose }: Props) {
       title="Dettaglio item"
       size="lg"
       fullScreen={fullScreen}
-      centered
+      centered={!fullScreen}
     >
       {item && (
         <>

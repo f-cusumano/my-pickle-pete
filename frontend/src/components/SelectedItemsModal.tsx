@@ -1,5 +1,5 @@
 import { Button, Divider, Group, Modal, ScrollArea, Stack } from '@mantine/core';
-import { useMediaQuery } from '@mantine/hooks';
+import { useFullScreenModal } from '../hooks/useFullScreenModal';
 import { Fragment } from 'react';
 import type { Item, Rarity, Stat, StatUnit } from '../api/types';
 import { ItemDetail } from './ItemDetail';
@@ -14,7 +14,7 @@ interface Props {
 
 /** Item selezionati uno dopo l'altro, in sola lettura, con "Chiudi" in basso a destra. */
 export function SelectedItemsModal({ opened, items, rarities, units, onClose }: Props) {
-  const fullScreen = useMediaQuery('(max-width: 48em)');
+  const fullScreen = useFullScreenModal();
   return (
     <Modal
       opened={opened}
@@ -22,7 +22,7 @@ export function SelectedItemsModal({ opened, items, rarities, units, onClose }: 
       title={`Item selezionati (${String(items.length)})`}
       size="lg"
       fullScreen={fullScreen}
-      centered
+      centered={!fullScreen}
       scrollAreaComponent={ScrollArea.Autosize}
     >
       <Stack gap="lg">

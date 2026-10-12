@@ -39,11 +39,12 @@ export const CONSTANTS: GameConstants = {
     'JESTER',
     'VIKING',
   ],
+  statUnits: ['PERCENT', 'FLAT'],
   stats: [
-    { code: 'DAMAGE', unit: 'PERCENT' },
-    { code: 'MAX_HP', unit: 'FLAT' },
-    { code: 'LUCK', unit: 'FLAT' },
-    { code: 'PICK_UP_RADIUS', unit: 'PERCENT' },
+    { code: 'DAMAGE', defaultUnit: 'PERCENT' },
+    { code: 'MAX_HP', defaultUnit: 'FLAT' },
+    { code: 'LUCK', defaultUnit: 'FLAT' },
+    { code: 'PICK_UP_RADIUS', defaultUnit: 'PERCENT' },
   ],
   sortOrders: [
     { code: 'ARMOR_SET', typeOrder: ['ARMOR', 'WEAPON', 'ABILITY'], preselected: true },
@@ -65,7 +66,6 @@ export function item(overrides: Partial<Item> & Pick<Item, 'id' | 'name'>): Item
     baseStat: 'DAMAGE',
     baseStatValue: 4,
     bonuses: [],
-    imageVersion: null,
     ...overrides,
   };
 }

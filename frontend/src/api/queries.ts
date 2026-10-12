@@ -1,6 +1,6 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { notifications } from '@mantine/notifications';
-import type { ArmorSet, Item, ItemRequest, ItemSortOrder } from './types';
+import type { ArmorSet, ItemRequest, ItemSortOrder } from './types';
 import { useApi } from './context';
 import { ApiError } from './client';
 import { ERROR_MESSAGES } from '../i18n/labels';
@@ -80,35 +80,12 @@ export function useItemCensus() {
   const invalidate = useInvalidateItems();
   return {
     save: useMutation({
-      mutationFn: async ({
-        id,
-        request,
-        image,
-      }: {
-        id: number | null;
-        request: ItemRequest;
-        image: File | null;
-      }) => {
-        const saved: Item = id === null ? await api.createItem(request) : await api.updateItem(id, request);
-        if (!image) {
-          return saved;
-        }
-        try {
-          return await api.saveImage(saved.id, image);
-        } catch (error) {
-          notifyError(error); //L'item è salvato: si segnala solo l'immagine non caricata
-          return saved;
-        }
-      },
+      mutationFn: ({ id, request }: { id: number | null; request: ItemRequest }) =>
+        id === null ? api.createItem(request) : api.updateItem(id, request),
       onSuccess: invalidate,
     }),
     remove: useMutation({
       mutationFn: (id: number) => api.deleteItem(id),
-      onSuccess: invalidate,
-      onError: notifyError,
-    }),
-    removeImage: useMutation({
-      mutationFn: (id: number) => api.deleteImage(id),
       onSuccess: invalidate,
       onError: notifyError,
     }),

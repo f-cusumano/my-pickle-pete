@@ -5,7 +5,7 @@ import { CONSTANTS, ITEMS } from '../test/fixtures';
 import { ItemsPage } from './ItemsPage';
 
 function fakeBackend(input: string): Promise<Response> {
-  const body = input.startsWith('/api/constants/game') ? CONSTANTS : ITEMS;
+  const body = input.includes('/api/constants/game') ? CONSTANTS : ITEMS;
   return Promise.resolve(
     new Response(JSON.stringify(body), { headers: { 'Content-Type': 'application/json' } }),
   );

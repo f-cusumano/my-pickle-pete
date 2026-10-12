@@ -19,6 +19,7 @@ import { useArmorSetCensus, useArmorSets, useGameConstants, useItemCensus, useIt
 import type { ArmorSetInfo, GameConstants, Item } from '../api/types';
 import { ItemFormModal } from '../components/ItemFormModal';
 import { ItemThumbnail } from '../components/ItemThumbnail';
+import { thumbnailOf } from '../domain/itemImages';
 import { SpecificationLabel } from '../components/SpecificationLabel';
 import { ARMOR_SET_LABELS, ITEM_TYPE_LABELS } from '../i18n/labels';
 
@@ -102,7 +103,7 @@ function ItemCensus({ constants }: { constants: GameConstants }) {
                 {items.data.map((item) => (
                   <Table.Tr key={item.id}>
                     <Table.Td>
-                      <ItemThumbnail item={item} size={40} />
+                      <ItemThumbnail {...thumbnailOf(item)} size={40} />
                     </Table.Td>
                     <Table.Td fw={700}>{item.name}</Table.Td>
                     <Table.Td>{ITEM_TYPE_LABELS[item.type]}</Table.Td>
