@@ -20,9 +20,10 @@ Specifica e decisioni prese: [docs/specifica.md](docs/specifica.md), [docs/decis
 
 ## Avvio
 
-Su Windows basta un doppio clic su `avvia.bat`: compila il frontend se serve, avvia il backend e apre il browser.
-Per usare un JDK 25 diverso da quello di sistema copia `.env.example` in `.env` e imposta `JAVA_HOME`:
-il file vale solo per l'avvio ed è escluso da git.
+Su Windows basta un doppio clic su `avvia.bat`: compila il frontend se manca o se il codice è cambiato,
+avvia il backend e apre il browser. Il JDK 25 si indica copiando `.env.example` in `.env` e impostando `JAVA_HOME`
+(il file vale solo per l'avvio ed è escluso da git); se manca o non è valido lo script lo cerca nelle cartelle
+di installazione più comuni.
 
 A mano:
 
