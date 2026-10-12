@@ -6,5 +6,6 @@
     <!-- Un file per modifica, in ordine di esecuzione (R29) -->
     <include file="changes/20261012_0.1.0_initial_schema.xml" relativeToChangelogFile="true"/>
     <include file="changes/20261012_0.1.0_armor_set_seed.xml" relativeToChangelogFile="true"/>
+    <include file="changes/20261012_0.1.0_bonus_unit_and_default_images.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>

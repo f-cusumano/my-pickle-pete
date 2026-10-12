@@ -3,15 +3,11 @@ package com.fcusumano.mpp.application.rest.item.controller;
 import com.fcusumano.mpp.application.rest.item.request.ItemRequest;
 import com.fcusumano.mpp.application.rest.item.response.ItemResponse;
 import com.fcusumano.mpp.core.enums.ItemSortOrder;
-import com.fcusumano.mpp.core.model.ItemImage;
 import com.fcusumano.mpp.core.services.ItemService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
-import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -19,14 +15,9 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.time.Duration;
 import java.util.List;
 
 @RestController
@@ -69,7 +60,7 @@ public class ItemEndpoint {
         return new ItemResponse(itemService.update(id, request.toDefinition()));
     }
 
-    @Operation(summary = "Delete a census item with its bonuses and image")
+    @Operation(summary = "Delete a census item with its bonuses")
     @DeleteMapping
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@RequestParam(required = true) long id) {
@@ -94,33 +85,5 @@ public class ItemEndpoint {
     @PutMapping("/level")
     public ItemResponse updateLevel(@RequestParam(required = true) long id, @RequestParam(required = true) @Min(1) int level) {
         return new ItemResponse(itemService.updateLevel(id, level));
-    }
-
-    /* --------------- IMMAGINE --------------- */
-
-    @Operation(summary = "Image of the item")
-    @GetMapping("/image")
-    public ResponseEntity<byte[]> image(@RequestParam(required = true) long id) {
-        final ItemImage image = itemService.image(id);
-        return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(image.contentType()))
-                .cacheControl(CacheControl.maxAge(Duration.ofDays(365)).cachePrivate()) //L'URL cambia con la versione dell'immagine
-                .body(image.data());
-    }
-
-    @Operation(summary = "Upload or replace the image of the item (png, jpeg, webp, gif)")
-    @PutMapping(value = "/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ItemResponse saveImage(@RequestParam(required = true) long id, @RequestPart("file") MultipartFile file) {
-        try {
-            return new ItemResponse(itemService.saveImage(id, file.getContentType(), file.getBytes()));
-        } catch (IOException e) {
-            throw new UncheckedIOException("Cannot read the image uploaded for item '%s'.".formatted(id), e);
-        }
-    }
-
-    @Operation(summary = "Remove the image of the item")
-    @DeleteMapping("/image")
-    public ItemResponse deleteImage(@RequestParam(required = true) long id) {
-        return new ItemResponse(itemService.deleteImage(id));
     }
 }

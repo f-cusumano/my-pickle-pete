@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!-- Unita' del potenziamento (valore o percentuale): si sceglie in censimento, quelle esistenti prendono l'unita' predefinita della caratteristica -->
+    <changeSet id="20261012_add_mpp_item_rarity_bonus_unit" author="f.cusumano">
+        <preConditions onFail="MARK_RAN">
+            <not><columnExists tableName="mpp_item_rarity_bonus" columnName="unit"/></not>
+        </preConditions>
+        <addColumn tableName="mpp_item_rarity_bonus">
+            <column name="unit" type="VARCHAR(10)" defaultValue="FLAT">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <update tableName="mpp_item_rarity_bonus">
+            <column name="unit" value="PERCENT"/>
+            <where>stat IN ('DAMAGE', 'ATTACK_SPEED', 'PICK_UP_RADIUS', 'MOVE_SPEED', 'XP_GAIN', 'DODGE_CHANCE', 'CRIT_CHANCE',
+                            'CRIT_DAMAGE', 'LIFE_STEAL', 'BOSS_DAMAGE', 'INTEREST')</where>
+        </update>
+        <dropDefaultValue tableName="mpp_item_rarity_bonus" columnName="unit"/>
+    </changeSet>
+
+    <!-- Le immagini non si caricano piu': ogni categoria ha un'immagine predefinita lato interfaccia -->
+    <changeSet id="20261012_drop_mpp_item_image" author="f.cusumano">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="mpp_item_image"/>
+        </preConditions>
+        <dropTable tableName="mpp_item_image"/>
+    </changeSet>
+
+</databaseChangeLog>

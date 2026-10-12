@@ -5,7 +5,8 @@ import static com.fcusumano.mpp.core.enums.StatUnit.PERCENT;
 
 /**
  * Elenco fisso delle caratteristiche del gioco, nell'ordine in cui si mostrano.
- * Le unità sono dedotte dalle guide online e dagli esempi della specifica: da verificare sul gioco.
+ * L'unità è quella predefinita, proposta in censimento e usata per la statistica base del livello:
+ * ogni potenziamento può comunque essere a valore o in percentuale.
  */
 public enum Stat {
     DAMAGE(PERCENT),
@@ -31,14 +32,14 @@ public enum Stat {
     INTEREST(PERCENT),
     KNOCKBACK(FLAT);
 
-    private final StatUnit unit;
+    private final StatUnit defaultUnit;
 
 
-    Stat(StatUnit unit) {
-        this.unit = unit;
+    Stat(StatUnit defaultUnit) {
+        this.defaultUnit = defaultUnit;
     }
 
-    public StatUnit unit() {
-        return unit;
+    public StatUnit defaultUnit() {
+        return defaultUnit;
     }
 }

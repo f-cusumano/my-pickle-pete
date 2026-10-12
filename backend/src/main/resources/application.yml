@@ -23,12 +23,6 @@ spring:
   jooq:
     sql-dialect: H2
 
-  # Immagini degli item: fino a 2MB
-  servlet:
-    multipart:
-      max-file-size: 2MB
-      max-request-size: 3MB
-
   # Il backend serve anche il frontend compilato (npm run build), così basta un solo indirizzo, anche da cellulare
   web:
     resources:
@@ -38,6 +32,9 @@ server:
   port: ${MPP_PORT:8080}
   # Solo locale di default: per aprire l'app dal cellulare sulla stessa rete Wi-Fi impostare MPP_SERVER_ADDRESS=0.0.0.0
   address: ${MPP_SERVER_ADDRESS:127.0.0.1}
+  # L'app risponde su http://localhost:8080/my-pickle-pete/ (il frontend è compilato con la stessa base)
+  servlet:
+    context-path: /my-pickle-pete
   error:
     include-stacktrace: never
     include-message: never

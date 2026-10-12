@@ -31,7 +31,7 @@ public record ItemRequest(@NotBlank(message = "Item name must be specified.")
         final List<RarityBonusRequest> requestedBonuses = bonuses == null ? List.of() : bonuses;
         return new ItemDefinition(name, type, specification, armorSet,
                                   requestedBonuses.stream().filter(Objects::nonNull)
-                                          .filter(b -> b.rarity() != null && b.stat() != null && b.amount() != null) //Gli incompleti li segnala @Valid
+                                          .filter(b -> b.rarity() != null && b.stat() != null && b.unit() != null && b.amount() != null) //Gli incompleti li segnala @Valid
                                           .map(RarityBonusRequest::toModel)
                                           .toList());
     }

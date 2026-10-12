@@ -5,21 +5,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
-import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/** Flusso completo su H2 in memoria: censimento, avanzamento, immagine e set completi. */
+/** Flusso completo su H2 in memoria: censimento, avanzamento e set completi. */
 @SpringBootTest(properties = {"spring.datasource.url=jdbc:h2:mem:mpp-flow;DB_CLOSE_DELAY=-1", "mpp.frontend.dist-path=target/no-frontend"})
 @AutoConfigureMockMvc
 class ItemFlowIntegrationTest {
@@ -32,7 +29,8 @@ class ItemFlowIntegrationTest {
     void censusProgressAndFullSet() throws Exception {
         final long hatId = create("""
                 {"name": "Cappello da cowboy", "type": "ARMOR", "specification": "HAT", "armorSet": "COWBOY",
-                 "bonuses": [{"rarity": "UNCOMMON", "stat": "CRIT_CHANCE", "amount": 2}, {"rarity": "RARE", "stat": "LUCK", "amount": 3}]}""");
+                 "bonuses": [{"rarity": "UNCOMMON", "stat": "CRIT_CHANCE", "unit": "PERCENT", "amount": 2},
+                             {"rarity": "RARE", "stat": "LUCK", "unit": "PERCENT", "amount": 3}]}""");
 
         //Parte da Comune 1/10 con +4% Danno
         mockMvc.perform(get("/api/item").param("id", String.valueOf(hatId)))
@@ -66,7 +64,12 @@ class ItemFlowIntegrationTest {
                 .andExpect(jsonPath("$[8].stats[0].stat").value("DAMAGE"))
                 .andExpect(jsonPath("$[8].stats[0].current").value(60))
                 .andExpect(jsonPath("$[8].stats[0].top").value(396))
-                .andExpect(jsonPath("$[8].stats[0].currentHighlight").value("BEST"));
+                .andExpect(jsonPath("$[8].stats[0].currentHighlight").value("BEST"))
+                //Fortuna in percentuale: riga in più subito dopo la Fortuna a valore
+                .andExpect(jsonPath("$[8].stats", hasSize(23)))
+                .andExpect(jsonPath("$[8].stats[18].stat").value("LUCK"))
+                .andExpect(jsonPath("$[8].stats[18].unit").value("PERCENT"))
+                .andExpect(jsonPath("$[8].stats[18].top").value(3));
 
         mockMvc.perform(post("/api/item/reset-rarity").param("id", String.valueOf(hatId)))
                 .andExpect(jsonPath("$.rarity").value("COMMON"))
@@ -93,30 +96,9 @@ class ItemFlowIntegrationTest {
     }
 
     @Test
-    void imageUploadAndRemoval() throws Exception {
+    void deleteItem() throws Exception {
         final long id = create("""
                 {"name": "Pistola ad acqua", "type": "WEAPON", "specification": "RANGED"}""");
-        final byte[] png = {(byte) 0x89, 'P', 'N', 'G'};
-        mockMvc.perform(multipart("/api/item/image").file(new MockMultipartFile("file", "pistola.png", "image/png", png))
-                                .param("id", String.valueOf(id))
-                                .with(request -> {
-                                    request.setMethod("PUT");
-                                    return request;
-                                }))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.imageVersion").isNumber());
-        mockMvc.perform(get("/api/item/image").param("id", String.valueOf(id)))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType("image/png"))
-                .andExpect(content().bytes(png));
-        mockMvc.perform(multipart("/api/item/image").file(new MockMultipartFile("file", "nota.txt", "text/plain", new byte[]{1}))
-                                .param("id", String.valueOf(id))
-                                .with(request -> {
-                                    request.setMethod("PUT");
-                                    return request;
-                                }))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value("IMAGE_NOT_VALID"));
         mockMvc.perform(delete("/api/item").param("id", String.valueOf(id))).andExpect(status().isNoContent());
         mockMvc.perform(get("/api/item").param("id", String.valueOf(id)))
                 .andExpect(status().isNotFound())

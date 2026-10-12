@@ -1,11 +1,11 @@
 package com.fcusumano.mpp.core.utils;
 
-import com.fcusumano.mpp.core.enums.Stat;
+import com.fcusumano.mpp.core.model.StatKey;
 import com.fcusumano.mpp.core.utils.bo.StatHighlights;
 
 import java.math.BigDecimal;
 import java.util.Comparator;
-import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NavigableSet;
@@ -27,20 +27,20 @@ public final class StatHighlighter {
     private StatHighlighter() {}
 
 
-    public static StatHighlights highlight(Map<Stat, BigDecimal> values) {
+    public static StatHighlights highlight(Map<StatKey, BigDecimal> values) {
         final NavigableSet<BigDecimal> distinctValues = new TreeSet<>(Comparator.naturalOrder()); //compareTo: 5 e 5.00 coincidono
         distinctValues.addAll(values.values());
         if (distinctValues.size() < 2) return StatHighlights.none();
-        final Set<Stat> best = extremes(values, distinctValues.descendingSet(), distinctValues.first());
-        final Set<Stat> worst = extremes(values, distinctValues, distinctValues.last());
+        final Set<StatKey> best = extremes(values, distinctValues.descendingSet(), distinctValues.first());
+        final Set<StatKey> worst = extremes(values, distinctValues, distinctValues.last());
         return new StatHighlights(best, worst);
     }
 
     /** Statistiche con il primo valore (e, se unico, con il secondo) nell'ordine dato, escluso il valore opposto. */
-    private static Set<Stat> extremes(Map<Stat, BigDecimal> values, NavigableSet<BigDecimal> orderedValues, BigDecimal oppositeValue) {
+    private static Set<StatKey> extremes(Map<StatKey, BigDecimal> values, NavigableSet<BigDecimal> orderedValues, BigDecimal oppositeValue) {
         final Iterator<BigDecimal> iterator = orderedValues.iterator();
         final BigDecimal first = iterator.next();
-        final Set<Stat> extremes = statsWith(values, first);
+        final Set<StatKey> extremes = statsWith(values, first);
         if (extremes.size() == 1 && iterator.hasNext()) {
             final BigDecimal second = iterator.next();
             if (second.compareTo(oppositeValue) != 0) extremes.addAll(statsWith(values, second));
@@ -48,10 +48,10 @@ public final class StatHighlighter {
         return extremes;
     }
 
-    private static Set<Stat> statsWith(Map<Stat, BigDecimal> values, BigDecimal value) {
-        final Set<Stat> stats = EnumSet.noneOf(Stat.class);
-        values.forEach((stat, statValue) -> {
-            if (statValue.compareTo(value) == 0) stats.add(stat);
+    private static Set<StatKey> statsWith(Map<StatKey, BigDecimal> values, BigDecimal value) {
+        final Set<StatKey> stats = new HashSet<>();
+        values.forEach((key, statValue) -> {
+            if (statValue.compareTo(value) == 0) stats.add(key);
         });
         return stats;
     }

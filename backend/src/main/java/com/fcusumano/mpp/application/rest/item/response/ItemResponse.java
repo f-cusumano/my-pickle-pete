@@ -9,10 +9,7 @@ import com.fcusumano.mpp.core.model.Item;
 
 import java.util.List;
 
-/**
- * Item con la configurazione effettiva. {@code imageVersion} cambia a ogni nuova immagine (null se assente):
- * il frontend lo aggiunge all'URL dell'immagine per non usare quella in cache.
- */
+/** Item con la configurazione effettiva; l'immagine è quella predefinita della categoria, scelta dal frontend. */
 public record ItemResponse(long id,
                            String name,
                            ItemType type,
@@ -23,17 +20,15 @@ public record ItemResponse(long id,
                            int maxLevel,
                            Stat baseStat,
                            int baseStatValue,
-                           List<RarityBonusResponse> bonuses,
-                           Long imageVersion) {
+                           List<RarityBonusResponse> bonuses) {
 
     public ItemResponse(Item item) {
         this(item.id(), item.name(), item.type(), item.specification(), item.armorSet(), item.rarity(), item.level(), item.maxLevel(),
              item.baseStat(), item.baseStatValue(),
              item.bonuses().stream()
                      .sorted((first, second) -> first.rarity().compareTo(second.rarity()))
-                     .map(bonus -> new RarityBonusResponse(bonus.rarity(), bonus.stat(), bonus.amount(), item.bonusUnlocked(bonus)))
-                     .toList(),
-             item.hasImage() ? item.imageUpdatedAt().toInstant().toEpochMilli() : null);
+                     .map(bonus -> new RarityBonusResponse(bonus.rarity(), bonus.stat(), bonus.unit(), bonus.amount(), item.bonusUnlocked(bonus)))
+                     .toList());
     }
 
     public static List<ItemResponse> of(List<Item> items) {

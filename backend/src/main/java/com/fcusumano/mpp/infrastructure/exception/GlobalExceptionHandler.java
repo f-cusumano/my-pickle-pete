@@ -13,12 +13,10 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
-import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.util.List;
 
 import static com.fcusumano.mpp.infrastructure.exception.InternalErrorCode.GENERIC;
-import static com.fcusumano.mpp.infrastructure.exception.InternalErrorCode.IMAGE_TOO_LARGE;
 import static com.fcusumano.mpp.infrastructure.exception.InternalErrorCode.VALIDATION_FAILED;
 
 /** Unico punto di traduzione delle eccezioni in risposte HTTP (R24). */
@@ -67,13 +65,6 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({MissingServletRequestParameterException.class, MethodArgumentTypeMismatchException.class})
     public ResponseEntity<ErrorResponse> malformedParameters(Exception exception) {
         return validationFailure(List.of(exception.getMessage()));
-    }
-
-    @ExceptionHandler(MaxUploadSizeExceededException.class)
-    public ResponseEntity<ErrorResponse> uploadTooLarge(MaxUploadSizeExceededException exception) {
-        log.warn("Upload rejected: {}", exception.getMessage());
-        return ResponseEntity.status(HttpStatus.CONTENT_TOO_LARGE)
-                .body(ErrorResponse.of(INCORRECT_REQUEST, IMAGE_TOO_LARGE, "The uploaded file is too large."));
     }
 
     @ExceptionHandler(RuntimeException.class)

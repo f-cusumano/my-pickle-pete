@@ -1,6 +1,6 @@
 package com.fcusumano.mpp.core.utils.bo;
 
-import com.fcusumano.mpp.core.enums.Stat;
+import com.fcusumano.mpp.core.model.StatKey;
 
 import java.util.Set;
 
@@ -9,7 +9,7 @@ import static com.fcusumano.mpp.core.utils.bo.Highlight.NONE;
 import static com.fcusumano.mpp.core.utils.bo.Highlight.WORST;
 
 /** Caratteristiche di picco (alone verde) e peggiori (alone rosso) di una colonna; mai sovrapposte. */
-public record StatHighlights(Set<Stat> best, Set<Stat> worst) {
+public record StatHighlights(Set<StatKey> best, Set<StatKey> worst) {
 
     public StatHighlights {
         best = Set.copyOf(best);
@@ -20,9 +20,9 @@ public record StatHighlights(Set<Stat> best, Set<Stat> worst) {
         return new StatHighlights(Set.of(), Set.of());
     }
 
-    public Highlight highlight4(Stat stat) {
-        if (best.contains(stat)) return BEST;
-        if (worst.contains(stat)) return WORST;
+    public Highlight highlight4(StatKey key) {
+        if (best.contains(key)) return BEST;
+        if (worst.contains(key)) return WORST;
         return NONE;
     }
 

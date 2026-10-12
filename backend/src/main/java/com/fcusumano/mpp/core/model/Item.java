@@ -8,11 +8,10 @@ import com.fcusumano.mpp.core.enums.Stat;
 import com.fcusumano.mpp.infrastructure.exception.BadRequestException;
 
 import java.math.BigDecimal;
-import java.time.OffsetDateTime;
-import java.util.EnumMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 import static com.fcusumano.mpp.core.Constants.BASE_STAT_PER_LEVEL;
 import static com.fcusumano.mpp.core.enums.Stat.DAMAGE;
@@ -30,8 +29,7 @@ public record Item(Long id,
                    ArmorSet armorSet,
                    Rarity rarity,
                    int level,
-                   List<RarityBonus> bonuses,
-                   OffsetDateTime imageUpdatedAt) {
+                   List<RarityBonus> bonuses) {
 
     public Item {
         bonuses = bonuses == null ? List.of() : List.copyOf(bonuses);
@@ -40,15 +38,11 @@ public record Item(Long id,
     /** Item appena censito: parte da Comune 1/10. */
     public static Item of(Long id, ItemDefinition definition) {
         return new Item(id, definition.name(), definition.type(), definition.specification(), definition.armorSet(),
-                        Rarity.base(), 1, definition.bonuses(), null);
+                        Rarity.base(), 1, definition.bonuses());
     }
 
     public int maxLevel() {
         return rarity.maxLevel();
-    }
-
-    public boolean hasImage() {
-        return imageUpdatedAt != null;
     }
 
     /** Caratteristica che cresce con il livello: Danno per armi, abilità, cappelli e occhiali, HP per gli altri slot. */
@@ -73,21 +67,24 @@ public record Item(Long id,
     }
 
     /** Caratteristiche alla rarità e al livello effettivi. */
-    public Map<Stat, BigDecimal> currentStats() {
+    public SortedMap<StatKey, BigDecimal> currentStats() {
         return stats4(rarity, level);
     }
 
     /** Caratteristiche a rarità e livello massimi. */
-    public Map<Stat, BigDecimal> topStats() {
+    public SortedMap<StatKey, BigDecimal> topStats() {
         return stats4(Rarity.top(), Rarity.top().maxLevel());
     }
 
-    /** Somma per caratteristica: valore base del livello più i potenziamenti delle rarità raggiunte. */
-    public Map<Stat, BigDecimal> stats4(Rarity reachedRarity, int reachedLevel) {
-        final Map<Stat, BigDecimal> stats = new EnumMap<>(Stat.class);
-        stats.put(baseStat(), BigDecimal.valueOf(baseStatValue(reachedLevel)));
+    /**
+     * Somma per caratteristica e unità: valore base del livello (nell'unità predefinita della caratteristica)
+     * più i potenziamenti delle rarità raggiunte.
+     */
+    public SortedMap<StatKey, BigDecimal> stats4(Rarity reachedRarity, int reachedLevel) {
+        final SortedMap<StatKey, BigDecimal> stats = new TreeMap<>();
+        stats.put(StatKey.defaultOf(baseStat()), BigDecimal.valueOf(baseStatValue(reachedLevel)));
         for (RarityBonus bonus : bonuses) { //Al massimo 5 elementi: ciclo classico (R30)
-            if (bonus.rarity().reachedBy(reachedRarity)) stats.merge(bonus.stat(), bonus.amount(), BigDecimal::add);
+            if (bonus.rarity().reachedBy(reachedRarity)) stats.merge(bonus.key(), bonus.amount(), BigDecimal::add);
         }
         return stats;
     }
@@ -114,6 +111,6 @@ public record Item(Long id,
     }
 
     private Item withProgress(Rarity newRarity, int newLevel) {
-        return new Item(id, name, type, specification, armorSet, newRarity, newLevel, bonuses, imageUpdatedAt);
+        return new Item(id, name, type, specification, armorSet, newRarity, newLevel, bonuses);
     }
 }

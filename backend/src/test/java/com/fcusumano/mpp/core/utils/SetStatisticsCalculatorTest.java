@@ -4,7 +4,9 @@ import com.fcusumano.mpp.core.enums.ArmorSet;
 import com.fcusumano.mpp.core.enums.Rarity;
 import com.fcusumano.mpp.core.enums.Specification;
 import com.fcusumano.mpp.core.enums.Stat;
+import com.fcusumano.mpp.core.enums.StatUnit;
 import com.fcusumano.mpp.core.model.Item;
+import com.fcusumano.mpp.core.model.StatKey;
 import com.fcusumano.mpp.core.utils.bo.Highlight;
 import com.fcusumano.mpp.core.utils.bo.StatComparison;
 import org.junit.jupiter.api.Assertions;
@@ -30,7 +32,20 @@ class SetStatisticsCalculatorTest {
     @Test
     void oneRowPerStatInFixedOrder() {
         final List<StatComparison> rows = SetStatisticsCalculator.compare(COWBOY);
-        Assertions.assertEquals(Arrays.asList(Stat.values()), rows.stream().map(StatComparison::stat).toList());
+        Assertions.assertEquals(Arrays.stream(Stat.values()).map(StatKey::defaultOf).toList(), rows.stream().map(StatComparison::key).toList());
+    }
+
+    @Test
+    void otherUnitAddsItsOwnRowEvenIfStillLocked() {
+        final Item glasses = armor(6, "Occhiali", ArmorSet.VIKING, Specification.GLASSES, Rarity.COMMON, 1,
+                                   bonus(Rarity.RARE, Stat.LUCK, StatUnit.PERCENT, "5"));
+        final List<StatComparison> rows = SetStatisticsCalculator.compare(List.of(glasses));
+        Assertions.assertEquals(Stat.values().length + 1, rows.size());
+        final StatComparison luckPercent = rows.stream().filter(r -> r.key().equals(StatKey.of(Stat.LUCK, StatUnit.PERCENT))).findFirst().orElseThrow();
+        Assertions.assertEquals(0, BigDecimal.ZERO.compareTo(luckPercent.current())); //Raro non ancora raggiunto
+        Assertions.assertEquals(0, new BigDecimal("5").compareTo(luckPercent.top()));
+        //Subito dopo la Fortuna nella sua unità predefinita
+        Assertions.assertEquals(StatKey.defaultOf(Stat.LUCK), rows.get(rows.indexOf(luckPercent) - 1).key());
     }
 
     @Test
@@ -66,6 +81,6 @@ class SetStatisticsCalculatorTest {
     }
 
     private static StatComparison row(List<StatComparison> rows, Stat stat) {
-        return rows.stream().filter(r -> r.stat() == stat).findFirst().orElseThrow();
+        return rows.stream().filter(r -> r.key().equals(StatKey.defaultOf(stat))).findFirst().orElseThrow();
     }
 }

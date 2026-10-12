@@ -5,12 +5,11 @@ import com.fcusumano.mpp.core.enums.Rarity;
 import com.fcusumano.mpp.core.enums.Specification;
 import com.fcusumano.mpp.core.model.Item;
 import com.fcusumano.mpp.core.model.ItemDefinition;
-import com.fcusumano.mpp.core.model.ItemImage;
 
 import java.util.List;
 import java.util.Optional;
 
-/** Persistenza degli item censiti, dei loro potenziamenti e delle immagini. */
+/** Persistenza degli item censiti e dei loro potenziamenti. */
 public interface ItemRepository {
 
     List<Item> retrieveAll();
@@ -28,10 +27,4 @@ public interface ItemRepository {
     void updateProgress(long id, Rarity rarity, int level);
 
     void delete(long id);
-
-    Optional<ItemImage> retrieveImage(long id);
-
-    void saveImage(long id, ItemImage image);
-
-    void deleteImage(long id);
 }

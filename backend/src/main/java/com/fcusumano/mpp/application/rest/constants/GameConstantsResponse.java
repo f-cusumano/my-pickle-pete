@@ -19,6 +19,7 @@ public record GameConstantsResponse(List<RarityConstant> rarities,
                                     List<ItemTypeConstant> itemTypes,
                                     List<SpecificationConstant> specifications,
                                     List<ArmorSet> armorSets,
+                                    List<StatUnit> statUnits,
                                     List<StatConstant> stats,
                                     List<SortOrderConstant> sortOrders,
                                     int baseStatPerLevel,
@@ -30,7 +31,7 @@ public record GameConstantsResponse(List<RarityConstant> rarities,
 
     public record SpecificationConstant(Specification code, ItemType itemType, Stat baseStat) {}
 
-    public record StatConstant(Stat code, StatUnit unit) {}
+    public record StatConstant(Stat code, StatUnit defaultUnit) {}
 
     public record SortOrderConstant(ItemSortOrder code, List<ItemType> typeOrder, boolean preselected) {}
 
@@ -41,7 +42,8 @@ public record GameConstantsResponse(List<RarityConstant> rarities,
                 Arrays.stream(ItemType.values()).map(t -> new ItemTypeConstant(t, t.isSpecified(), t.isPartOfArmorSet())).toList(),
                 Arrays.stream(Specification.values()).map(s -> new SpecificationConstant(s, s.itemType(), s.baseStat())).toList(),
                 List.of(ArmorSet.values()),
-                Arrays.stream(Stat.values()).map(s -> new StatConstant(s, s.unit())).toList(),
+                List.of(StatUnit.values()),
+                Arrays.stream(Stat.values()).map(s -> new StatConstant(s, s.defaultUnit())).toList(),
                 Arrays.stream(ItemSortOrder.values()).map(o -> new SortOrderConstant(o, o.typeOrder(), o == ItemSortOrder.defaultOrder())).toList(),
                 BASE_STAT_PER_LEVEL,
                 ARMOR_SET_BONUS_THRESHOLD);

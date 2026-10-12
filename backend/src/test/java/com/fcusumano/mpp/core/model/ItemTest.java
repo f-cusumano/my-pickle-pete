@@ -4,12 +4,14 @@ import com.fcusumano.mpp.core.enums.ArmorSet;
 import com.fcusumano.mpp.core.enums.Rarity;
 import com.fcusumano.mpp.core.enums.Specification;
 import com.fcusumano.mpp.core.enums.Stat;
+import com.fcusumano.mpp.core.enums.StatUnit;
 import com.fcusumano.mpp.infrastructure.exception.BadRequestException;
 import com.fcusumano.mpp.infrastructure.exception.InternalErrorCode;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Map;
 
 import static com.fcusumano.mpp.TestItems.ability;
@@ -35,18 +37,35 @@ class ItemTest {
 
     @Test
     void currentStatsSumOnlyUnlockedBonuses() {
-        final Map<Stat, BigDecimal> stats = BOOTS.currentStats();
-        Assertions.assertEquals(0, new BigDecimal("100").compareTo(stats.get(Stat.MAX_HP)));
-        Assertions.assertEquals(0, new BigDecimal("3").compareTo(stats.get(Stat.LUCK))); //Epico non ancora sbloccato
-        Assertions.assertEquals(0, new BigDecimal("5").compareTo(stats.get(Stat.PICK_UP_RADIUS)));
+        final Map<StatKey, BigDecimal> stats = BOOTS.currentStats();
+        Assertions.assertEquals(0, new BigDecimal("100").compareTo(stats.get(StatKey.defaultOf(Stat.MAX_HP))));
+        Assertions.assertEquals(0, new BigDecimal("3").compareTo(stats.get(StatKey.defaultOf(Stat.LUCK)))); //Epico non ancora sbloccato
+        Assertions.assertEquals(0, new BigDecimal("5").compareTo(stats.get(StatKey.defaultOf(Stat.PICK_UP_RADIUS))));
         Assertions.assertEquals(3, stats.size());
     }
 
     @Test
     void topStatsUseArtifactAtLevel99() {
-        final Map<Stat, BigDecimal> stats = BOOTS.topStats();
-        Assertions.assertEquals(0, new BigDecimal("406").compareTo(stats.get(Stat.MAX_HP))); //4 x 99 + 10 dell'Artefatto
-        Assertions.assertEquals(0, new BigDecimal("5.5").compareTo(stats.get(Stat.LUCK)));
+        final Map<StatKey, BigDecimal> stats = BOOTS.topStats();
+        Assertions.assertEquals(0, new BigDecimal("406").compareTo(stats.get(StatKey.defaultOf(Stat.MAX_HP)))); //4 x 99 + 10 dell'Artefatto
+        Assertions.assertEquals(0, new BigDecimal("5.5").compareTo(stats.get(StatKey.defaultOf(Stat.LUCK))));
+    }
+
+    @Test
+    void sameStatInDifferentUnitsStaysSeparate() {
+        final Item hat = armor(2, "Cappello", ArmorSet.COWBOY, Specification.HAT, Rarity.EPIC, 1,
+                               bonus(Rarity.UNCOMMON, Stat.LUCK, StatUnit.FLAT, "3"),
+                               bonus(Rarity.RARE, Stat.LUCK, StatUnit.PERCENT, "5"),
+                               bonus(Rarity.EPIC, Stat.DAMAGE, StatUnit.FLAT, "2"));
+        final Map<StatKey, BigDecimal> stats = hat.currentStats();
+        Assertions.assertEquals(0, new BigDecimal("3").compareTo(stats.get(StatKey.of(Stat.LUCK, StatUnit.FLAT))));
+        Assertions.assertEquals(0, new BigDecimal("5").compareTo(stats.get(StatKey.of(Stat.LUCK, StatUnit.PERCENT))));
+        Assertions.assertEquals(0, new BigDecimal("4").compareTo(stats.get(StatKey.of(Stat.DAMAGE, StatUnit.PERCENT)))); //Base 4 x 1
+        Assertions.assertEquals(0, new BigDecimal("2").compareTo(stats.get(StatKey.of(Stat.DAMAGE, StatUnit.FLAT))));
+        //Ordine fisso, unità predefinita prima dell'altra
+        Assertions.assertEquals(List.of(StatKey.of(Stat.DAMAGE, StatUnit.PERCENT), StatKey.of(Stat.DAMAGE, StatUnit.FLAT),
+                                        StatKey.of(Stat.LUCK, StatUnit.FLAT), StatKey.of(Stat.LUCK, StatUnit.PERCENT)),
+                                List.copyOf(stats.keySet()));
     }
 
     @Test
