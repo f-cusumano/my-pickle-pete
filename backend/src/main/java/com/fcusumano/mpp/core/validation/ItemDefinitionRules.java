@@ -21,6 +21,9 @@ public final class ItemDefinitionRules {
         if (definition.type() == null) return violations; //Lo segnala già @NotNull sul tipo
         checkSpecification(definition, violations);
         checkArmorSet(definition, violations);
+        if (definition.description() != null && definition.type() != ItemType.ABILITY) {
+            violations.add("Items of type '%s' cannot have a description.".formatted(definition.type()));
+        }
         checkBonuses(definition, violations);
         return violations;
     }
@@ -50,8 +53,11 @@ public final class ItemDefinitionRules {
     private static void checkBonuses(ItemDefinition definition, List<String> violations) {
         final Set<Rarity> seen = EnumSet.noneOf(Rarity.class);
         for (RarityBonus bonus : definition.bonuses()) { //Al massimo 5 elementi
-            if (bonus.own() && definition.type() != ItemType.WEAPON) {
-                violations.add("Only weapons can have own bonuses (rarity '%s').".formatted(bonus.rarity()));
+            if (bonus.own() && definition.type() == ItemType.ARMOR) {
+                violations.add("Armor pieces cannot have own bonuses (rarity '%s').".formatted(bonus.rarity()));
+            } else if (!definition.type().allowsBonus(bonus.key())) {
+                violations.add("Bonus %s %s%s is not allowed for items of type '%s' (rarity '%s').".formatted(
+                        bonus.stat(), bonus.unit(), bonus.own() ? " (own)" : "", definition.type(), bonus.rarity()));
             }
             if (!bonus.rarity().unlocksBonus()) {
                 violations.add("Rarity '%s' does not unlock any bonus.".formatted(bonus.rarity()));

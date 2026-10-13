@@ -96,7 +96,7 @@ class ItemTest {
 
     @Test
     void newItemStartsFromCommonLevelOne() {
-        final Item item = Item.of(9L, new ItemDefinition(" Pistola ", com.fcusumano.mpp.core.enums.ItemType.WEAPON, Specification.RANGED, null, null));
+        final Item item = Item.of(9L, new ItemDefinition(" Pistola ", com.fcusumano.mpp.core.enums.ItemType.WEAPON, Specification.RANGED, null, null, null));
         Assertions.assertEquals("Pistola", item.name());
         Assertions.assertEquals(Rarity.COMMON, item.rarity());
         Assertions.assertEquals(1, item.level());

@@ -7,6 +7,7 @@ import type {
   Rarity,
   Specification,
   Stat,
+  StatKey,
   StatUnit,
 } from '../api/types';
 import { ARMOR_SET_LABELS, SPECIFICATION_LABELS } from '../i18n/labels';
@@ -19,9 +20,12 @@ export interface BonusRow {
   /** Valore o percentuale: alla scelta della caratteristica si propone la sua unità predefinita. */
   unit: StatUnit | null;
   amount: number | string;
-  /** Solo armi: potenziamento della sola arma ("+10% al proprio danno"). */
+  /** Armi e abilità: potenziamento del solo item ("+10% al proprio danno"). */
   own: boolean;
 }
+
+/** Potenziamento possibile di un'abilità: caratteristica, unità fissa e se è proprio ("Proprio danno"). */
+export type FixedBonus = StatKey & { own: boolean };
 
 /** Valori del modulo di censimento di un item. */
 export interface ItemFormValues {
@@ -29,6 +33,8 @@ export interface ItemFormValues {
   type: ItemType | null;
   specification: Specification | null;
   armorSet: ArmorSet | null;
+  /** Solo abilità: effetti descritti a parole. */
+  description: string;
   bonuses: Partial<Record<Rarity, BonusRow>>;
 }
 
@@ -38,7 +44,7 @@ export function missingPieceName(slot: Specification, armorSet: ArmorSet): strin
 }
 
 export function emptyForm(): ItemFormValues {
-  return { name: '', type: null, specification: null, armorSet: null, bonuses: {} };
+  return { name: '', type: null, specification: null, armorSet: null, description: '', bonuses: {} };
 }
 
 export function formOf(item: Item): ItemFormValues {
@@ -47,6 +53,7 @@ export function formOf(item: Item): ItemFormValues {
     type: item.type,
     specification: item.specification,
     armorSet: item.armorSet,
+    description: item.description ?? '',
     bonuses: Object.fromEntries(
       item.bonuses.map((bonus) => [
         bonus.rarity,
@@ -63,6 +70,20 @@ function amountOf(row: BonusRow): number | null {
 }
 
 const EMPTY_ROW: BonusRow = { stat: null, unit: null, amount: '', own: false };
+
+/** Potenziamenti possibili quando sono un elenco chiuso (abilità), vuoto per armature e armi. */
+export function fixedBonuses(constants: GameConstants, type: ItemType | null): FixedBonus[] {
+  return constants.itemTypes.find((t) => t.code === type)?.fixedBonuses ?? [];
+}
+
+/** Il potenziamento della riga è tra quelli ammessi dalla tipologia (caratteristiche generali per armature e armi). */
+function allowedBonus(row: BonusRow, constants: GameConstants, type: ItemType): boolean {
+  const fixed = fixedBonuses(constants, type);
+  if (fixed.length > 0) {
+    return fixed.some((key) => key.stat === row.stat && key.unit === row.unit && key.own === row.own);
+  }
+  return constants.stats.some((stat) => stat.code === row.stat && stat.general) && row.unit !== 'SECONDS';
+}
 
 /** Rarità che sbloccano un potenziamento (tutte tranne la base, Comune). */
 export function bonusRarities(constants: GameConstants): Rarity[] {
@@ -92,6 +113,9 @@ export function validateForm(values: ItemFormValues, constants: GameConstants): 
     const amount = amountOf(row);
     if (row.stat === null) {
       errors[`bonuses.${rarity}.stat`] = 'Scegli la caratteristica';
+    } else if (row.unit !== null && !allowedBonus(row, constants, type.code)) {
+      errors[`bonuses.${rarity}.stat`] =
+        type.code === 'ABILITY' ? "Non vale per un'abilità" : 'Vale solo per le abilità';
     }
     if (row.unit === null) {
       errors[`bonuses.${rarity}.unit`] = 'Scegli valore o percentuale';
@@ -115,7 +139,7 @@ export function toRequest(values: ItemFormValues, constants: GameConstants): Ite
       const row = values.bonuses[rarity];
       const amount = row ? amountOf(row) : null;
       return row?.stat && row.unit && amount !== null
-        ? [{ rarity, stat: row.stat, unit: row.unit, amount, own: type.code === 'WEAPON' && row.own }]
+        ? [{ rarity, stat: row.stat, unit: row.unit, amount, own: type.code !== 'ARMOR' && row.own }]
         : [];
     });
   return {
@@ -123,6 +147,8 @@ export function toRequest(values: ItemFormValues, constants: GameConstants): Ite
     type: type.code,
     specification: type.specified ? values.specification : null,
     armorSet: type.partOfArmorSet ? values.armorSet : null,
+    description:
+      type.code === 'ABILITY' && values.description.trim() !== '' ? values.description.trim() : null,
     bonuses,
   };
 }

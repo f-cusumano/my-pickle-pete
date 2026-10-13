@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!-- Descrizione libera degli effetti di un'abilita' -->
+    <changeSet id="20261013_add_mpp_item_description" author="f.cusumano">
+        <preConditions onFail="MARK_RAN">
+            <not><columnExists tableName="mpp_item" columnName="description"/></not>
+        </preConditions>
+        <addColumn tableName="mpp_item">
+            <column name="description" type="VARCHAR(1000)"/>
+        </addColumn>
+    </changeSet>
+
+    <!-- Abilita' facoltativa di un set custom: i suoi potenziamenti si mostrano a parte nella tabella del set -->
+    <changeSet id="20261013_add_mpp_custom_set_ability" author="f.cusumano">
+        <preConditions onFail="MARK_RAN">
+            <not><columnExists tableName="mpp_custom_set" columnName="id_mpp_item_ability"/></not>
+        </preConditions>
+        <addColumn tableName="mpp_custom_set">
+            <column name="id_mpp_item_ability" type="BIGINT"/>
+        </addColumn>
+        <addForeignKeyConstraint baseTableName="mpp_custom_set" baseColumnNames="id_mpp_item_ability" constraintName="mpp_custom_set_fk2"
+                                 referencedTableName="mpp_item" referencedColumnNames="id" onDelete="NO ACTION"/>
+        <createIndex tableName="mpp_custom_set" indexName="mpp_custom_set_id_mpp_item_ability_idx">
+            <column name="id_mpp_item_ability"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

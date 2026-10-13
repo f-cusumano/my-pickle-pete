@@ -29,7 +29,7 @@ class StatHighlighterTest {
         //Tutte le altre caratteristiche valgono 0: sono le peggiori e lo 0 non entra tra le migliori
         final StatHighlights highlights = StatHighlighter.highlight(stats(Stat.MAX_HP, "12"));
         Assertions.assertEquals(Set.of(StatKey.defaultOf(Stat.MAX_HP)), highlights.best());
-        Assertions.assertEquals(Stat.values().length - 1, highlights.worst().size());
+        Assertions.assertEquals(Stat.general().size() - 1, highlights.worst().size());
         Assertions.assertFalse(highlights.worst().contains(StatKey.defaultOf(Stat.MAX_HP)));
     }
 
@@ -42,7 +42,7 @@ class StatHighlighterTest {
         values.put(StatKey.defaultOf(Stat.DAMAGE), new BigDecimal("2.00")); //Stesso valore con scala diversa
         final StatHighlights highlights = StatHighlighter.highlight(values);
         Assertions.assertEquals(Set.of(StatKey.defaultOf(Stat.LUCK), StatKey.defaultOf(Stat.ARMOR), StatKey.defaultOf(Stat.DAMAGE)), highlights.worst());
-        Assertions.assertEquals(Stat.values().length - 3, highlights.best().size()); //Il 10 compare più volte
+        Assertions.assertEquals(Stat.general().size() - 3, highlights.best().size()); //Il 10 compare più volte
     }
 
     @Test

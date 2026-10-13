@@ -9,6 +9,7 @@ import {
   Stack,
   Text,
   TextInput,
+  Textarea,
   Tooltip,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
@@ -16,14 +17,18 @@ import { useFullScreenModal } from '../hooks/useFullScreenModal';
 import { useState, type ReactNode } from 'react';
 import { errorMessage, useItemCensus } from '../api/queries';
 import type { GameConstants, Item, ItemType, Rarity, Stat, StatUnit } from '../api/types';
+import { statKeyId } from '../domain/customSets';
+import { statSign } from '../domain/format';
 import {
   MIN_BONUS_AMOUNT,
   bonusRarities,
   emptyForm,
+  fixedBonuses,
   formOf,
   toRequest,
   validateForm,
   type BonusRow,
+  type FixedBonus,
   type ItemFormValues,
 } from '../domain/itemForm';
 import { statUnits } from '../domain/units';
@@ -34,6 +39,7 @@ import {
   STAT_LABELS,
   STAT_UNIT_DESCRIPTIONS,
   STAT_UNIT_LABELS,
+  ownStatLabel,
 } from '../i18n/labels';
 import { ItemThumbnail } from './ItemThumbnail';
 import { RarityBadge } from './RarityBadge';
@@ -60,6 +66,7 @@ export function ItemFormModal({ constants, item, preset, onClose }: Props) {
   });
   const type = constants.itemTypes.find((t) => t.code === form.values.type);
   const rarities = bonusRarities(constants);
+  const fixed = fixedBonuses(constants, form.values.type);
 
   const submit = form.onSubmit((values) => {
     setServerError(null);
@@ -70,7 +77,12 @@ export function ItemFormModal({ constants, item, preset, onClose }: Props) {
   });
 
   const changeType = (value: string | null) => {
-    form.setFieldValue('type', value as ItemType | null);
+    const newType = value as ItemType | null;
+    // Abilità e altre tipologie hanno caratteristiche diverse: passando dalle une alle altre i potenziamenti si azzerano
+    if ((newType === 'ABILITY') !== (form.values.type === 'ABILITY')) {
+      form.setFieldValue('bonuses', {});
+    }
+    form.setFieldValue('type', newType);
     form.setFieldValue('specification', null);
     form.setFieldValue('armorSet', null);
   };
@@ -118,14 +130,24 @@ export function ItemFormModal({ constants, item, preset, onClose }: Props) {
               error={form.errors.armorSet}
             />
           )}
+          {form.values.type === 'ABILITY' && (
+            <Textarea
+              label="Effetti"
+              placeholder="Cosa fa l'abilità, es. lancia una granata che esplode dopo 2 secondi"
+              autosize
+              minRows={2}
+              maxLength={1000}
+              {...form.getInputProps('description')}
+            />
+          )}
 
           <Group gap="sm" wrap="nowrap">
             <ItemThumbnail
               type={form.values.type}
               specification={form.values.specification}
-              rarity={item?.rarity ?? null}
               label="Immagine della categoria"
               size={56}
+              plain
             />
             <Text size="xs" c="dimmed">
               L&apos;immagine è quella predefinita della categoria e si aggiorna da sola scegliendo tipologia
@@ -145,6 +167,7 @@ export function ItemFormModal({ constants, item, preset, onClose }: Props) {
               rarity={rarity}
               row={form.values.bonuses[rarity] ?? { stat: null, unit: null, amount: '', own: false }}
               weapon={form.values.type === 'WEAPON'}
+              fixed={fixed}
               statError={form.errors[`bonuses.${rarity}.stat`]}
               unitError={form.errors[`bonuses.${rarity}.unit`]}
               amountError={form.errors[`bonuses.${rarity}.amount`]}
@@ -184,6 +207,8 @@ interface BonusRowProps {
   row: BonusRow;
   /** Solo per le armi si può indicare un potenziamento proprio dell'arma. */
   weapon: boolean;
+  /** Potenziamenti possibili quando sono un elenco chiuso (abilità): unità fissa, "Proprio danno" tra le scelte. */
+  fixed: FixedBonus[];
   statError: ReactNode;
   unitError: ReactNode;
   amountError: ReactNode;
@@ -192,10 +217,13 @@ interface BonusRowProps {
   constants: GameConstants;
 }
 
+const UNIT_SUFFIXES: Record<StatUnit, string | undefined> = { PERCENT: '%', FLAT: undefined, SECONDS: 's' };
+
 function BonusRowInput({
   rarity,
   row,
   weapon,
+  fixed,
   statError,
   unitError,
   amountError,
@@ -208,43 +236,69 @@ function BonusRowInput({
     const stat = value as Stat | null;
     onChange({ ...row, stat, unit: stat ? units[stat] : row.unit });
   };
+  // Elenco chiuso: la scelta fissa caratteristica, unità e "proprio"
+  const changeFixed = (value: string | null) => {
+    const key = fixed.find((candidate) => statKeyId(candidate) === value);
+    onChange({ ...row, stat: key?.stat ?? null, unit: key?.unit ?? null, own: key?.own ?? false });
+  };
+  const closed = fixed.length > 0;
   return (
-    <div className={classes.bonusRow}>
+    <div className={closed ? `${classes.bonusRow} ${classes.bonusRowFixed}` : classes.bonusRow}>
       <div className={classes.bonusBadge}>
         <RarityBadge rarity={rarity} />
       </div>
-      <Select
-        aria-label={`Caratteristica ${rarity}`}
-        placeholder="Caratteristica"
-        data={constants.stats.map((stat) => ({ value: stat.code, label: STAT_LABELS[stat.code] }))}
-        value={row.stat}
-        onChange={changeStat}
-        error={statError}
-        searchable
-        clearable
-        className={classes.bonusStat}
-      />
-      <div className={classes.bonusUnit}>
-        <SegmentedControl
-          aria-label={`Unità ${rarity}`}
-          data={(['FLAT', 'PERCENT'] as const).map((unit) => ({
-            value: unit,
-            label: (
-              <Tooltip label={STAT_UNIT_DESCRIPTIONS[unit]} withinPortal>
-                <span aria-label={STAT_UNIT_DESCRIPTIONS[unit]}>{STAT_UNIT_LABELS[unit]}</span>
-              </Tooltip>
-            ),
+      {closed ? (
+        <Select
+          aria-label={`Caratteristica ${rarity}`}
+          placeholder="Caratteristica"
+          data={fixed.map((key) => ({
+            value: statKeyId(key),
+            label: key.own ? ownStatLabel(key.stat) : STAT_LABELS[key.stat],
           }))}
-          value={row.unit ?? ''}
-          onChange={(value) => onChange({ ...row, unit: value as StatUnit })}
-          fullWidth
+          value={row.stat && row.unit ? statKeyId({ stat: row.stat, unit: row.unit, own: row.own }) : null}
+          onChange={changeFixed}
+          error={statError}
+          clearable
+          className={classes.bonusStat}
         />
-        {unitError && (
-          <Text c="red" size="xs" mt={2}>
-            {unitError}
-          </Text>
-        )}
-      </div>
+      ) : (
+        <Select
+          aria-label={`Caratteristica ${rarity}`}
+          placeholder="Caratteristica"
+          data={constants.stats
+            .filter((stat) => stat.general)
+            .map((stat) => ({ value: stat.code, label: STAT_LABELS[stat.code] }))}
+          value={row.stat}
+          onChange={changeStat}
+          error={statError}
+          searchable
+          clearable
+          className={classes.bonusStat}
+        />
+      )}
+      {!closed && (
+        <div className={classes.bonusUnit}>
+          <SegmentedControl
+            aria-label={`Unità ${rarity}`}
+            data={(['FLAT', 'PERCENT'] as const).map((unit) => ({
+              value: unit,
+              label: (
+                <Tooltip label={STAT_UNIT_DESCRIPTIONS[unit]} withinPortal>
+                  <span aria-label={STAT_UNIT_DESCRIPTIONS[unit]}>{STAT_UNIT_LABELS[unit]}</span>
+                </Tooltip>
+              ),
+            }))}
+            value={row.unit ?? ''}
+            onChange={(value) => onChange({ ...row, unit: value as StatUnit })}
+            fullWidth
+          />
+          {unitError && (
+            <Text c="red" size="xs" mt={2}>
+              {unitError}
+            </Text>
+          )}
+        </div>
+      )}
       <NumberInput
         aria-label={`Quantità ${rarity}`}
         placeholder="Quantità"
@@ -255,8 +309,8 @@ function BonusRowInput({
         decimalScale={2}
         decimalSeparator=","
         allowNegative={false}
-        prefix="+"
-        suffix={row.unit === 'PERCENT' ? '%' : undefined}
+        prefix={statSign(row.stat)}
+        suffix={UNIT_SUFFIXES[row.unit ?? 'FLAT']}
         inputMode="decimal"
         className={classes.bonusAmount}
       />

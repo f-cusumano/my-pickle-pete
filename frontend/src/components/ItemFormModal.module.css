@@ -25,6 +25,12 @@
   grid-area: amount;
 }
 
+/* Abilità: unità fissa, niente scelta tra valore e percentuale */
+.bonusRowFixed {
+  grid-template-columns: auto minmax(0, 1fr) 96px;
+  grid-template-areas: 'badge stat amount';
+}
+
 /* Solo armi: casella "proprio dell'arma" sotto caratteristica, unità e valore */
 .bonusOwn {
   grid-column: 2 / -1;
@@ -47,5 +53,11 @@
 
   .bonusOwn {
     grid-column: 1 / -1;
+  }
+
+  .bonusRowFixed {
+    grid-template-areas:
+      'badge badge'
+      'stat amount';
   }
 }

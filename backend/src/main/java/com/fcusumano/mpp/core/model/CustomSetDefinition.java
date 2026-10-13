@@ -4,9 +4,9 @@ import java.util.List;
 
 /**
  * Dati di un set custom scelti dall'utente: nome, item indossati (al massimo uno per slot di armatura)
- * e arma facoltativa (null se nessuna).
+ * arma e abilità facoltative (null se nessuna).
  */
-public record CustomSetDefinition(String name, List<Long> itemIds, Long weaponId) {
+public record CustomSetDefinition(String name, List<Long> itemIds, Long weaponId, Long abilityId) {
 
     public CustomSetDefinition {
         name = name == null ? null : name.strip();

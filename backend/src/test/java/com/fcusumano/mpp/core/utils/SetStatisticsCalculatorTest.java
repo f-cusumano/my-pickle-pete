@@ -16,7 +16,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
-import java.util.Arrays;
 import java.util.List;
 
 import static com.fcusumano.mpp.TestItems.armor;
@@ -37,16 +36,16 @@ class SetStatisticsCalculatorTest {
 
     @Test
     void oneRowPerStatInFixedOrder() {
-        final List<StatComparison> rows = SetStatisticsCalculator.compare(COWBOY, null).rows();
-        Assertions.assertEquals(Arrays.stream(Stat.values()).map(StatKey::defaultOf).toList(), rows.stream().map(StatComparison::key).toList());
+        final List<StatComparison> rows = SetStatisticsCalculator.compare(COWBOY, null, null).rows();
+        Assertions.assertEquals(Stat.general().stream().map(StatKey::defaultOf).toList(), rows.stream().map(StatComparison::key).toList());
     }
 
     @Test
     void otherUnitAddsItsOwnRowEvenIfStillLocked() {
         final Item glasses = armor(6, "Occhiali", ArmorSet.VIKING, Specification.GLASSES, Rarity.COMMON, 1,
                                    bonus(Rarity.RARE, Stat.LUCK, StatUnit.PERCENT, "5"));
-        final List<StatComparison> rows = SetStatisticsCalculator.compare(List.of(glasses), null).rows();
-        Assertions.assertEquals(Stat.values().length + 1, rows.size());
+        final List<StatComparison> rows = SetStatisticsCalculator.compare(List.of(glasses), null, null).rows();
+        Assertions.assertEquals(Stat.general().size() + 1, rows.size());
         final StatComparison luckPercent = rows.stream().filter(r -> r.key().equals(StatKey.of(Stat.LUCK, StatUnit.PERCENT))).findFirst().orElseThrow();
         Assertions.assertEquals(0, BigDecimal.ZERO.compareTo(luckPercent.current())); //Raro non ancora raggiunto
         Assertions.assertEquals(0, new BigDecimal("5").compareTo(luckPercent.top()));
@@ -56,7 +55,7 @@ class SetStatisticsCalculatorTest {
 
     @Test
     void currentAndTopSumsOnlyBonuses() {
-        final List<StatComparison> rows = SetStatisticsCalculator.compare(COWBOY, null).rows();
+        final List<StatComparison> rows = SetStatisticsCalculator.compare(COWBOY, null, null).rows();
         final StatComparison crit = row(rows, Stat.CRIT_CHANCE);
         Assertions.assertEquals(0, new BigDecimal("2").compareTo(crit.current())); //Solo il cappello è Incomune
         Assertions.assertEquals(0, new BigDecimal("4").compareTo(crit.top()));
@@ -73,15 +72,15 @@ class SetStatisticsCalculatorTest {
     @Test
     void levelStatsSumBaseStatsOfPiecesAndWeapon() {
         Assertions.assertEquals(new LevelStats(32, 792, 48, 1188), //Danno 4 x (5 + 3) e 2 x 4 x 99, HP 4 x (10 + 1 + 1) e 3 x 4 x 99
-                                SetStatisticsCalculator.compare(COWBOY, null).levelStats());
+                                SetStatisticsCalculator.compare(COWBOY, null, null).levelStats());
         final Item pistol = weapon(8, "Pistola", Specification.RANGED, Rarity.UNCOMMON, 2);
-        Assertions.assertEquals(new LevelStats(40, 1188, 48, 1188), SetStatisticsCalculator.compare(COWBOY, pistol).levelStats());
-        Assertions.assertEquals(new LevelStats(0, 0, 0, 0), SetStatisticsCalculator.compare(List.of(), null).levelStats());
+        Assertions.assertEquals(new LevelStats(40, 1188, 48, 1188), SetStatisticsCalculator.compare(COWBOY, pistol, null).levelStats());
+        Assertions.assertEquals(new LevelStats(0, 0, 0, 0), SetStatisticsCalculator.compare(List.of(), null, null).levelStats());
     }
 
     @Test
     void highlightsPerColumn() {
-        final List<StatComparison> rows = SetStatisticsCalculator.compare(COWBOY, null).rows();
+        final List<StatComparison> rows = SetStatisticsCalculator.compare(COWBOY, null, null).rows();
         //Attuale: HP 5 unico, poi Critico 2; il minimo è 0
         Assertions.assertEquals(Highlight.BEST, row(rows, Stat.MAX_HP).currentHighlight());
         Assertions.assertEquals(Highlight.BEST, row(rows, Stat.CRIT_CHANCE).currentHighlight());
@@ -97,7 +96,7 @@ class SetStatisticsCalculatorTest {
         //Arma Incomune 1/20: +3 Fortuna sbloccata, +10% al proprio danno ancora bloccato al Raro
         final Item pistol = weapon(8, "Pistola", Specification.RANGED, Rarity.UNCOMMON, 1,
                                    bonus(Rarity.UNCOMMON, Stat.LUCK, "3"), ownBonus(Rarity.RARE, Stat.DAMAGE, "10"));
-        final List<StatComparison> rows = SetStatisticsCalculator.compare(COWBOY, pistol).rows();
+        final List<StatComparison> rows = SetStatisticsCalculator.compare(COWBOY, pistol, null).rows();
         final StatComparison luck = row(rows, Stat.LUCK);
         Assertions.assertEquals(0, BigDecimal.ZERO.compareTo(luck.current())); //Il set da solo
         Assertions.assertEquals(0, new BigDecimal("3").compareTo(luck.weaponCurrent()));
@@ -112,7 +111,7 @@ class SetStatisticsCalculatorTest {
         Assertions.assertEquals(0, new BigDecimal("10").compareTo(own.top()));
         Assertions.assertNull(own.weaponCurrent());
         Assertions.assertEquals(Highlight.NONE, own.topHighlight());
-        Assertions.assertEquals(Stat.values().length + 1, rows.size());
+        Assertions.assertEquals(Stat.general().size() + 1, rows.size());
     }
 
     @Test
@@ -122,7 +121,7 @@ class SetStatisticsCalculatorTest {
         final Item glasses = armor(10, "Occhiali", ArmorSet.WIZARD, Specification.GLASSES, Rarity.UNCOMMON, 1,
                                    bonus(Rarity.UNCOMMON, Stat.MELEE_DAMAGE, "1"), bonus(Rarity.RARE, Stat.RANGED_DAMAGE, "3"));
         final Item melee = weapon(11, "Daga", Specification.MELEE, Rarity.UNCOMMON, 1, bonus(Rarity.UNCOMMON, Stat.MELEE_DAMAGE, "9"));
-        final SetStatistics statistics = SetStatisticsCalculator.compare(List.of(hat, glasses), melee);
+        final SetStatistics statistics = SetStatisticsCalculator.compare(List.of(hat, glasses), melee, null);
         //Attuale: Elementale 3, Ravvicinata 1, le altre 0
         Assertions.assertEquals(List.of(Specification.ELEMENTAL), statistics.currentAdvice().recommended());
         Assertions.assertEquals(List.of(Specification.RANGED, Specification.MECHANICAL), statistics.currentAdvice().discouraged());
@@ -135,12 +134,12 @@ class SetStatisticsCalculatorTest {
     void weaponTypesUseTheOtherUnitOnlyToBreakTies() {
         final Item hat = armor(12, "Cappello", ArmorSet.WIZARD, Specification.HAT, Rarity.UNCOMMON, 1,
                                bonus(Rarity.UNCOMMON, Stat.MECHANICAL_DAMAGE, StatUnit.PERCENT, "5"));
-        final SetStatistics statistics = SetStatisticsCalculator.compare(List.of(hat), null);
+        final SetStatistics statistics = SetStatisticsCalculator.compare(List.of(hat), null, null);
         Assertions.assertEquals(List.of(Specification.MECHANICAL), statistics.currentAdvice().recommended());
         Assertions.assertEquals(List.of(Specification.RANGED, Specification.ELEMENTAL, Specification.MELEE),
                                 statistics.currentAdvice().discouraged());
         //Nessun pezzo: tutti pari, nessun consiglio
-        Assertions.assertEquals(WeaponAdvice.none(), SetStatisticsCalculator.compare(List.of(), null).currentAdvice());
+        Assertions.assertEquals(WeaponAdvice.none(), SetStatisticsCalculator.compare(List.of(), null, null).currentAdvice());
     }
 
     @Test

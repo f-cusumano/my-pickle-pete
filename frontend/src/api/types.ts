@@ -38,8 +38,12 @@ export type Stat =
   | 'PATROL_EARNINGS'
   | 'BOSS_DAMAGE'
   | 'INTEREST'
-  | 'KNOCKBACK';
-export type StatUnit = 'PERCENT' | 'FLAT';
+  | 'KNOCKBACK'
+  | 'COOLDOWN'
+  | 'DURATION'
+  | 'ACTION_RADIUS';
+/** SECONDS solo per le caratteristiche delle abilità (Tempo di recupero, Durata). */
+export type StatUnit = 'PERCENT' | 'FLAT' | 'SECONDS';
 export type ItemSortOrder = 'ARMOR_SET' | 'WEAPONS_FIRST' | 'RARITY';
 export type Highlight = 'BEST' | 'WORST' | 'NONE';
 
@@ -48,7 +52,7 @@ export interface RarityBonus {
   stat: Stat;
   unit: StatUnit;
   amount: number;
-  /** Solo armi: potenziamento della sola arma, es. "+10% al proprio danno". */
+  /** Armi e abilità: potenziamento del solo item, es. "+10% al proprio danno". */
   own: boolean;
   unlocked: boolean;
 }
@@ -59,6 +63,8 @@ export interface Item {
   type: ItemType;
   specification: Specification | null;
   armorSet: ArmorSet | null;
+  /** Solo abilità: effetti descritti a parole. */
+  description: string | null;
   rarity: Rarity;
   level: number;
   maxLevel: number;
@@ -80,6 +86,7 @@ export interface ItemRequest {
   type: ItemType;
   specification: Specification | null;
   armorSet: ArmorSet | null;
+  description: string | null;
   bonuses: RarityBonusRequest[];
 }
 
@@ -139,8 +146,11 @@ export interface CustomSet {
   bonusDescription: string | null;
   pieces: Item[];
   weapon: Item | null;
+  ability: Item | null;
   levelStats: LevelStats;
   stats: StatComparison[];
+  /** Caratteristiche dell'abilità, a parte: nessuna intersezione con quelle del set. */
+  abilityStats: StatComparison[];
   weaponAdvice: WeaponAdvice;
 }
 
@@ -148,6 +158,7 @@ export interface CustomSetRequest {
   name: string;
   itemIds: number[];
   weaponId: number | null;
+  abilityId: number | null;
 }
 
 /** Caratteristica con la sua unità ("+5% Fortuna" e "+5 Fortuna" sono caratteristiche diverse). */
@@ -166,11 +177,18 @@ export type BestSetMode = 'now' | 'potential';
 
 export interface GameConstants {
   rarities: { code: Rarity; maxLevel: number }[];
-  itemTypes: { code: ItemType; specified: boolean; partOfArmorSet: boolean }[];
+  /** fixedBonuses: potenziamenti possibili quando sono un elenco chiuso (abilità), vuoto altrimenti. */
+  itemTypes: {
+    code: ItemType;
+    specified: boolean;
+    partOfArmorSet: boolean;
+    fixedBonuses: (StatKey & { own: boolean })[];
+  }[];
   specifications: { code: Specification; itemType: ItemType; baseStat: Stat }[];
   armorSets: ArmorSet[];
   statUnits: StatUnit[];
-  stats: { code: Stat; defaultUnit: StatUnit }[];
+  /** general: caratteristica di armature e armi (le altre valgono solo per le abilità). */
+  stats: { code: Stat; defaultUnit: StatUnit; general: boolean }[];
   sortOrders: { code: ItemSortOrder; typeOrder: ItemType[]; preselected: boolean }[];
   baseStatPerLevel: number;
   armorSetBonusThreshold: number;
@@ -186,7 +204,8 @@ export type InternalErrorCode =
   | 'CUSTOM_SET_NOT_FOUND'
   | 'CUSTOM_SET_NAME_ALREADY_EXISTS'
   | 'CUSTOM_SET_INVALID_PIECES'
-  | 'CUSTOM_SET_INVALID_WEAPON';
+  | 'CUSTOM_SET_INVALID_WEAPON'
+  | 'CUSTOM_SET_INVALID_ABILITY';
 
 export interface ErrorResponse {
   key: string;

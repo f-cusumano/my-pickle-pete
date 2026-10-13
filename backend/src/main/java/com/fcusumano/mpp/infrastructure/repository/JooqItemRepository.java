@@ -68,6 +68,7 @@ public class JooqItemRepository implements ItemRepository {
                 .set(MPP_ITEM.ITEM_TYPE, name(definition.type()))
                 .set(MPP_ITEM.SPECIFICATION, name(definition.specification()))
                 .set(MPP_ITEM.ID_MPP_ARMOR_SET, name(definition.armorSet()))
+                .set(MPP_ITEM.DESCRIPTION, definition.description())
                 .set(MPP_ITEM.RARITY, name(Rarity.base()))
                 .set(MPP_ITEM.LEVEL, 1)
                 .returningResult(MPP_ITEM.ID)
@@ -84,6 +85,7 @@ public class JooqItemRepository implements ItemRepository {
                 .set(MPP_ITEM.ITEM_TYPE, name(definition.type()))
                 .set(MPP_ITEM.SPECIFICATION, name(definition.specification()))
                 .set(MPP_ITEM.ID_MPP_ARMOR_SET, name(definition.armorSet()))
+                .set(MPP_ITEM.DESCRIPTION, definition.description())
                 .where(MPP_ITEM.ID.eq(id))
                 .execute();
         dsl.deleteFrom(MPP_ITEM_RARITY_BONUS).where(MPP_ITEM_RARITY_BONUS.ID_MPP_ITEM.eq(id)).execute();
@@ -149,6 +151,7 @@ public class JooqItemRepository implements ItemRepository {
                         valueOf(ItemType.class, r.get(MPP_ITEM.ITEM_TYPE)),
                         valueOf(Specification.class, r.get(MPP_ITEM.SPECIFICATION)),
                         valueOf(ArmorSet.class, r.get(MPP_ITEM.ID_MPP_ARMOR_SET)),
+                        r.get(MPP_ITEM.DESCRIPTION),
                         valueOf(Rarity.class, r.get(MPP_ITEM.RARITY)),
                         r.get(MPP_ITEM.LEVEL),
                         bonuses);

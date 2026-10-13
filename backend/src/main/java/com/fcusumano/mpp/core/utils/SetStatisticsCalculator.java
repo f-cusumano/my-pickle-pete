@@ -38,10 +38,12 @@ public final class SetStatisticsCalculator {
      * portata da qualche pezzo (o dall'arma) nell'altra unità; ordine fisso, con le evidenziazioni di ciascuna colonna
      * calcolate sul totale con l'arma. In fondo le caratteristiche proprie dell'arma, se ne ha.
      * I tipi di arma consigliati e sconsigliati dipendono solo dalle armature. Danno e HP dovuti al livello sono a parte.
+     * Le caratteristiche dell'abilità sono un elenco a parte, senza intersezioni con quelle del set né evidenziazioni.
      *
-     * @param weapon arma scelta per il set, null se nessuna
+     * @param weapon  arma scelta per il set, null se nessuna
+     * @param ability abilità scelta per il set, null se nessuna
      */
-    public static SetStatistics compare(Collection<Item> pieces, Item weapon) {
+    public static SetStatistics compare(Collection<Item> pieces, Item weapon, Item ability) {
         final SortedMap<StatKey, BigDecimal> current = complete(StatUtils.sum(pieces.stream().map(Item::currentStats).toList()), pieces);
         final SortedMap<StatKey, BigDecimal> top = complete(StatUtils.sum(pieces.stream().map(Item::topStats).toList()), pieces);
         final WeaponAdvice currentAdvice = weaponAdvice(current);
@@ -61,7 +63,20 @@ public final class SetStatisticsCalculator {
         }
         weaponTop.keySet().stream().filter(StatKey::own).forEach(key -> rows.add(
                 new StatComparison(key, weaponCurrent.get(key), weaponTop.get(key), null, null, Highlight.NONE, Highlight.NONE)));
-        return new SetStatistics(rows, levelStats(pieces, weapon), currentAdvice, topAdvice);
+        return new SetStatistics(rows, abilityRows(ability), levelStats(pieces, weapon), currentAdvice, topAdvice);
+    }
+
+    /** Potenziamenti dell'abilità nell'ordine del suo elenco chiuso (gli altri, censiti prima, in fondo). */
+    static List<StatComparison> abilityRows(Item ability) {
+        if (ability == null) return List.of();
+        final SortedMap<StatKey, BigDecimal> current = complete(ability.currentStats(), List.of(ability));
+        final SortedMap<StatKey, BigDecimal> top = ability.topStats();
+        final List<StatKey> order = ItemType.ABILITY.fixedBonusKeys();
+        final Comparator<StatKey> byAbilityOrder = Comparator.comparingInt(key -> order.contains(key) ? order.indexOf(key) : order.size());
+        return top.keySet().stream()
+                .sorted(byAbilityOrder.thenComparing(Comparator.naturalOrder()))
+                .map(key -> new StatComparison(key, current.get(key), top.get(key), null, null, Highlight.NONE, Highlight.NONE))
+                .toList();
     }
 
     /** Somma di Danno e HP dovuti al livello di pezzi e arma, ciascuno sulla propria caratteristica base. */
