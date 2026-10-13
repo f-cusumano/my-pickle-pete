@@ -4,7 +4,14 @@ import { IconX } from '@tabler/icons-react';
 import { useState } from 'react';
 import { useGameConstants } from '../api/queries';
 import type { Item, Specification } from '../api/types';
-import { abilityCandidates, slotCandidates, swapPreview, weaponCandidates } from '../domain/customSets';
+import {
+  abilityCandidates,
+  slotCandidates,
+  slotSpecification,
+  slotType,
+  swapPreview,
+  weaponCandidates,
+} from '../domain/customSets';
 import { formatLevel } from '../domain/format';
 import { thumbnailOf } from '../domain/itemImages';
 import { statUnits } from '../domain/units';
@@ -23,12 +30,12 @@ const GEAR_TEXTS = {
   WEAPON: {
     title: "Scegli l'arma",
     none: 'Nessuna arma',
-    empty: 'Nessuna arma censita: aggiungila dal Censimento.',
+    empty: 'Nessuna arma censita: aggiungila qui sotto.',
   },
   ABILITY: {
     title: "Scegli l'abilità",
     none: 'Nessuna abilità',
-    empty: 'Nessuna abilità censita: aggiungila dal Censimento.',
+    empty: 'Nessuna abilità censita: aggiungila qui sotto.',
   },
 };
 
@@ -40,6 +47,8 @@ interface Props {
   /** Item già nello slot, null se è vuoto. */
   selected: Item | null;
   onPick: (item: Item | null) => void;
+  /** "Censisci nuovo" in fondo all'elenco: censimento di un item per lo slot. */
+  onCensus: () => void;
   onClose: () => void;
 }
 
@@ -47,9 +56,17 @@ interface Props {
  * Scelta del pezzo di uno slot tra le armature censite, per rarità decrescente e poi per nome;
  * per l'arma, tra le armi censite per categoria; per l'abilità, tra le abilità censite.
  * Passando col mouse su un candidato, o tenendoci il dito sopra, si vedono le caratteristiche che cambierebbero
- * scegliendolo.
+ * scegliendolo. In fondo, "Censisci nuovo" porta al censimento di un item per lo slot.
  */
-export function SlotPickerModal({ slot, items, weaponCategories, selected, onPick, onClose }: Props) {
+export function SlotPickerModal({
+  slot,
+  items,
+  weaponCategories,
+  selected,
+  onPick,
+  onCensus,
+  onClose,
+}: Props) {
   const fullScreen = useFullScreenModal();
   const constants = useGameConstants();
   // Solo con un puntatore che passa sopra gli elementi (no touch)
@@ -101,9 +118,7 @@ export function SlotPickerModal({ slot, items, weaponCategories, selected, onPic
         )}
         {candidates.length === 0 && (
           <Text c="dimmed" size="sm">
-            {gear
-              ? gear.empty
-              : 'Nessun pezzo censito per questo slot: aggiungilo dal Censimento o da Full Sets.'}
+            {gear ? gear.empty : 'Nessun pezzo censito per questo slot: aggiungilo qui sotto.'}
           </Text>
         )}
         {candidates.map((candidate) => {
@@ -159,6 +174,27 @@ export function SlotPickerModal({ slot, items, weaponCategories, selected, onPic
             </UnstyledButton>
           );
         })}
+        {slot !== null && (
+          <UnstyledButton
+            onClick={() => {
+              setHovered(null);
+              onCensus();
+            }}
+            p="xs"
+            style={{ borderRadius: 8 }}
+          >
+            <Group gap="sm" wrap="nowrap">
+              <ItemThumbnail
+                type={slotType(slot)}
+                specification={slotSpecification(slot)}
+                label="Nuovo item"
+                size={48}
+                action="add"
+              />
+              <Text fw={700}>Censisci nuovo</Text>
+            </Group>
+          </UnstyledButton>
+        )}
       </Stack>
       {hovered && slot !== null && constants.data && (
         <SwapPreview

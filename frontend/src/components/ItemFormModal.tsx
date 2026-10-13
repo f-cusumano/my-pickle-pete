@@ -51,11 +51,13 @@ interface Props {
   item: Item | null;
   /** Valori di partenza di un nuovo item (es. set e slot del pezzo mancante da aggiungere). */
   preset?: Partial<ItemFormValues>;
+  /** Item appena salvato (es. per metterlo subito nello slot da cui è partito il censimento). */
+  onSaved?: (saved: Item) => void;
   onClose: () => void;
 }
 
 /** Censimento di un item: dati fissi e potenziamento sbloccato da ogni rarità; l'immagine è quella della categoria. */
-export function ItemFormModal({ constants, item, preset, onClose }: Props) {
+export function ItemFormModal({ constants, item, preset, onSaved, onClose }: Props) {
   const fullScreen = useFullScreenModal();
   const census = useItemCensus();
   const [serverError, setServerError] = useState<string | null>(null);
@@ -72,7 +74,13 @@ export function ItemFormModal({ constants, item, preset, onClose }: Props) {
     setServerError(null);
     census.save.mutate(
       { id: item?.id ?? null, request: toRequest(values, constants) },
-      { onSuccess: onClose, onError: (error) => setServerError(errorMessage(error)) },
+      {
+        onSuccess: (saved) => {
+          onSaved?.(saved);
+          onClose();
+        },
+        onError: (error) => setServerError(errorMessage(error)),
+      },
     );
   });
 

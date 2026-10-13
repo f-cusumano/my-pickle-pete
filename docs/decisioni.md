@@ -96,6 +96,9 @@ Il prompt è chiaro nella struttura generale (header, menu, Items, Full Sets, Cu
 - Riepilogo dell'item al passaggio del mouse sull'icona (Items, Censimento, set, proposte Best, modifica): nome e
   livello, tipologia - specifica - set, potenziamenti per rarità con un quadratino del colore della rarità, opacizzati
   se non sbloccati. Non c'è nella scelta dei candidati (c'è già l'anteprima) né nel dettaglio dell'item.
+- In fondo alla scelta di un pezzo, dell'arma o dell'abilità c'è "Censisci nuovo" (0.5.4): apre il censimento con
+  tipologia e specifica dello slot e un nome da cambiare ("Nuovo cappello", "Nuovi occhiali", "Nuova arma", "Nuova
+  abilità"); per l'arma la categoria si sceglie nel censimento. L'item salvato va subito nello slot del set in modifica.
 
 ## 5. Aspetti tecnici
 16. ✅ **Architettura.** App solo per te con database H2. Regole da Dropbox/MyClaudeProjects/MyCodingStyle (vedi sotto).

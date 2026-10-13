@@ -4,6 +4,7 @@ import type {
   FullSet,
   GameConstants,
   Item,
+  ItemType,
   RarityBonus,
   Specification,
   Stat,
@@ -308,4 +309,14 @@ export function alignRows(
     return ordered.map((key) => byKey.get(statKeyId(key)) ?? emptyRow(key));
   };
   return [complete(first), complete(second)];
+}
+
+/** Tipologia degli item che vanno in uno slot del set (armatura, arma o abilità). */
+export function slotType(slot: Specification | 'WEAPON' | 'ABILITY'): ItemType {
+  return slot === 'WEAPON' || slot === 'ABILITY' ? slot : 'ARMOR';
+}
+
+/** Specifica di uno slot del set: quella dell'armatura, nessuna per arma (categoria da scegliere) e abilità. */
+export function slotSpecification(slot: Specification | 'WEAPON' | 'ABILITY'): Specification | null {
+  return slot === 'WEAPON' || slot === 'ABILITY' ? null : slot;
 }

@@ -52,6 +52,21 @@ export const EMPTY_SLOT_LABELS: Record<Specification | 'WEAPON' | 'ABILITY', str
   ABILITY: 'Nessuna',
 };
 
+/** Nome proposto censendo un nuovo item dalla scelta di uno slot, accordato col nome dello slot. */
+export const NEW_ITEM_NAMES: Record<Specification | 'WEAPON' | 'ABILITY', string> = {
+  RANGED: 'Nuova arma',
+  ELEMENTAL: 'Nuova arma',
+  MECHANICAL: 'Nuova arma',
+  MELEE: 'Nuova arma',
+  HAT: 'Nuovo cappello',
+  GLASSES: 'Nuovi occhiali',
+  CHEST: 'Nuovo petto',
+  BACK: 'Nuova schiena',
+  BOOTS: 'Nuovi stivali',
+  WEAPON: 'Nuova arma',
+  ABILITY: 'Nuova abilità',
+};
+
 export const ARMOR_SET_LABELS: Record<ArmorSet, string> = {
   BANDIT: 'Bandito',
   KNIGHT: 'Cavaliere',
