@@ -131,10 +131,10 @@ export function CustomSetEditor({ draft, items, slots, weaponCategories, units, 
   };
 
   // Item già scelto nello slot che si sta riempiendo (null se vuoto)
-  const selectedIdOf = (slot: PickerSlot | null): number | null => {
-    if (slot === 'WEAPON') return weaponId;
-    if (slot === 'ABILITY') return abilityId;
-    return slot ? (selection[slot]?.id ?? null) : null;
+  const selectedOf = (slot: PickerSlot | null): Item | null => {
+    if (slot === 'WEAPON') return weapon;
+    if (slot === 'ABILITY') return ability;
+    return slot ? (selection[slot] ?? null) : null;
   };
 
   const pick = (item: Item | null) => {
@@ -286,7 +286,7 @@ export function CustomSetEditor({ draft, items, slots, weaponCategories, units, 
         slot={picking}
         items={items}
         weaponCategories={weaponCategories}
-        selectedId={selectedIdOf(picking)}
+        selected={selectedOf(picking)}
         onPick={pick}
         onClose={() => setPicking(null)}
       />

@@ -1,4 +1,4 @@
-import type { Item, StatComparison } from '../api/types';
+import type { Item, RarityBonus, StatComparison } from '../api/types';
 import { CONSTANTS, item } from '../test/fixtures';
 import { statUnits } from './units';
 import {
@@ -11,6 +11,7 @@ import {
   statKeyId,
   statKeyOptions,
   statTrends,
+  swapPreview,
   weaponAdviceText,
   weaponCandidates,
   weaponSpecifications,
@@ -163,5 +164,68 @@ describe('customize a full set', () => {
   it('proposes the name with the right preposition', () => {
     expect(customizedName('BANDIT')).toBe('Set del Bandito personalizzato');
     expect(customizedName('SUPERMAN')).toBe('Set di Superman personalizzato');
+  });
+});
+
+describe('preview of a candidate in the picker', () => {
+  const bonus = (
+    rarity: RarityBonus['rarity'],
+    stat: RarityBonus['stat'],
+    unit: RarityBonus['unit'],
+    amount: number,
+    unlocked: boolean,
+    own = false,
+  ): RarityBonus => ({ rarity, stat, unit, amount, own, unlocked });
+
+  it('shows the whole candidate in an empty slot, in game order', () => {
+    const candidate = armor(1, 'Cappello', {
+      bonuses: [bonus('UNCOMMON', 'LUCK', 'FLAT', 2, true), bonus('RARE', 'DAMAGE', 'PERCENT', 5, false)],
+    });
+    expect(swapPreview(candidate, null, CONSTANTS)).toEqual([
+      { stat: 'DAMAGE', unit: 'PERCENT', own: false, current: 0, top: 5 },
+      { stat: 'LUCK', unit: 'FLAT', own: false, current: 2, top: 2 },
+    ]);
+  });
+
+  it('subtracts the replaced item and drops the rows that do not change', () => {
+    const replaced = armor(1, 'Vecchio', {
+      bonuses: [bonus('UNCOMMON', 'MAX_HP', 'FLAT', 5, true), bonus('RARE', 'LUCK', 'FLAT', 2, true)],
+    });
+    const candidate = armor(2, 'Nuovo', {
+      bonuses: [bonus('UNCOMMON', 'LUCK', 'FLAT', 2, true), bonus('RARE', 'DAMAGE', 'PERCENT', 15, true)],
+    });
+    expect(swapPreview(candidate, replaced, CONSTANTS)).toEqual([
+      { stat: 'DAMAGE', unit: 'PERCENT', own: false, current: 15, top: 15 },
+      { stat: 'MAX_HP', unit: 'FLAT', own: false, current: -5, top: -5 },
+    ]);
+    expect(swapPreview(replaced, replaced, CONSTANTS)).toEqual([]);
+  });
+
+  it('keeps own stats after the general ones and abilities in their fixed order', () => {
+    const weapon = item({
+      id: 3,
+      name: 'Pistola',
+      type: 'WEAPON',
+      bonuses: [
+        bonus('UNCOMMON', 'DAMAGE', 'PERCENT', 10, true, true),
+        bonus('RARE', 'LUCK', 'FLAT', 1.1, true),
+      ],
+    });
+    expect(swapPreview(weapon, null, CONSTANTS).map((delta) => statKeyId(delta))).toEqual([
+      'LUCK-FLAT',
+      'DAMAGE-PERCENT-own',
+    ]);
+    const ability = item({
+      id: 4,
+      name: 'Granata',
+      bonuses: [
+        bonus('UNCOMMON', 'DURATION', 'SECONDS', 1.5, true),
+        bonus('RARE', 'COOLDOWN', 'SECONDS', 2, false),
+      ],
+    });
+    expect(swapPreview(ability, null, CONSTANTS).map((delta) => delta.stat)).toEqual([
+      'COOLDOWN',
+      'DURATION',
+    ]);
   });
 });

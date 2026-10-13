@@ -68,6 +68,14 @@ Il prompt è chiaro nella struttura generale (header, menu, Items, Full Sets, Cu
   Il suo Danno dal livello non entra nel 👊 del set. Cancellandola, o cambiandole tipologia, la si toglie dai set.
 - **Rarità nel censimento.** Le icone del censimento non hanno la cornice colorata della rarità.
 
+### Anteprima nella scelta dei pezzi (0.4.1)
+- Nell'elenco dei candidati di uno slot (armatura, arma o abilità), passando col mouse su un item compare una
+  mini-tabella con le sole caratteristiche che cambierebbero, attuali e top: verde se migliorano, rosso se peggiorano,
+  "Nessuna variazione" se non cambia nulla. Vale anche per gli slot già pieni: il confronto è con l'item che c'è.
+- La tabella segue il puntatore con l'angolo in alto a sinistra; vicino ai bordi della finestra passa dall'altra
+  parte per restare visibile. Su telefono non c'è il passaggio del mouse, quindi non compare.
+- Danno e HP dal livello non ci sono, come nelle tabelle dei set. Il bonus del set (testo) non è una caratteristica.
+
 ## 5. Aspetti tecnici
 16. ✅ **Architettura.** App solo per te con database H2. Regole da Dropbox/MyClaudeProjects/MyCodingStyle (vedi sotto).
 17. ✅ **Lingua.** Interfaccia in italiano.

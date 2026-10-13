@@ -1,13 +1,18 @@
 import { Badge, Group, Modal, Stack, Text, UnstyledButton } from '@mantine/core';
+import { useMediaQuery } from '@mantine/hooks';
 import { IconX } from '@tabler/icons-react';
+import { useState } from 'react';
+import { useGameConstants } from '../api/queries';
 import type { Item, Specification } from '../api/types';
-import { abilityCandidates, slotCandidates, weaponCandidates } from '../domain/customSets';
+import { abilityCandidates, slotCandidates, swapPreview, weaponCandidates } from '../domain/customSets';
 import { formatLevel } from '../domain/format';
 import { thumbnailOf } from '../domain/itemImages';
+import { statUnits } from '../domain/units';
 import { useFullScreenModal } from '../hooks/useFullScreenModal';
 import { ARMOR_SET_LABELS, SPECIFICATION_LABELS } from '../i18n/labels';
 import { ItemThumbnail } from './ItemThumbnail';
 import { RarityBadge } from './RarityBadge';
+import { SwapPreview } from './SwapPreview';
 
 /** Slot da riempire: uno slot di armatura, l'arma o l'abilità del set. */
 export type PickerSlot = Specification | 'WEAPON' | 'ABILITY';
@@ -31,7 +36,8 @@ interface Props {
   items: Item[];
   /** Categorie di arma nell'ordine del gioco (per ordinare le armi). */
   weaponCategories: Specification[];
-  selectedId: number | null;
+  /** Item già nello slot, null se è vuoto. */
+  selected: Item | null;
   onPick: (item: Item | null) => void;
   onClose: () => void;
 }
@@ -39,9 +45,19 @@ interface Props {
 /**
  * Scelta del pezzo di uno slot tra le armature censite, per rarità decrescente e poi per nome;
  * per l'arma, tra le armi censite per categoria; per l'abilità, tra le abilità censite.
+ * Con il mouse, passando su un candidato si vedono le caratteristiche che cambierebbero scegliendolo.
  */
-export function SlotPickerModal({ slot, items, weaponCategories, selectedId, onPick, onClose }: Props) {
+export function SlotPickerModal({ slot, items, weaponCategories, selected, onPick, onClose }: Props) {
   const fullScreen = useFullScreenModal();
+  const constants = useGameConstants();
+  // Solo con un puntatore che passa sopra gli elementi (no touch)
+  const canHover = useMediaQuery('(hover: hover) and (pointer: fine)');
+  const [hovered, setHovered] = useState<{ item: Item; x: number; y: number } | null>(null);
+  const selectedId = selected?.id ?? null;
+  const choose = (item: Item | null) => {
+    setHovered(null);
+    onPick(item);
+  };
   const weapon = slot === 'WEAPON';
   const gear = slot === 'WEAPON' || slot === 'ABILITY' ? GEAR_TEXTS[slot] : null;
   let candidates: Item[] = [];
@@ -59,7 +75,10 @@ export function SlotPickerModal({ slot, items, weaponCategories, selectedId, onP
   return (
     <Modal
       opened={slot !== null}
-      onClose={onClose}
+      onClose={() => {
+        setHovered(null);
+        onClose();
+      }}
       title={title}
       fullScreen={fullScreen}
       centered={!fullScreen}
@@ -67,7 +86,7 @@ export function SlotPickerModal({ slot, items, weaponCategories, selectedId, onP
     >
       <Stack gap={6}>
         {selectedId !== null && (
-          <UnstyledButton onClick={() => onPick(null)} p="xs" style={{ borderRadius: 8 }}>
+          <UnstyledButton onClick={() => choose(null)} p="xs" style={{ borderRadius: 8 }}>
             <Group gap="sm" wrap="nowrap">
               <IconX size={20} />
               <Text>{gear ? gear.none : 'Lascia lo slot vuoto'}</Text>
@@ -86,7 +105,13 @@ export function SlotPickerModal({ slot, items, weaponCategories, selectedId, onP
           return (
             <UnstyledButton
               key={candidate.id}
-              onClick={() => onPick(candidate)}
+              onClick={() => choose(candidate)}
+              onMouseMove={
+                canHover
+                  ? (event) => setHovered({ item: candidate, x: event.clientX, y: event.clientY })
+                  : undefined
+              }
+              onMouseLeave={() => setHovered(null)}
               p="xs"
               aria-pressed={selected}
               style={{
@@ -123,6 +148,14 @@ export function SlotPickerModal({ slot, items, weaponCategories, selectedId, onP
           );
         })}
       </Stack>
+      {hovered && slot !== null && constants.data && (
+        <SwapPreview
+          deltas={swapPreview(hovered.item, selected, constants.data)}
+          units={statUnits(constants.data)}
+          x={hovered.x}
+          y={hovered.y}
+        />
+      )}
     </Modal>
   );
 }
