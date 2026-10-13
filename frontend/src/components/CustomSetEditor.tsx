@@ -199,7 +199,6 @@ export function CustomSetEditor({ draft, items, slots, weaponCategories, units, 
         units={units}
         trends={trends}
         abilityTrends={abilityTrends}
-        fixedLayout={sideBySide}
       />
     ) : (
       <Loader key="stats" />
@@ -217,7 +216,6 @@ export function CustomSetEditor({ draft, items, slots, weaponCategories, units, 
           stats={aligned?.stats[0] ?? original.stats}
           abilityStats={aligned?.abilityStats[0] ?? original.abilityStats}
           units={units}
-          fixedLayout={sideBySide}
         />,
       ]
     : [];

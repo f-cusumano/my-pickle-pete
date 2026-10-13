@@ -83,7 +83,9 @@ Il prompt è chiaro nella struttura generale (header, menu, Items, Full Sets, Cu
 - Danno e HP dal livello stanno tra parentesi accanto al nome del set (anche nelle proposte Best e nella modifica).
 - I pezzi sono uno sotto l'altro con nome e livello. Lo slot vuoto ha la X rossa sull'immagine, "Nessuno" o "Nessuna"
   (accordato con lo slot) e "- / -"; dove lo slot si può riempire (censimento da Full Sets, modifica del set) resta il "+".
-- Ordine: bonus del set, pezzi, armi consigliate, poi arma e abilità (Custom Sets), infine la tabella.
+- Sotto il bonus del set l'area è divisa in due colonne (0.5.1): a sinistra pezzi, armi consigliate, arma e abilità
+  (Custom Sets); a destra la tabella delle caratteristiche e, staccate, quelle proprie dell'arma e dell'abilità, con
+  colonne della stessa larghezza. Su schermi stretti le due colonne vanno una sotto l'altra.
 - In modifica le sezioni dei due set stanno sulle stesse righe, e le due tabelle hanno le stesse righe (quelle che ha
   solo l'altro set valgono 0) e colonne della stessa larghezza, così si confrontano riga per riga.
 - Riepilogo dell'item al passaggio del mouse sull'icona (Items, Censimento, set, proposte Best, modifica): nome e

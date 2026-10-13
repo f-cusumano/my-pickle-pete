@@ -1,4 +1,4 @@
-import { Table, Text } from '@mantine/core';
+import { Stack, Table, Text } from '@mantine/core';
 import { IconArrowDown, IconArrowUp } from '@tabler/icons-react';
 import type { Highlight, Stat, StatComparison, StatUnit } from '../api/types';
 import { statKeyId, unitSuffix, type StatTrend, type Trend } from '../domain/customSets';
@@ -20,14 +20,14 @@ interface Props {
   /** Frecce rispetto al set di partenza (solo in modifica). */
   trends?: Map<string, StatTrend>;
   abilityTrends?: Map<string, StatTrend>;
-  /** Colonne di larghezza fissa: due tabelle affiancate restano allineate anche nelle colonne. */
+  /** Colonne di larghezza fissa: le tabelle restano allineate anche nelle colonne (di default sì). */
   fixedLayout?: boolean;
 }
 
 /**
- * Tabella delle caratteristiche di un set: valore attuale e top, con massimi e minimi evidenziati.
+ * Tabelle delle caratteristiche di un set: valore attuale e top, con massimi e minimi evidenziati.
  * Il contributo dell'arma scelta è tra parentesi; le caratteristiche proprie dell'arma e quelle dell'abilità
- * stanno in fondo, ciascuna nella sua sezione.
+ * sono in tabelle a parte, sotto.
  */
 export function SetStatsTable({
   stats,
@@ -35,10 +35,54 @@ export function SetStatsTable({
   units,
   trends,
   abilityTrends,
-  fixedLayout = false,
+  fixedLayout = true,
 }: Props) {
   const general = stats.filter((row) => !row.own);
   const own = stats.filter((row) => row.own);
+  return (
+    <Stack gap="lg">
+      <StatsSection
+        title="Caratteristica"
+        rows={general}
+        labelOf={(row) => STAT_LABELS[row.stat]}
+        units={units}
+        trends={trends}
+        fixedLayout={fixedLayout}
+      />
+      {own.length > 0 && (
+        <StatsSection
+          title="Proprie dell'arma"
+          rows={own}
+          labelOf={(row) => ownStatLabel(row.stat)}
+          units={units}
+          trends={trends}
+          fixedLayout={fixedLayout}
+        />
+      )}
+      {abilityStats.length > 0 && (
+        <StatsSection
+          title="Proprie dell'abilità"
+          rows={abilityStats}
+          labelOf={(row) => (row.own ? ownStatLabel(row.stat) : STAT_LABELS[row.stat])}
+          units={units}
+          trends={abilityTrends}
+          fixedLayout={fixedLayout}
+        />
+      )}
+    </Stack>
+  );
+}
+
+interface SectionProps {
+  title: string;
+  rows: StatComparison[];
+  labelOf: (row: StatComparison) => string;
+  units: Record<Stat, StatUnit>;
+  trends?: Map<string, StatTrend>;
+  fixedLayout: boolean;
+}
+
+function StatsSection({ title, rows, labelOf, units, trends, fixedLayout }: SectionProps) {
   return (
     <Table
       withTableBorder
@@ -49,58 +93,16 @@ export function SetStatsTable({
     >
       <Table.Thead>
         <Table.Tr>
-          <Table.Th w={fixedLayout ? '46%' : undefined}>Caratteristica</Table.Th>
+          <Table.Th w={fixedLayout ? '46%' : undefined}>{title}</Table.Th>
           <Table.Th ta="right">Attuale</Table.Th>
           <Table.Th ta="right">Top</Table.Th>
         </Table.Tr>
       </Table.Thead>
       <Table.Tbody>
-        {general.map((row) => (
-          <StatRow
-            key={statKeyId(row)}
-            row={row}
-            label={STAT_LABELS[row.stat]}
-            units={units}
-            trends={trends}
-          />
+        {rows.map((row) => (
+          <StatRow key={statKeyId(row)} row={row} label={labelOf(row)} units={units} trends={trends} />
         ))}
       </Table.Tbody>
-      {own.length > 0 && (
-        <Table.Tbody className={classes.ownSection}>
-          <Table.Tr>
-            <Table.Th colSpan={3} className={classes.ownTitle}>
-              Proprie dell&apos;arma
-            </Table.Th>
-          </Table.Tr>
-          {own.map((row) => (
-            <StatRow
-              key={statKeyId(row)}
-              row={row}
-              label={ownStatLabel(row.stat)}
-              units={units}
-              trends={trends}
-            />
-          ))}
-        </Table.Tbody>
-      )}
-      {abilityStats.length > 0 && (
-        <Table.Tbody className={classes.ownSection}>
-          <Table.Tr>
-            <Table.Th colSpan={3} className={classes.ownTitle}>
-              Proprie dell&apos;abilità
-            </Table.Th>
-          </Table.Tr>
-          {abilityStats.map((row) => (
-            <StatRow
-              key={statKeyId(row)}
-              row={row}
-              label={row.own ? ownStatLabel(row.stat) : STAT_LABELS[row.stat]}
-              units={units}
-              trends={abilityTrends}
-            />
-          ))}
-        </Table.Tbody>
-      )}
     </Table>
   );
 }
