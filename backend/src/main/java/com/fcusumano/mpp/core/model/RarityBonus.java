@@ -7,8 +7,11 @@ import com.fcusumano.mpp.core.enums.StatUnit;
 import java.math.BigDecimal;
 import java.util.Objects;
 
-/** Potenziamento di caratteristica sbloccato da un item quando raggiunge la rarità indicata. */
-public record RarityBonus(Rarity rarity, Stat stat, StatUnit unit, BigDecimal amount) {
+/**
+ * Potenziamento di caratteristica sbloccato da un item quando raggiunge la rarità indicata.
+ * {@code own} (solo armi) indica un potenziamento della sola arma, es. "+10% al proprio danno".
+ */
+public record RarityBonus(Rarity rarity, Stat stat, StatUnit unit, BigDecimal amount, boolean own) {
 
     public RarityBonus {
         Objects.requireNonNull(rarity, "rarity");
@@ -18,10 +21,14 @@ public record RarityBonus(Rarity rarity, Stat stat, StatUnit unit, BigDecimal am
     }
 
     public static RarityBonus of(Rarity rarity, Stat stat, StatUnit unit, BigDecimal amount) {
-        return new RarityBonus(rarity, stat, unit, amount);
+        return new RarityBonus(rarity, stat, unit, amount, false);
+    }
+
+    public static RarityBonus ownOf(Rarity rarity, Stat stat, StatUnit unit, BigDecimal amount) {
+        return new RarityBonus(rarity, stat, unit, amount, true);
     }
 
     public StatKey key() {
-        return StatKey.of(stat, unit);
+        return new StatKey(stat, unit, own);
     }
 }

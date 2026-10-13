@@ -8,6 +8,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
+import static com.fcusumano.mpp.TestItems.allBonusesJson;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -28,9 +29,9 @@ class ItemFlowIntegrationTest {
     @Test
     void censusProgressAndFullSet() throws Exception {
         final long hatId = create("""
-                {"name": "Cappello da cowboy", "type": "ARMOR", "specification": "HAT", "armorSet": "COWBOY",
-                 "bonuses": [{"rarity": "UNCOMMON", "stat": "CRIT_CHANCE", "unit": "PERCENT", "amount": 2},
-                             {"rarity": "RARE", "stat": "LUCK", "unit": "PERCENT", "amount": 3}]}""");
+                {"name": "Cappello da cowboy", "type": "ARMOR", "specification": "HAT", "armorSet": "COWBOY", "bonuses": %s}"""
+                                          .formatted(allBonusesJson("{\"rarity\": \"UNCOMMON\", \"stat\": \"CRIT_CHANCE\", \"unit\": \"PERCENT\", \"amount\": 2}",
+                                                                    "{\"rarity\": \"RARE\", \"stat\": \"LUCK\", \"unit\": \"PERCENT\", \"amount\": 3}")));
 
         //Parte da Comune 1/10 con +4% Danno
         mockMvc.perform(get("/api/item").param("id", String.valueOf(hatId)))
@@ -87,26 +88,34 @@ class ItemFlowIntegrationTest {
     @Test
     void censusRejectsDuplicatesAndInconsistentData() throws Exception {
         create("""
-                {"name": "Stivali del bandito", "type": "ARMOR", "specification": "BOOTS", "armorSet": "BANDIT"}""");
+                {"name": "Stivali del bandito", "type": "ARMOR", "specification": "BOOTS", "armorSet": "BANDIT", "bonuses": %s}""".formatted(allBonusesJson()));
         mockMvc.perform(post("/api/item").contentType(MediaType.APPLICATION_JSON).content("""
-                        {"name": "stivali del bandito", "type": "ARMOR", "specification": "BACK", "armorSet": "BANDIT"}"""))
+                        {"name": "stivali del bandito", "type": "ARMOR", "specification": "BACK", "armorSet": "BANDIT", "bonuses": %s}"""
+                                                                                   .formatted(allBonusesJson())))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value("ITEM_NAME_ALREADY_EXISTS"));
         mockMvc.perform(post("/api/item").contentType(MediaType.APPLICATION_JSON).content("""
-                        {"name": "Altri stivali", "type": "ARMOR", "specification": "BOOTS", "armorSet": "BANDIT"}"""))
+                        {"name": "Altri stivali", "type": "ARMOR", "specification": "BOOTS", "armorSet": "BANDIT", "bonuses": %s}"""
+                                                                                   .formatted(allBonusesJson())))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value("ARMOR_SLOT_ALREADY_TAKEN"));
         mockMvc.perform(post("/api/item").contentType(MediaType.APPLICATION_JSON).content("""
                         {"name": "Barattolo", "type": "ABILITY", "specification": "HAT", "armorSet": "BANDIT"}"""))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
-                .andExpect(jsonPath("$.messages", hasSize(2)));
+                .andExpect(jsonPath("$.messages", hasSize(3))); //Specifica, set e potenziamenti mancanti
+        //Un potenziamento aumenta almeno di 1
+        mockMvc.perform(post("/api/item").contentType(MediaType.APPLICATION_JSON).content("""
+                        {"name": "Barattolo", "type": "ABILITY",
+                         "bonuses": [{"rarity": "RARE", "stat": "LUCK", "unit": "FLAT", "amount": 0.5}]}"""))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
     }
 
     @Test
     void deleteItem() throws Exception {
         final long id = create("""
-                {"name": "Pistola ad acqua", "type": "WEAPON", "specification": "RANGED"}""");
+                {"name": "Pistola ad acqua", "type": "WEAPON", "specification": "RANGED", "bonuses": %s}""".formatted(allBonusesJson()));
         mockMvc.perform(delete("/api/item").param("id", String.valueOf(id))).andExpect(status().isNoContent());
         mockMvc.perform(get("/api/item").param("id", String.valueOf(id)))
                 .andExpect(status().isNotFound())

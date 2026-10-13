@@ -12,7 +12,9 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
+import static com.fcusumano.mpp.TestItems.allBonuses;
 import static com.fcusumano.mpp.TestItems.bonus;
+import static com.fcusumano.mpp.TestItems.ownBonus;
 
 class ItemDefinitionRulesTest {
 
@@ -44,11 +46,25 @@ class ItemDefinitionRulesTest {
 
     @Test
     void bonusesOnlyOnePerUnlockingRarity() {
-        final List<RarityBonus> bonuses = List.of(bonus(Rarity.COMMON, Stat.LUCK, "1"), bonus(Rarity.RARE, Stat.LUCK, "1"), bonus(Rarity.RARE, Stat.ARMOR, "2"));
+        final List<RarityBonus> bonuses = allBonuses(bonus(Rarity.COMMON, Stat.LUCK, "1"), bonus(Rarity.RARE, Stat.LUCK, "1"), bonus(Rarity.RARE, Stat.ARMOR, "2"));
         Assertions.assertEquals(2, ItemDefinitionRules.violations(new ItemDefinition("Barattolo", ItemType.ABILITY, null, null, bonuses)).size());
     }
 
+    @Test
+    void bonusesRequiredForEveryRarityAboveTheBase() {
+        final List<RarityBonus> bonuses = List.of(bonus(Rarity.UNCOMMON, Stat.LUCK, "1"), bonus(Rarity.RARE, Stat.LUCK, "1"));
+        Assertions.assertEquals(List.of("Bonuses are required for every rarity above the base one, missing: [EPIC, LEGENDARY, ARTIFACT]."),
+                                ItemDefinitionRules.violations(new ItemDefinition("Barattolo", ItemType.ABILITY, null, null, bonuses)));
+    }
+
+    @Test
+    void ownBonusesOnlyForWeapons() {
+        final List<RarityBonus> bonuses = allBonuses(ownBonus(Rarity.RARE, Stat.DAMAGE, "10"));
+        Assertions.assertEquals(List.of(), ItemDefinitionRules.violations(new ItemDefinition("Pistola", ItemType.WEAPON, Specification.RANGED, null, bonuses)));
+        Assertions.assertEquals(1, ItemDefinitionRules.violations(new ItemDefinition("Elmo", ItemType.ARMOR, Specification.HAT, ArmorSet.VIKING, bonuses)).size());
+    }
+
     private static List<String> violations(ItemType type, Specification specification, ArmorSet armorSet) {
-        return ItemDefinitionRules.violations(new ItemDefinition("Item", type, specification, armorSet, List.of()));
+        return ItemDefinitionRules.violations(new ItemDefinition("Item", type, specification, armorSet, allBonuses()));
     }
 }

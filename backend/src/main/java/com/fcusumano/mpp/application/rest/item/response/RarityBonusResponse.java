@@ -6,6 +6,9 @@ import com.fcusumano.mpp.core.enums.StatUnit;
 
 import java.math.BigDecimal;
 
-/** Potenziamento di una rarità; {@code unlocked} indica se la rarità effettiva dell'item lo ha già sbloccato. */
-public record RarityBonusResponse(Rarity rarity, Stat stat, StatUnit unit, BigDecimal amount, boolean unlocked) {
+/**
+ * Potenziamento di una rarità; {@code own} indica un potenziamento della sola arma,
+ * {@code unlocked} se la rarità effettiva dell'item lo ha già sbloccato.
+ */
+public record RarityBonusResponse(Rarity rarity, Stat stat, StatUnit unit, BigDecimal amount, boolean own, boolean unlocked) {
 }
