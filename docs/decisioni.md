@@ -86,6 +86,8 @@ Il prompt è chiaro nella struttura generale (header, menu, Items, Full Sets, Cu
 - Sotto il bonus del set l'area è divisa in due colonne (0.5.1): a sinistra pezzi, armi consigliate, arma e abilità
   (Custom Sets); a destra la tabella delle caratteristiche e, staccate, quelle proprie dell'arma e dell'abilità, con
   colonne della stessa larghezza. Su schermi stretti le due colonne vanno una sotto l'altra.
+- Nei Custom Sets i tasti Modifica (verde) ed Elimina (rosso) stanno sulla riga del set, dopo la freccia (0.5.2);
+  su cellulare mostrano solo il simbolo, per lasciare spazio al nome.
 - In modifica le sezioni dei due set stanno sulle stesse righe, e le due tabelle hanno le stesse righe (quelle che ha
   solo l'altro set valgono 0) e colonne della stessa larghezza, così si confrontano riga per riga.
 - Riepilogo dell'item al passaggio del mouse sull'icona (Items, Censimento, set, proposte Best, modifica): nome e
