@@ -48,14 +48,14 @@ public class CustomSetEndpoint {
 
     /* --------------- SALVATAGGIO --------------- */
 
-    @Operation(summary = "Save a new custom set (at most one armor piece per slot)")
+    @Operation(summary = "Save a new custom set (at most one armor piece per slot, optional weapon)")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public CustomSetResponse create(@Valid @RequestBody CustomSetRequest request) {
         return new CustomSetResponse(customSetService.create(request.toDefinition()));
     }
 
-    @Operation(summary = "Overwrite name and pieces of a custom set")
+    @Operation(summary = "Overwrite name, pieces and weapon of a custom set")
     @PutMapping
     public CustomSetResponse update(@RequestParam(required = true) long id, @Valid @RequestBody CustomSetRequest request) {
         return new CustomSetResponse(customSetService.update(id, request.toDefinition()));
@@ -70,10 +70,10 @@ public class CustomSetEndpoint {
 
     /* --------------- CALCOLI --------------- */
 
-    @Operation(summary = "Stats of an unsaved set, as they would be once saved")
+    @Operation(summary = "Stats of an unsaved set (pieces and optional weapon), as they would be once saved")
     @PostMapping("/evaluate")
     public CustomSetResponse evaluate(@Valid @RequestBody CustomSetPiecesRequest request) {
-        return new CustomSetResponse(customSetService.evaluate(request.itemIdsOrEmpty()));
+        return new CustomSetResponse(customSetService.evaluate(request.itemIdsOrEmpty(), request.weaponId()));
     }
 
     @Operation(summary = "Up to 3 sets maximizing the primary stat (then the secondary) at the current rarity and level of the items")

@@ -95,7 +95,6 @@ function ItemCensus({ constants }: { constants: GameConstants }) {
                   <Table.Th>Tipologia</Table.Th>
                   <Table.Th>Specifica</Table.Th>
                   <Table.Th>Set</Table.Th>
-                  <Table.Th>Potenziamenti</Table.Th>
                   <Table.Th w={96} />
                 </Table.Tr>
               </Table.Thead>
@@ -111,11 +110,6 @@ function ItemCensus({ constants }: { constants: GameConstants }) {
                       <SpecificationLabel specification={item.specification} />
                     </Table.Td>
                     <Table.Td>{item.armorSet ? ARMOR_SET_LABELS[item.armorSet] : '-'}</Table.Td>
-                    <Table.Td>
-                      <Text size="sm" c={item.bonuses.length === 5 ? 'pickle.9' : 'orange.8'}>
-                        {item.bonuses.length}/5
-                      </Text>
-                    </Table.Td>
                     <Table.Td>
                       <Group gap={4} wrap="nowrap">
                         <ActionIcon

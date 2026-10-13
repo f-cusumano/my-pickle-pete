@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!-- Potenziamento proprio dell'arma ("+10% al proprio danno"): vale solo per l'arma, quelli esistenti sono generali -->
+    <changeSet id="20261012_add_mpp_item_rarity_bonus_own" author="f.cusumano">
+        <preConditions onFail="MARK_RAN">
+            <not><columnExists tableName="mpp_item_rarity_bonus" columnName="own"/></not>
+        </preConditions>
+        <addColumn tableName="mpp_item_rarity_bonus">
+            <column name="own" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <!-- Arma facoltativa di un set custom: i suoi potenziamenti si mostrano a parte nella tabella del set -->
+    <changeSet id="20261012_add_mpp_custom_set_weapon" author="f.cusumano">
+        <preConditions onFail="MARK_RAN">
+            <not><columnExists tableName="mpp_custom_set" columnName="id_mpp_item_weapon"/></not>
+        </preConditions>
+        <addColumn tableName="mpp_custom_set">
+            <column name="id_mpp_item_weapon" type="BIGINT"/>
+        </addColumn>
+        <addForeignKeyConstraint baseTableName="mpp_custom_set" baseColumnNames="id_mpp_item_weapon" constraintName="mpp_custom_set_fk1"
+                                 referencedTableName="mpp_item" referencedColumnNames="id" onDelete="NO ACTION"/>
+        <createIndex tableName="mpp_custom_set" indexName="mpp_custom_set_id_mpp_item_weapon_idx">
+            <column name="id_mpp_item_weapon"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

@@ -8,5 +8,6 @@
     <include file="changes/20261012_0.1.0_armor_set_seed.xml" relativeToChangelogFile="true"/>
     <include file="changes/20261012_0.1.0_bonus_unit_and_default_images.xml" relativeToChangelogFile="true"/>
     <include file="changes/20261012_0.2.0_custom_set.xml" relativeToChangelogFile="true"/>
+    <include file="changes/20261012_0.3.0_weapons.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>

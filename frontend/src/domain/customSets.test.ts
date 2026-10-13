@@ -7,9 +7,16 @@ import {
   selectionOf,
   slotCandidates,
   statKeyLabel,
+  customizedName,
+  statKeyId,
   statKeyOptions,
   statTrends,
+  weaponAdviceText,
+  weaponCandidates,
+  weaponSpecifications,
 } from './customSets';
+import { formatStatBonus } from './format';
+import { ownStatLabel } from '../i18n/labels';
 
 const units = statUnits(CONSTANTS);
 
@@ -21,11 +28,15 @@ const row = (
   unit: StatComparison['unit'],
   current: number,
   top: number,
+  weapon: { current: number; top: number } | null = null,
 ): StatComparison => ({
   stat,
   unit,
+  own: false,
   current,
   top,
+  weaponCurrent: weapon?.current ?? null,
+  weaponTop: weapon?.top ?? null,
   currentHighlight: 'NONE',
   topHighlight: 'NONE',
 });
@@ -42,14 +53,16 @@ describe('statKeyOptions', () => {
   it('adds the other unit right after the default one, only when some armor gives it', () => {
     const items = [
       armor(1, 'Cappello', {
-        bonuses: [{ rarity: 'RARE', stat: 'LUCK', unit: 'PERCENT', amount: 3, unlocked: false }],
+        bonuses: [{ rarity: 'RARE', stat: 'LUCK', unit: 'PERCENT', amount: 3, own: false, unlocked: false }],
       }),
       item({
         id: 2,
         name: 'Pistola',
         type: 'WEAPON',
         specification: 'RANGED',
-        bonuses: [{ rarity: 'RARE', stat: 'MAX_HP', unit: 'PERCENT', amount: 3, unlocked: false }],
+        bonuses: [
+          { rarity: 'RARE', stat: 'MAX_HP', unit: 'PERCENT', amount: 3, own: false, unlocked: false },
+        ],
       }),
     ];
     expect(statKeyOptions(CONSTANTS, items).map((key) => `${key.stat}-${key.unit}`)).toEqual([
@@ -104,5 +117,51 @@ describe('statTrends', () => {
     expect(trends.get('DAMAGE-PERCENT')).toEqual({ current: 'up', top: 'down' });
     expect(trends.get('LUCK-FLAT')).toEqual({ current: null, top: null });
     expect(trends.get('LUCK-PERCENT')).toEqual({ current: null, top: 'up' });
+  });
+
+  it('compares the totals with the weapon', () => {
+    const trends = statTrends(
+      [row('LUCK', 'FLAT', 5, 5)],
+      [row('LUCK', 'FLAT', 3, 3, { current: 2, top: 4 })],
+    );
+    expect(trends.get('LUCK-FLAT')).toEqual({ current: null, top: 'up' });
+  });
+});
+
+describe('weapons', () => {
+  it('lists weapons by category, then rarity and name', () => {
+    const weapons = weaponCandidates(
+      [
+        item({ id: 1, name: 'Daga', type: 'WEAPON', specification: 'MELEE', rarity: 'EPIC' }),
+        item({ id: 2, name: 'Pistola', type: 'WEAPON', specification: 'RANGED', rarity: 'COMMON' }),
+        item({ id: 3, name: 'Fionda', type: 'WEAPON', specification: 'RANGED', rarity: 'RARE' }),
+        armor(4, 'Cappello', {}),
+      ],
+      weaponSpecifications(CONSTANTS),
+    );
+    expect(weapons.map((weapon) => weapon.name)).toEqual(['Fionda', 'Pistola', 'Daga']);
+  });
+
+  it('describes recommended types, adding the top ones only when they differ', () => {
+    expect(weaponAdviceText(['ELEMENTAL'], ['ELEMENTAL'])).toBe('elementale');
+    expect(weaponAdviceText(['RANGED'], ['RANGED', 'MELEE'])).toBe(
+      'a distanza (al massimo potenziale: a distanza, ravvicinata)',
+    );
+    expect(weaponAdviceText([], [])).toBe('nessuna in particolare');
+  });
+
+  it('keeps own stats apart from the general ones', () => {
+    expect(statKeyId({ stat: 'DAMAGE', unit: 'PERCENT', own: true })).toBe('DAMAGE-PERCENT-own');
+    expect(ownStatLabel('DAMAGE')).toBe('Proprio danno');
+    expect(ownStatLabel('LUCK')).toBe('Propria fortuna');
+    expect(ownStatLabel('MAX_HP')).toBe('Propri HP');
+    expect(formatStatBonus('DAMAGE', 10, 'PERCENT', true)).toBe('+10% proprio danno');
+  });
+});
+
+describe('customize a full set', () => {
+  it('proposes the name with the right preposition', () => {
+    expect(customizedName('BANDIT')).toBe('Set del Bandito personalizzato');
+    expect(customizedName('SUPERMAN')).toBe('Set di Superman personalizzato');
   });
 });

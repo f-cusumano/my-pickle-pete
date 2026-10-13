@@ -1,5 +1,5 @@
 import type { Stat, StatUnit } from '../api/types';
-import { STAT_LABELS } from '../i18n/labels';
+import { STAT_LABELS, ownStatLabel } from '../i18n/labels';
 
 const NUMBER_FORMAT = new Intl.NumberFormat('it-IT', { maximumFractionDigits: 2 });
 
@@ -12,9 +12,10 @@ export function formatStatValue(value: number, unit: StatUnit): string {
   return `${sign}${NUMBER_FORMAT.format(value)}${unit === 'PERCENT' ? '%' : ''}`;
 }
 
-/** Potenziamento leggibile: "+5% Raggio di raccolta", "+3 Fortuna". */
-export function formatStatBonus(stat: Stat, value: number, unit: StatUnit): string {
-  return `${formatStatValue(value, unit)} ${STAT_LABELS[stat]}`;
+/** Potenziamento leggibile: "+5% Raggio di raccolta", "+3 Fortuna", "+10% proprio danno" (proprio dell'arma). */
+export function formatStatBonus(stat: Stat, value: number, unit: StatUnit, own = false): string {
+  const label = own ? ownStatLabel(stat, true) : STAT_LABELS[stat];
+  return `${formatStatValue(value, unit)} ${label}`;
 }
 
 /** Livello come "N / M", con M il massimo della rarità. */

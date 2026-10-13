@@ -48,6 +48,8 @@ export interface RarityBonus {
   stat: Stat;
   unit: StatUnit;
   amount: number;
+  /** Solo armi: potenziamento della sola arma, es. "+10% al proprio danno". */
+  own: boolean;
   unlocked: boolean;
 }
 
@@ -70,6 +72,7 @@ export interface RarityBonusRequest {
   stat: Stat;
   unit: StatUnit;
   amount: number;
+  own: boolean;
 }
 
 export interface ItemRequest {
@@ -85,13 +88,29 @@ export interface ArmorSetInfo {
   bonusDescription: string | null;
 }
 
+/**
+ * Riga della tabella di un set. weaponCurrent e weaponTop sono il contributo dell'arma scelta (null se non porta la
+ * caratteristica): le evidenziazioni tengono conto del totale. Le righe own (proprie dell'arma) stanno in fondo
+ * con i soli valori dell'arma.
+ */
 export interface StatComparison {
   stat: Stat;
   unit: StatUnit;
+  own: boolean;
   current: number;
   top: number;
+  weaponCurrent: number | null;
+  weaponTop: number | null;
   currentHighlight: Highlight;
   topHighlight: Highlight;
+}
+
+/** Tipi di arma consigliati e sconsigliati dalle armature di un set (liste vuote se tutti i tipi sono pari). */
+export interface WeaponAdvice {
+  recommendedNow: Specification[];
+  discouragedNow: Specification[];
+  recommendedTop: Specification[];
+  discouragedTop: Specification[];
 }
 
 export interface FullSet {
@@ -100,6 +119,7 @@ export interface FullSet {
   bonusActive: boolean;
   pieces: Item[];
   stats: StatComparison[];
+  weaponAdvice: WeaponAdvice;
 }
 
 /** Set custom (id e nome null se non salvato): bonusArmorSet è il set con almeno 4 pezzi, se c'è. */
@@ -109,12 +129,15 @@ export interface CustomSet {
   bonusArmorSet: ArmorSet | null;
   bonusDescription: string | null;
   pieces: Item[];
+  weapon: Item | null;
   stats: StatComparison[];
+  weaponAdvice: WeaponAdvice;
 }
 
 export interface CustomSetRequest {
   name: string;
   itemIds: number[];
+  weaponId: number | null;
 }
 
 /** Caratteristica con la sua unità ("+5% Fortuna" e "+5 Fortuna" sono caratteristiche diverse). */
@@ -152,7 +175,8 @@ export type InternalErrorCode =
   | 'LEVEL_OUT_OF_RANGE'
   | 'CUSTOM_SET_NOT_FOUND'
   | 'CUSTOM_SET_NAME_ALREADY_EXISTS'
-  | 'CUSTOM_SET_INVALID_PIECES';
+  | 'CUSTOM_SET_INVALID_PIECES'
+  | 'CUSTOM_SET_INVALID_WEAPON';
 
 export interface ErrorResponse {
   key: string;

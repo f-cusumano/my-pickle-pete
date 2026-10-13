@@ -25,6 +25,12 @@
   grid-area: amount;
 }
 
+/* Solo armi: casella "proprio dell'arma" sotto caratteristica, unità e valore */
+.bonusOwn {
+  grid-column: 2 / -1;
+  margin-top: -2px;
+}
+
 /* Su cellulare: badge, poi caratteristica a tutta larghezza, poi unità e valore affiancati */
 @media (max-width: $mantine-breakpoint-xs) {
   .bonusRow {
@@ -37,5 +43,9 @@
 
   .bonusBadge {
     padding-top: 0;
+  }
+
+  .bonusOwn {
+    grid-column: 1 / -1;
   }
 }

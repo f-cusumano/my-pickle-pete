@@ -1,5 +1,6 @@
 package com.fcusumano.mpp.core.validation;
 
+import com.fcusumano.mpp.core.enums.ItemType;
 import com.fcusumano.mpp.core.enums.Rarity;
 import com.fcusumano.mpp.core.model.ItemDefinition;
 import com.fcusumano.mpp.core.model.RarityBonus;
@@ -20,7 +21,7 @@ public final class ItemDefinitionRules {
         if (definition.type() == null) return violations; //Lo segnala già @NotNull sul tipo
         checkSpecification(definition, violations);
         checkArmorSet(definition, violations);
-        checkBonuses(definition.bonuses(), violations);
+        checkBonuses(definition, violations);
         return violations;
     }
 
@@ -46,14 +47,20 @@ public final class ItemDefinitionRules {
         }
     }
 
-    private static void checkBonuses(List<RarityBonus> bonuses, List<String> violations) {
+    private static void checkBonuses(ItemDefinition definition, List<String> violations) {
         final Set<Rarity> seen = EnumSet.noneOf(Rarity.class);
-        for (RarityBonus bonus : bonuses) { //Al massimo 5 elementi
+        for (RarityBonus bonus : definition.bonuses()) { //Al massimo 5 elementi
+            if (bonus.own() && definition.type() != ItemType.WEAPON) {
+                violations.add("Only weapons can have own bonuses (rarity '%s').".formatted(bonus.rarity()));
+            }
             if (!bonus.rarity().unlocksBonus()) {
                 violations.add("Rarity '%s' does not unlock any bonus.".formatted(bonus.rarity()));
             } else if (!seen.add(bonus.rarity())) {
                 violations.add("Rarity '%s' has more than one bonus.".formatted(bonus.rarity()));
             }
         }
+        //Ogni rarità oltre la base sblocca un potenziamento: vanno censiti tutti
+        final List<Rarity> missing = Rarity.bonusRarities().stream().filter(rarity -> !seen.contains(rarity)).toList();
+        if (!missing.isEmpty()) violations.add("Bonuses are required for every rarity above the base one, missing: %s.".formatted(missing));
     }
 }

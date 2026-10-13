@@ -58,7 +58,7 @@ public class ArmorSetService {
         for (ArmorSet armorSet : ArmorSet.values()) {
             final List<Item> pieces = set2pieces.getOrDefault(armorSet, List.of());
             fullSets.add(new FullSet(armorSet, set2description.get(armorSet), SetStatisticsCalculator.bonusActive(pieces.size()),
-                                     pieces, SetStatisticsCalculator.compare(pieces)));
+                                     pieces, SetStatisticsCalculator.compare(pieces, null)));
         }
         return fullSets;
     }

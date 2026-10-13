@@ -134,12 +134,13 @@ public class JooqItemRepository implements ItemRepository {
         bonusRecord.setStat(name(bonus.stat()));
         bonusRecord.setUnit(name(bonus.unit()));
         bonusRecord.setAmount(bonus.amount());
+        bonusRecord.setOwn(bonus.own());
         return bonusRecord;
     }
 
     private static RarityBonus toModel(MppItemRarityBonusRecord bonusRecord) {
-        return RarityBonus.of(valueOf(Rarity.class, bonusRecord.getRarity()), valueOf(Stat.class, bonusRecord.getStat()),
-                              valueOf(StatUnit.class, bonusRecord.getUnit()), bonusRecord.getAmount());
+        return new RarityBonus(valueOf(Rarity.class, bonusRecord.getRarity()), valueOf(Stat.class, bonusRecord.getStat()),
+                               valueOf(StatUnit.class, bonusRecord.getUnit()), bonusRecord.getAmount(), bonusRecord.getOwn());
     }
 
     private static Item toModel(Record r, List<RarityBonus> bonuses) {

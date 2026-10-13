@@ -9,6 +9,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 
+import static com.fcusumano.mpp.TestItems.allBonusesJson;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -99,14 +100,67 @@ class CustomSetFlowIntegrationTest {
                 .andExpect(jsonPath("$.code").value("CUSTOM_SET_NOT_FOUND"));
     }
 
+    @Test
+    void weaponInCustomSet() throws Exception {
+        final long hat = createItem("Elmo vichingo", "HAT", "VIKING", "{\"rarity\": \"UNCOMMON\", \"stat\": \"MELEE_DAMAGE\", \"unit\": \"FLAT\", \"amount\": 2}");
+        final long pistol = id(postJson("/api/item", """
+                {"name": "Pistola ad acqua", "type": "WEAPON", "specification": "RANGED", "bonuses": %s}"""
+                                                .formatted(allBonusesJson("{\"rarity\": \"UNCOMMON\", \"stat\": \"LUCK\", \"unit\": \"FLAT\", \"amount\": 3}",
+                                                                          "{\"rarity\": \"RARE\", \"stat\": \"DAMAGE\", \"unit\": \"PERCENT\", \"amount\": 10, \"own\": true}")))
+                                       .andExpect(status().isCreated())
+                                       .andExpect(jsonPath("$.bonuses[1].own").value(true))
+                                       .andReturn());
+        //Solo le armi hanno potenziamenti propri
+        postJson("/api/item", """
+                {"name": "Occhiali vichinghi", "type": "ARMOR", "specification": "GLASSES", "armorSet": "VIKING", "bonuses": %s}"""
+                .formatted(allBonusesJson("{\"rarity\": \"RARE\", \"stat\": \"DAMAGE\", \"unit\": \"PERCENT\", \"amount\": 10, \"own\": true}")))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
+
+        //Arma valutata a parte: Danno del set 4 + 4 dell'arma, riga propria in fondo; le armi consigliate seguono solo il set
+        postJson("/api/custom-set/evaluate", "{\"itemIds\": [%d], \"weaponId\": %d}".formatted(hat, pistol))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.weapon.id").value(pistol))
+                .andExpect(jsonPath("$.stats[0].stat").value("DAMAGE"))
+                .andExpect(jsonPath("$.stats[0].current").value(4))
+                .andExpect(jsonPath("$.stats[0].weaponCurrent").value(4))
+                .andExpect(jsonPath("$.stats[1].weaponCurrent").doesNotExist())
+                .andExpect(jsonPath("$.stats[22].own").value(true))
+                .andExpect(jsonPath("$.stats[22].top").value(10))
+                .andExpect(jsonPath("$.weaponAdvice.recommendedNow", hasSize(0))) //Elmo Comune: tutti i tipi a 0
+                .andExpect(jsonPath("$.weaponAdvice.recommendedTop[0]").value("MELEE"))
+                .andExpect(jsonPath("$.weaponAdvice.discouragedTop", hasSize(3)));
+        postJson("/api/custom-set/evaluate", "{\"itemIds\": [], \"weaponId\": %d}".formatted(hat))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("CUSTOM_SET_INVALID_WEAPON"));
+
+        final long setId = createSet("{\"name\": \"Vichingo armato\", \"itemIds\": [%d], \"weaponId\": %d}".formatted(hat, pistol));
+        mockMvc.perform(get("/api/custom-set").param("id", String.valueOf(setId)))
+                .andExpect(jsonPath("$.weapon.name").value("Pistola ad acqua"));
+
+        //Cambiando categoria resta un'arma; cambiando tipologia esce dal set
+        mockMvc.perform(put("/api/item").param("id", String.valueOf(pistol)).contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"name\": \"Pistola ad acqua\", \"type\": \"WEAPON\", \"specification\": \"ELEMENTAL\", \"bonuses\": %s}"
+                                                 .formatted(allBonusesJson())))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/api/custom-set").param("id", String.valueOf(setId))).andExpect(jsonPath("$.weapon.id").value(pistol));
+        mockMvc.perform(put("/api/item").param("id", String.valueOf(pistol)).contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"name\": \"Pistola ad acqua\", \"type\": \"ABILITY\", \"bonuses\": %s}".formatted(allBonusesJson())))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/api/custom-set").param("id", String.valueOf(setId)))
+                .andExpect(jsonPath("$.weapon").doesNotExist())
+                .andExpect(jsonPath("$.pieces", hasSize(1)));
+    }
+
     private long createItem(String name, String slot, String armorSet, String bonus) throws Exception {
         return id(postJson("/api/item", """
-                {"name": "%s", "type": "ARMOR", "specification": "%s", "armorSet": "%s", "bonuses": [%s]}"""
-                .formatted(name, slot, armorSet, bonus == null ? "" : bonus)).andExpect(status().isCreated()).andReturn());
+                {"name": "%s", "type": "ARMOR", "specification": "%s", "armorSet": "%s", "bonuses": %s}"""
+                .formatted(name, slot, armorSet, bonus == null ? allBonusesJson() : allBonusesJson(bonus))).andExpect(status().isCreated()).andReturn());
     }
 
     private long createWeapon() throws Exception {
-        return id(postJson("/api/item", "{\"name\": \"Spada\", \"type\": \"WEAPON\", \"specification\": \"MELEE\"}")
+        return id(postJson("/api/item", "{\"name\": \"Spada\", \"type\": \"WEAPON\", \"specification\": \"MELEE\", \"bonuses\": %s}"
+                                   .formatted(allBonusesJson()))
                           .andExpect(status().isCreated()).andReturn());
     }
 

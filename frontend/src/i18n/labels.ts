@@ -53,8 +53,14 @@ export const ARMOR_SET_LABELS: Record<ArmorSet, string> = {
 
 /** Unità del potenziamento: a valore ("+3 Fortuna") o in percentuale ("+3% Fortuna"). */
 export const STAT_UNIT_LABELS: Record<StatUnit, string> = {
-  FLAT: 'Valore',
+  FLAT: '#',
   PERCENT: '%',
+};
+
+/** Descrizione dell'unità, mostrata al passaggio del mouse. */
+export const STAT_UNIT_DESCRIPTIONS: Record<StatUnit, string> = {
+  FLAT: 'Aumento in valore',
+  PERCENT: 'Aumento in percentuale',
 };
 
 export const STAT_LABELS: Record<Stat, string> = {
@@ -82,6 +88,58 @@ export const STAT_LABELS: Record<Stat, string> = {
   KNOCKBACK: 'Contraccolpo',
 };
 
+/** Aggettivo concordato con la caratteristica, per i potenziamenti propri dell'arma ("Proprio danno", "Propria fortuna"). */
+const OWN_ADJECTIVES: Record<Stat, 'Proprio' | 'Propria' | 'Propri'> = {
+  DAMAGE: 'Proprio',
+  MAX_HP: 'Propri',
+  ATTACK_SPEED: 'Propria',
+  REGENERATION: 'Propria',
+  ARMOR: 'Propria',
+  PICK_UP_HEAL: 'Propria',
+  PICK_UP_RADIUS: 'Proprio',
+  MOVE_SPEED: 'Propria',
+  XP_GAIN: 'Proprio',
+  DODGE_CHANCE: 'Propria',
+  CRIT_CHANCE: 'Propria',
+  CRIT_DAMAGE: 'Proprio',
+  LIFE_STEAL: 'Proprio',
+  MELEE_DAMAGE: 'Proprio',
+  RANGED_DAMAGE: 'Proprio',
+  ELEMENTAL_DAMAGE: 'Proprio',
+  MECHANICAL_DAMAGE: 'Proprio',
+  LUCK: 'Propria',
+  PATROL_EARNINGS: 'Propri',
+  BOSS_DAMAGE: 'Proprio',
+  INTEREST: 'Propri',
+  KNOCKBACK: 'Proprio',
+};
+
+/**
+ * Caratteristica propria dell'arma: "Proprio danno", "Propri HP" (le sigle restano maiuscole);
+ * in minuscolo dentro una frase ("+10% proprio danno").
+ */
+export function ownStatLabel(stat: Stat, lowerCase = false): string {
+  const label = STAT_LABELS[stat];
+  const acronym = /^.[A-Z]/.test(label);
+  const adjective = lowerCase ? OWN_ADJECTIVES[stat].toLowerCase() : OWN_ADJECTIVES[stat];
+  return `${adjective} ${acronym ? label : label.charAt(0).toLowerCase() + label.slice(1)}`;
+}
+
+/** Set con la preposizione, per i nomi proposti: "del Bandito", "di Superman". */
+export const ARMOR_SET_OF_LABELS: Record<ArmorSet, string> = {
+  BANDIT: 'del Bandito',
+  KNIGHT: 'del Cavaliere',
+  VAMPIRE: 'del Vampiro',
+  MECHANIC: 'del Meccanico',
+  BANKER: 'del Banchiere',
+  TRAVELER: 'del Viaggiatore',
+  WIZARD: 'del Mago',
+  SUPERMAN: 'di Superman',
+  COWBOY: 'del Cowboy',
+  JESTER: 'del Giullare',
+  VIKING: 'del Vichingo',
+};
+
 export const SORT_ORDER_LABELS: Record<ItemSortOrder, string> = {
   ARMOR_SET: 'Armor Set',
   WEAPONS_FIRST: 'Weapons first',
@@ -103,4 +161,5 @@ export const ERROR_MESSAGES: Record<InternalErrorCode, string> = {
   CUSTOM_SET_NOT_FOUND: 'Il set non esiste più.',
   CUSTOM_SET_NAME_ALREADY_EXISTS: 'Esiste già un set con questo nome.',
   CUSTOM_SET_INVALID_PIECES: 'Il set può contenere solo armature, al massimo una per slot.',
+  CUSTOM_SET_INVALID_WEAPON: "L'item scelto come arma non è un'arma.",
 };

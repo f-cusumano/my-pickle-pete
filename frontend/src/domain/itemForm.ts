@@ -10,11 +10,16 @@ import type {
   StatUnit,
 } from '../api/types';
 
+/** Aumento minimo di un potenziamento (in valore o in percentuale). */
+export const MIN_BONUS_AMOUNT = 1;
+
 export interface BonusRow {
   stat: Stat | null;
   /** Valore o percentuale: alla scelta della caratteristica si propone la sua unità predefinita. */
   unit: StatUnit | null;
   amount: number | string;
+  /** Solo armi: potenziamento della sola arma ("+10% al proprio danno"). */
+  own: boolean;
 }
 
 /** Valori del modulo di censimento di un item. */
@@ -39,7 +44,7 @@ export function formOf(item: Item): ItemFormValues {
     bonuses: Object.fromEntries(
       item.bonuses.map((bonus) => [
         bonus.rarity,
-        { stat: bonus.stat, unit: bonus.unit, amount: bonus.amount },
+        { stat: bonus.stat, unit: bonus.unit, amount: bonus.amount, own: bonus.own },
       ]),
     ),
   };
@@ -51,8 +56,11 @@ function amountOf(row: BonusRow): number | null {
   return Number.isFinite(amount) ? amount : null;
 }
 
-function rowFilled(row: BonusRow | undefined): row is BonusRow {
-  return row !== undefined && (row.stat !== null || row.amount !== '');
+const EMPTY_ROW: BonusRow = { stat: null, unit: null, amount: '', own: false };
+
+/** Rarità che sbloccano un potenziamento (tutte tranne la base, Comune). */
+export function bonusRarities(constants: GameConstants): Rarity[] {
+  return constants.rarities.slice(1).map((rarity) => rarity.code);
 }
 
 /** Errori del modulo per campo (chiavi di @mantine/form), vuoto se il modulo è valido. */
@@ -72,10 +80,9 @@ export function validateForm(values: ItemFormValues, constants: GameConstants): 
   if (type.partOfArmorSet && values.armorSet === null) {
     errors.armorSet = 'Scegli il set';
   }
-  for (const [rarity, row] of Object.entries(values.bonuses)) {
-    if (!rowFilled(row)) {
-      continue;
-    }
+  // Ogni rarità oltre la base sblocca un potenziamento: vanno compilati tutti
+  for (const rarity of bonusRarities(constants)) {
+    const row = values.bonuses[rarity] ?? EMPTY_ROW;
     const amount = amountOf(row);
     if (row.stat === null) {
       errors[`bonuses.${rarity}.stat`] = 'Scegli la caratteristica';
@@ -83,14 +90,14 @@ export function validateForm(values: ItemFormValues, constants: GameConstants): 
     if (row.unit === null) {
       errors[`bonuses.${rarity}.unit`] = 'Scegli valore o percentuale';
     }
-    if (amount === null || amount <= 0) {
-      errors[`bonuses.${rarity}.amount`] = 'Valore maggiore di 0';
+    if (amount === null || amount < MIN_BONUS_AMOUNT) {
+      errors[`bonuses.${rarity}.amount`] = `Almeno ${String(MIN_BONUS_AMOUNT)}`;
     }
   }
   return errors;
 }
 
-/** Richiesta per il backend: specifica e set solo dove si applicano, potenziamenti solo se compilati. */
+/** Richiesta per il backend: specifica e set solo dove si applicano, potenziamenti per rarità crescente. */
 export function toRequest(values: ItemFormValues, constants: GameConstants): ItemRequest {
   const type = constants.itemTypes.find((t) => t.code === values.type);
   if (!type) {
@@ -102,7 +109,7 @@ export function toRequest(values: ItemFormValues, constants: GameConstants): Ite
       const row = values.bonuses[rarity];
       const amount = row ? amountOf(row) : null;
       return row?.stat && row.unit && amount !== null
-        ? [{ rarity, stat: row.stat, unit: row.unit, amount }]
+        ? [{ rarity, stat: row.stat, unit: row.unit, amount, own: type.code === 'WEAPON' && row.own }]
         : [];
     });
   return {

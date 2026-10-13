@@ -5,12 +5,11 @@ import com.fcusumano.mpp.core.model.Item;
 
 import java.util.List;
 
-/** Set di armatura completo con i pezzi censiti e il confronto tra caratteristiche attuali e top. */
-public record FullSet(ArmorSet armorSet, String bonusDescription, boolean bonusActive, List<Item> pieces, List<StatComparison> stats) {
+/** Set di armatura completo con i pezzi censiti, il confronto tra caratteristiche attuali e top e i tipi di arma consigliati. */
+public record FullSet(ArmorSet armorSet, String bonusDescription, boolean bonusActive, List<Item> pieces, SetStatistics statistics) {
 
     public FullSet {
         pieces = List.copyOf(pieces);
-        stats = List.copyOf(stats);
     }
 
     @Override

@@ -27,7 +27,8 @@ public record ItemResponse(long id,
              item.baseStat(), item.baseStatValue(),
              item.bonuses().stream()
                      .sorted((first, second) -> first.rarity().compareTo(second.rarity()))
-                     .map(bonus -> new RarityBonusResponse(bonus.rarity(), bonus.stat(), bonus.unit(), bonus.amount(), item.bonusUnlocked(bonus)))
+                     .map(bonus -> new RarityBonusResponse(bonus.rarity(), bonus.stat(), bonus.unit(), bonus.amount(), bonus.own(),
+                                                           item.bonusUnlocked(bonus)))
                      .toList());
     }
 

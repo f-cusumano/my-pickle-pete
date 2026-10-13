@@ -21,21 +21,30 @@ import {
   IconTrash,
   IconTrendingUp,
 } from '@tabler/icons-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useCustomSetCensus, useCustomSets, useGameConstants, useItems } from '../api/queries';
-import type { BestSetMode, CustomSet, GameConstants, Item, Rarity } from '../api/types';
+import type { BestSetMode, CustomSet, FullSet, GameConstants, Item, Rarity } from '../api/types';
 import { BestSetModal } from '../components/BestSetModal';
 import { CustomSetBonus } from '../components/CustomSetBonus';
 import { CustomSetEditor, type SetDraft } from '../components/CustomSetEditor';
 import { ItemModal } from '../components/ItemModal';
 import { SetPieces } from '../components/SetPieces';
 import { SetStatsTable } from '../components/SetStatsTable';
-import { armorSlots } from '../domain/customSets';
+import { WeaponAdviceCard } from '../components/WeaponAdviceCard';
+import { WeaponSlot } from '../components/WeaponSlot';
+import { armorSlots, customizedName, fullSetAsCustomSet, weaponSpecifications } from '../domain/customSets';
 import { statUnits } from '../domain/units';
 import { ARMOR_SET_LABELS, BEST_SET_TITLES } from '../i18n/labels';
 
-/** Custom Sets: set costruiti da zero o partendo dalle proposte Best now / Best potential. */
-export function CustomSetsPage() {
+interface Props {
+  /** Full Set da personalizzare (tasto "Personalizza" di Full Sets): si apre subito la modifica di un nuovo set. */
+  customizing: FullSet | null;
+  /** Il Full Set da personalizzare è stato preso in carico (non si riapre tornando sulla pagina). */
+  onCustomizingOpened: () => void;
+}
+
+/** Custom Sets: set costruiti da zero, da un Full Set o partendo dalle proposte Best now / Best potential. */
+export function CustomSetsPage({ customizing, onCustomizingOpened }: Props) {
   const constants = useGameConstants();
   const customSets = useCustomSets();
   const items = useItems('ARMOR_SET');
@@ -50,21 +59,39 @@ export function CustomSetsPage() {
       </Alert>
     );
   }
-  return <CustomSetList constants={constants.data} customSets={customSets.data} items={items.data} />;
+  return (
+    <CustomSetList
+      constants={constants.data}
+      customSets={customSets.data}
+      items={items.data}
+      customizing={customizing}
+      onCustomizingOpened={onCustomizingOpened}
+    />
+  );
 }
 
-interface ListProps {
+interface ListProps extends Props {
   constants: GameConstants;
   customSets: CustomSet[];
   items: Item[];
 }
 
-function CustomSetList({ constants, customSets, items }: ListProps) {
+function CustomSetList({ constants, customSets, items, customizing, onCustomizingOpened }: ListProps) {
   const census = useCustomSetCensus();
   const units = useMemo(() => statUnits(constants), [constants]);
   const rarities = useMemo<Rarity[]>(() => constants.rarities.map((rarity) => rarity.code), [constants]);
   const slots = useMemo(() => armorSlots(constants), [constants]);
-  const [draft, setDraft] = useState<SetDraft | null>(null);
+  const weaponCategories = useMemo(() => weaponSpecifications(constants), [constants]);
+  const [draft, setDraft] = useState<SetDraft | null>(() =>
+    customizing
+      ? { id: null, name: customizedName(customizing.armorSet), original: fullSetAsCustomSet(customizing) }
+      : null,
+  );
+  useEffect(() => {
+    if (customizing) {
+      onCustomizingOpened();
+    }
+  }, [customizing, onCustomizingOpened]);
   const [bestMode, setBestMode] = useState<BestSetMode | null>(null);
   const [openedId, setOpenedId] = useState<number | null>(null);
   // L'item aperto si rilegge dagli item aggiornati, così la modale segue rarità e livello
@@ -157,6 +184,11 @@ function CustomSetList({ constants, customSets, items }: ListProps) {
                   </Group>
                   <CustomSetBonus set={set} threshold={constants.armorSetBonusThreshold} />
                   <SetPieces slots={slots} pieces={set.pieces} onPiece={(piece) => setOpenedId(piece.id)} />
+                  <WeaponSlot
+                    weapon={set.weapon}
+                    onClick={set.weapon ? () => setOpenedId(set.weapon?.id ?? null) : undefined}
+                  />
+                  <WeaponAdviceCard advice={set.weaponAdvice} />
                   <SetStatsTable stats={set.stats} units={units} />
                 </Stack>
               </Accordion.Panel>
@@ -186,6 +218,7 @@ function CustomSetList({ constants, customSets, items }: ListProps) {
           draft={draft}
           items={items}
           slots={slots}
+          weaponCategories={weaponCategories}
           units={units}
           threshold={constants.armorSetBonusThreshold}
           onClose={() => setDraft(null)}

@@ -37,12 +37,13 @@ import java.util.stream.Collectors;
 
 import static com.fcusumano.mpp.core.Constants.BEST_SET_PROPOSALS;
 import static com.fcusumano.mpp.infrastructure.exception.InternalErrorCode.CUSTOM_SET_INVALID_PIECES;
+import static com.fcusumano.mpp.infrastructure.exception.InternalErrorCode.CUSTOM_SET_INVALID_WEAPON;
 import static com.fcusumano.mpp.infrastructure.exception.InternalErrorCode.CUSTOM_SET_NAME_ALREADY_EXISTS;
 import static com.fcusumano.mpp.infrastructure.exception.InternalErrorCode.CUSTOM_SET_NOT_FOUND;
 import static com.fcusumano.mpp.infrastructure.exception.InternalErrorCode.ITEM_NOT_FOUND;
 import static com.fcusumano.mpp.tools.FunctionUtils.exception;
 
-/** Casi d'uso sui set custom: salvataggio, valutazione di un set non salvato e proposte Best now / Best potential. */
+/** Casi d'uso sui set custom: salvataggio, valutazione di un set non salvato e proposte Best now / Best potential (senza arma). */
 @Service
 public class CustomSetService {
 
@@ -65,23 +66,23 @@ public class CustomSetService {
         final Context context = context();
         return customSetRepository.retrieveAll().stream()
                 .sorted(Comparator.comparing(CustomSet::name, String.CASE_INSENSITIVE_ORDER))
-                .map(customSet -> context.evaluate(customSet.id(), customSet.name(), context.items(customSet.itemIds())))
+                .map(context::evaluate)
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public EvaluatedSet single(long id) {
-        final CustomSet customSet = retrieve(id);
-        final Context context = context();
-        return context.evaluate(customSet.id(), customSet.name(), context.items(customSet.itemIds()));
+        return context().evaluate(retrieve(id));
     }
 
     @Transactional
     public EvaluatedSet create(CustomSetDefinition definition) {
         checkName(definition.name(), null);
         checkPieces(definition.itemIds());
+        checkWeapon(definition.weaponId());
         final long id = customSetRepository.insert(definition);
-        log.info("Custom set '{}' created with name '{}' and {} pieces", id, definition.name(), definition.itemIds().size());
+        log.info("Custom set '{}' created with name '{}', {} pieces and weapon '{}'", id, definition.name(), definition.itemIds().size(),
+                 definition.weaponId());
         return single(id);
     }
 
@@ -90,8 +91,10 @@ public class CustomSetService {
         retrieve(id);
         checkName(definition.name(), id);
         checkPieces(definition.itemIds());
+        checkWeapon(definition.weaponId());
         customSetRepository.update(id, definition);
-        log.info("Custom set '{}' updated with name '{}' and {} pieces", id, definition.name(), definition.itemIds().size());
+        log.info("Custom set '{}' updated with name '{}', {} pieces and weapon '{}'", id, definition.name(), definition.itemIds().size(),
+                 definition.weaponId());
         return single(id);
     }
 
@@ -104,9 +107,10 @@ public class CustomSetService {
 
     /** Set non salvato (da zero o in modifica): stessi calcoli di un set salvato. */
     @Transactional(readOnly = true)
-    public EvaluatedSet evaluate(List<Long> itemIds) {
+    public EvaluatedSet evaluate(List<Long> itemIds, Long weaponId) {
         final List<Item> pieces = checkPieces(itemIds);
-        return context().evaluate(null, null, pieces);
+        final Item weapon = checkWeapon(weaponId);
+        return context().evaluate(null, null, pieces, weapon);
     }
 
     /** Al massimo 3 set che massimizzano la caratteristica principale (e a parità la secondaria) nella configurazione scelta. */
@@ -115,7 +119,7 @@ public class CustomSetService {
         final Context context = context();
         final List<EvaluatedSet> proposals = BestSetFinder.find(context.id2item().values(), configuration, primary, secondary, BEST_SET_PROPOSALS)
                 .stream()
-                .map(pieces -> context.evaluate(null, null, pieces))
+                .map(pieces -> context.evaluate(null, null, pieces, null))
                 .toList();
         log.info("Best sets for {} by {} then {}: {} proposals", configuration, primary, secondary, proposals.size());
         return proposals;
@@ -156,6 +160,17 @@ public class CustomSetService {
         return pieces;
     }
 
+    /** Arma facoltativa: se indicata deve esistere ed essere un'arma. */
+    private Item checkWeapon(Long weaponId) {
+        if (weaponId == null) return null;
+        final Item weapon = itemRepository.retrieve(weaponId)
+                .orElseThrow(exception(message -> new ObjectNotFoundException(ITEM_NOT_FOUND, message), "Item '%s' not found.", weaponId));
+        if (weapon.type() != ItemType.WEAPON) {
+            throw new BadRequestException(CUSTOM_SET_INVALID_WEAPON, "Item '%s' is not a weapon.", weaponId);
+        }
+        return weapon;
+    }
+
     private Context context() {
         final Map<ArmorSet, String> set2description = new EnumMap<>(ArmorSet.class);
         for (ArmorSetInfo info : armorSetRepository.retrieveAll()) {
@@ -171,10 +186,15 @@ public class CustomSetService {
             return itemIds.stream().map(id2item::get).filter(Objects::nonNull).sorted(Comparator.comparing(Item::specification)).toList();
         }
 
-        EvaluatedSet evaluate(Long id, String name, List<Item> pieces) {
+        EvaluatedSet evaluate(CustomSet customSet) {
+            return evaluate(customSet.id(), customSet.name(), items(customSet.itemIds()),
+                            customSet.weaponId() == null ? null : id2item.get(customSet.weaponId()));
+        }
+
+        EvaluatedSet evaluate(Long id, String name, List<Item> pieces, Item weapon) {
             final ArmorSet bonusArmorSet = SetStatisticsCalculator.activeBonus(pieces).orElse(null);
-            return new EvaluatedSet(id, name, pieces, bonusArmorSet, bonusArmorSet == null ? null : set2description.get(bonusArmorSet),
-                                    SetStatisticsCalculator.compare(pieces));
+            return new EvaluatedSet(id, name, pieces, weapon, bonusArmorSet, bonusArmorSet == null ? null : set2description.get(bonusArmorSet),
+                                    SetStatisticsCalculator.compare(pieces, weapon));
         }
     }
 }

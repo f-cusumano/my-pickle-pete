@@ -3,7 +3,7 @@ import { IconArrowDown, IconArrowUp } from '@tabler/icons-react';
 import type { Highlight, Stat, StatComparison, StatUnit } from '../api/types';
 import { statKeyId, unitSuffix, type StatTrend, type Trend } from '../domain/customSets';
 import { formatStatValue } from '../domain/format';
-import { STAT_LABELS } from '../i18n/labels';
+import { STAT_LABELS, ownStatLabel } from '../i18n/labels';
 import classes from './SetStatsTable.module.css';
 
 const HIGHLIGHT_CLASSES: Record<Highlight, string | undefined> = {
@@ -19,8 +19,13 @@ interface Props {
   trends?: Map<string, StatTrend>;
 }
 
-/** Tabella delle caratteristiche di un set: valore attuale e top, con massimi e minimi evidenziati. */
+/**
+ * Tabella delle caratteristiche di un set: valore attuale e top, con massimi e minimi evidenziati.
+ * Il contributo dell'arma scelta è tra parentesi; le caratteristiche proprie dell'arma stanno in fondo, separate.
+ */
 export function SetStatsTable({ stats, units, trends }: Props) {
+  const general = stats.filter((row) => !row.own);
+  const own = stats.filter((row) => row.own);
   return (
     <Table withTableBorder withColumnBorders verticalSpacing={6} fz="sm">
       <Table.Thead>
@@ -31,33 +36,83 @@ export function SetStatsTable({ stats, units, trends }: Props) {
         </Table.Tr>
       </Table.Thead>
       <Table.Tbody>
-        {stats.map((row) => {
-          const trend = trends?.get(statKeyId(row));
-          const suffix = unitSuffix(row, units);
-          return (
-            <Table.Tr key={statKeyId(row)}>
-              <Table.Td>
-                {STAT_LABELS[row.stat]}
-                {/* La stessa caratteristica nell'altra unità ha una riga sua: si indica l'unità */}
-                {suffix && (
-                  <Text span size="xs" c="dimmed">
-                    {suffix}
-                  </Text>
-                )}
-              </Table.Td>
-              <Table.Td ta="right" className={HIGHLIGHT_CLASSES[row.currentHighlight]}>
-                <TrendArrow trend={trend?.current ?? null} />
-                <span className={classes.value}>{formatStatValue(row.current, row.unit)}</span>
-              </Table.Td>
-              <Table.Td ta="right" className={HIGHLIGHT_CLASSES[row.topHighlight]}>
-                <TrendArrow trend={trend?.top ?? null} />
-                <span className={classes.value}>{formatStatValue(row.top, row.unit)}</span>
-              </Table.Td>
-            </Table.Tr>
-          );
-        })}
+        {general.map((row) => (
+          <StatRow
+            key={statKeyId(row)}
+            row={row}
+            label={STAT_LABELS[row.stat]}
+            units={units}
+            trends={trends}
+          />
+        ))}
       </Table.Tbody>
+      {own.length > 0 && (
+        <Table.Tbody className={classes.ownSection}>
+          <Table.Tr>
+            <Table.Th colSpan={3} className={classes.ownTitle}>
+              Proprie dell&apos;arma
+            </Table.Th>
+          </Table.Tr>
+          {own.map((row) => (
+            <StatRow
+              key={statKeyId(row)}
+              row={row}
+              label={ownStatLabel(row.stat)}
+              units={units}
+              trends={trends}
+            />
+          ))}
+        </Table.Tbody>
+      )}
     </Table>
+  );
+}
+
+interface RowProps {
+  row: StatComparison;
+  label: string;
+  units: Record<Stat, StatUnit>;
+  trends?: Map<string, StatTrend>;
+}
+
+function StatRow({ row, label, units, trends }: RowProps) {
+  const trend = trends?.get(statKeyId(row));
+  const suffix = unitSuffix(row, units);
+  return (
+    <Table.Tr>
+      <Table.Td>
+        {label}
+        {/* La stessa caratteristica nell'altra unità ha una riga sua: si indica l'unità */}
+        {suffix && (
+          <Text span size="xs" c="dimmed">
+            {suffix}
+          </Text>
+        )}
+      </Table.Td>
+      <Table.Td ta="right" className={HIGHLIGHT_CLASSES[row.currentHighlight]}>
+        <TrendArrow trend={trend?.current ?? null} />
+        <span className={classes.value}>{formatStatValue(row.current, row.unit)}</span>
+        <WeaponValue value={row.weaponCurrent} unit={row.unit} />
+      </Table.Td>
+      <Table.Td ta="right" className={HIGHLIGHT_CLASSES[row.topHighlight]}>
+        <TrendArrow trend={trend?.top ?? null} />
+        <span className={classes.value}>{formatStatValue(row.top, row.unit)}</span>
+        <WeaponValue value={row.weaponTop} unit={row.unit} />
+      </Table.Td>
+    </Table.Tr>
+  );
+}
+
+/** Contributo dell'arma tra parentesi, solo se c'è: "+12% (+4%)". */
+function WeaponValue({ value, unit }: { value: number | null; unit: StatUnit }) {
+  if (value === null || value === 0) {
+    return null;
+  }
+  return (
+    <span className={classes.weapon} title="Contributo dell'arma">
+      {' '}
+      ({formatStatValue(value, unit)})
+    </span>
   );
 }
 
