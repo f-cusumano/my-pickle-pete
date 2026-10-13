@@ -257,3 +257,55 @@ export function swapPreview(candidate: Item, replaced: Item | null, constants: G
 
 /** Le quantità hanno al massimo due decimali: si tolgono gli errori delle somme in virgola mobile. */
 const round = (value: number) => Math.round(value * 100) / 100;
+
+/** Riga vuota di una caratteristica che l'altro set ha e questo no: tutto a zero, senza evidenziazioni. */
+const emptyRow = (key: StatKey & { own: boolean }): StatComparison => ({
+  stat: key.stat,
+  unit: key.unit,
+  own: key.own,
+  current: 0,
+  top: 0,
+  weaponCurrent: null,
+  weaponTop: null,
+  currentHighlight: 'NONE',
+  topHighlight: 'NONE',
+});
+
+/**
+ * Stesse righe nelle due tabelle da confrontare (set di partenza e modificato), così restano allineate:
+ * a ciascuna si aggiungono, a zero, le righe che ha solo l'altra. L'ordine è quello del backend:
+ * prima le caratteristiche generali nell'ordine del gioco (unità predefinita prima), poi quelle proprie;
+ * per le righe delle abilità (ability) conta prima il loro elenco chiuso.
+ */
+export function alignRows(
+  first: StatComparison[],
+  second: StatComparison[],
+  constants: GameConstants,
+  ability = false,
+): [StatComparison[], StatComparison[]] {
+  const stats = constants.stats.map((stat) => stat.code);
+  const defaults = Object.fromEntries(constants.stats.map((stat) => [stat.code, stat.defaultUnit]));
+  const fixed = ability
+    ? (constants.itemTypes.find((type) => type.code === 'ABILITY')?.fixedBonuses ?? []).map((key) =>
+        statKeyId(key),
+      )
+    : [];
+  const rank = (row: StatComparison) => {
+    const index = fixed.indexOf(statKeyId(row));
+    return index >= 0 ? index : fixed.length;
+  };
+  const compare = (a: StatComparison, b: StatComparison) =>
+    rank(a) - rank(b) ||
+    Number(a.own) - Number(b.own) ||
+    stats.indexOf(a.stat) - stats.indexOf(b.stat) ||
+    Number(defaults[b.stat] === b.unit) - Number(defaults[a.stat] === a.unit) ||
+    a.unit.localeCompare(b.unit);
+  const keys = new Map<string, StatComparison>();
+  [...first, ...second].forEach((row) => keys.set(statKeyId(row), row));
+  const ordered = [...keys.values()].sort(compare);
+  const complete = (rows: StatComparison[]) => {
+    const byKey = new Map(rows.map((row) => [statKeyId(row), row]));
+    return ordered.map((key) => byKey.get(statKeyId(key)) ?? emptyRow(key));
+  };
+  return [complete(first), complete(second)];
+}

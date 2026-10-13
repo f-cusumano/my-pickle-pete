@@ -28,11 +28,10 @@ import { BestSetModal } from '../components/BestSetModal';
 import { CustomSetBonus } from '../components/CustomSetBonus';
 import { CustomSetEditor, type SetDraft } from '../components/CustomSetEditor';
 import { ItemModal } from '../components/ItemModal';
-import { SetPieces } from '../components/SetPieces';
+import { SetGearList, SetItemList } from '../components/SetItemList';
 import { SetLevelStats } from '../components/SetLevelStats';
 import { SetStatsTable } from '../components/SetStatsTable';
 import { WeaponAdviceCard } from '../components/WeaponAdviceCard';
-import { GearSlot } from '../components/GearSlot';
 import { armorSlots, customizedName, fullSetAsCustomSet, weaponSpecifications } from '../domain/customSets';
 import { statUnits } from '../domain/units';
 import { ARMOR_SET_LABELS, BEST_SET_TITLES } from '../i18n/labels';
@@ -147,9 +146,12 @@ function CustomSetList({ constants, customSets, items, customizing, onCustomizin
                 <Accordion.Control>
                   {/* Su cellulare i badge vanno a capo sotto il nome invece di troncarsi */}
                   <Group justify="space-between" gap="xs" pr="xs">
-                    <Text fw={700} size="lg" ff="heading" style={{ overflowWrap: 'anywhere' }}>
-                      {set.name}
-                    </Text>
+                    <Group gap="lg" style={{ rowGap: 2 }}>
+                      <Text fw={700} size="lg" ff="heading" style={{ overflowWrap: 'anywhere' }}>
+                        {set.name}
+                      </Text>
+                      <SetLevelStats levelStats={set.levelStats} />
+                    </Group>
                     <Group gap={6} wrap="nowrap">
                       {set.bonusArmorSet && (
                         <Badge variant="light" color="pickle">
@@ -184,20 +186,13 @@ function CustomSetList({ constants, customSets, items, customizing, onCustomizin
                     </Button>
                   </Group>
                   <CustomSetBonus set={set} threshold={constants.armorSetBonusThreshold} />
-                  <Group align="flex-start" gap={24}>
-                    <SetPieces slots={slots} pieces={set.pieces} onPiece={(piece) => setOpenedId(piece.id)} />
-                    <GearSlot
-                      item={set.weapon}
-                      onClick={set.weapon ? () => setOpenedId(set.weapon?.id ?? null) : undefined}
-                    />
-                    <GearSlot
-                      kind="ABILITY"
-                      item={set.ability}
-                      onClick={set.ability ? () => setOpenedId(set.ability?.id ?? null) : undefined}
-                    />
-                    <SetLevelStats levelStats={set.levelStats} />
-                  </Group>
+                  <SetItemList slots={slots} pieces={set.pieces} onPiece={(piece) => setOpenedId(piece.id)} />
                   <WeaponAdviceCard advice={set.weaponAdvice} />
+                  <SetGearList
+                    weapon={set.weapon}
+                    ability={set.ability}
+                    onClick={(_kind, item) => setOpenedId(item?.id ?? null)}
+                  />
                   <SetStatsTable stats={set.stats} abilityStats={set.abilityStats} units={units} />
                 </Stack>
               </Accordion.Panel>

@@ -6,7 +6,7 @@ import type { ArmorSet, FullSet, GameConstants, Rarity, Specification, Stat, Sta
 import { ItemFormModal } from '../components/ItemFormModal';
 import { ItemModal } from '../components/ItemModal';
 import { SetBonusCard } from '../components/SetBonusCard';
-import { SetPieces } from '../components/SetPieces';
+import { SetItemList } from '../components/SetItemList';
 import { missingPieceName } from '../domain/itemForm';
 import { SetLevelStats } from '../components/SetLevelStats';
 import { SetStatsTable } from '../components/SetStatsTable';
@@ -62,11 +62,19 @@ function FullSetList({ constants, fullSets, onCustomize }: ListProps) {
         {fullSets.map((fullSet) => (
           <Accordion.Item key={fullSet.armorSet} value={fullSet.armorSet}>
             <Accordion.Control>
-              <Group justify="space-between" wrap="nowrap" pr="xs">
-                <Text fw={700} size="lg" ff="heading">
-                  {ARMOR_SET_LABELS[fullSet.armorSet]}
-                </Text>
-                <Badge variant="light" color={fullSet.pieces.length === slots.length ? 'pickle' : 'gray'}>
+              {/* Su cellulare il badge va a capo sotto il nome invece di troncarsi */}
+              <Group justify="space-between" gap="xs" pr="xs">
+                <Group gap="lg" style={{ rowGap: 2 }}>
+                  <Text fw={700} size="lg" ff="heading">
+                    {ARMOR_SET_LABELS[fullSet.armorSet]}
+                  </Text>
+                  <SetLevelStats levelStats={fullSet.levelStats} />
+                </Group>
+                <Badge
+                  variant="light"
+                  color={fullSet.pieces.length === slots.length ? 'pickle' : 'gray'}
+                  style={{ flexShrink: 0 }}
+                >
                   {fullSet.pieces.length}/{slots.length} pezzi
                 </Badge>
               </Group>
@@ -131,18 +139,13 @@ function FullSetDetail({ fullSet, slots, units, threshold, onOpen, onAdd, onCust
         active={fullSet.bonusActive}
         description={fullSet.bonusDescription}
       />
-      <Group align="flex-start" gap={24}>
-        <SetPieces
-          slots={slots}
-          pieces={fullSet.pieces}
-          onPiece={(piece) => onOpen(piece.id)}
-          onEmpty={onAdd}
-          emptyLabel={(slot) =>
-            `Aggiungi ${SPECIFICATION_LABELS[slot]} ${ARMOR_SET_LABELS[fullSet.armorSet]}`
-          }
-        />
-        <SetLevelStats levelStats={fullSet.levelStats} />
-      </Group>
+      <SetItemList
+        slots={slots}
+        pieces={fullSet.pieces}
+        onPiece={(piece) => onOpen(piece.id)}
+        onEmpty={onAdd}
+        emptyLabel={(slot) => `Aggiungi ${SPECIFICATION_LABELS[slot]} ${ARMOR_SET_LABELS[fullSet.armorSet]}`}
+      />
       <WeaponAdviceCard advice={fullSet.weaponAdvice} />
       <SetStatsTable stats={fullSet.stats} units={units} />
     </Stack>

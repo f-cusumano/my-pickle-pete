@@ -17,7 +17,8 @@ import { formatStatValue } from '../domain/format';
 import { useFullScreenModal } from '../hooks/useFullScreenModal';
 import { BEST_SET_TITLES } from '../i18n/labels';
 import { CustomSetBonus } from './CustomSetBonus';
-import { SetPieces } from './SetPieces';
+import { SetItemList } from './SetItemList';
+import { SetLevelStats } from './SetLevelStats';
 
 const BEST_SET_DESCRIPTIONS: Record<BestSetMode, string> = {
   now: 'I set migliori con rarità e livello attuali degli item.',
@@ -114,7 +115,10 @@ export function BestSetModal({ mode, constants, items, slots, units, onChoose, o
               <Stack gap="sm">
                 <Group justify="space-between" wrap="nowrap" align="flex-start">
                   <div>
-                    <Title order={4}>Proposta {index + 1}</Title>
+                    <Group gap="lg" style={{ rowGap: 2 }}>
+                      <Title order={4}>Proposta {index + 1}</Title>
+                      <SetLevelStats levelStats={proposal.levelStats} />
+                    </Group>
                     <Text size="sm">
                       {statKeyLabel(primary, units)} <b>{valueOf(proposal, primary)}</b>
                       {secondary && (
@@ -136,8 +140,8 @@ export function BestSetModal({ mode, constants, items, slots, units, onChoose, o
                     Scegli
                   </Button>
                 </Group>
-                <SetPieces slots={slots} pieces={proposal.pieces} showNames />
                 <CustomSetBonus set={proposal} threshold={constants.armorSetBonusThreshold} />
+                <SetItemList slots={slots} pieces={proposal.pieces} />
               </Stack>
             </Paper>
           ))}

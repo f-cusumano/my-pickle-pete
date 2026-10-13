@@ -12,6 +12,7 @@ import {
   statKeyOptions,
   statTrends,
   swapPreview,
+  alignRows,
   weaponAdviceText,
   weaponCandidates,
   weaponSpecifications,
@@ -227,5 +228,35 @@ describe('preview of a candidate in the picker', () => {
       'COOLDOWN',
       'DURATION',
     ]);
+  });
+});
+
+describe('compare two sets side by side', () => {
+  it('gives both tables the same rows, in the backend order', () => {
+    const own = { ...row('DAMAGE', 'PERCENT', 10, 10), own: true };
+    const original = [row('DAMAGE', 'PERCENT', 1, 2), row('LUCK', 'FLAT', 3, 3), own];
+    const modified = [
+      row('DAMAGE', 'PERCENT', 2, 2),
+      row('LUCK', 'PERCENT', 4, 4),
+      row('LUCK', 'FLAT', 1, 1),
+    ];
+    const [left, right] = alignRows(original, modified, CONSTANTS);
+    const ids = ['DAMAGE-PERCENT', 'LUCK-FLAT', 'LUCK-PERCENT', 'DAMAGE-PERCENT-own'];
+    expect(left.map((r) => statKeyId(r))).toEqual(ids);
+    expect(right.map((r) => statKeyId(r))).toEqual(ids);
+    expect(left[2]).toMatchObject({ current: 0, top: 0, currentHighlight: 'NONE' });
+    expect(right[3]).toMatchObject({ own: true, current: 0, top: 0 });
+    expect(right[1]).toMatchObject({ current: 1 });
+  });
+
+  it('keeps the abilities in their fixed order', () => {
+    const [left, right] = alignRows(
+      [row('DURATION', 'SECONDS', 1, 1)],
+      [row('COOLDOWN', 'SECONDS', 2, 2)],
+      CONSTANTS,
+      true,
+    );
+    expect(left.map((r) => r.stat)).toEqual(['COOLDOWN', 'DURATION']);
+    expect(right.map((r) => r.stat)).toEqual(['COOLDOWN', 'DURATION']);
   });
 });

@@ -1,12 +1,19 @@
 import { Box } from '@mantine/core';
-import { IconPencil, IconPlus } from '@tabler/icons-react';
-import type { ItemType, Rarity, Specification } from '../api/types';
+import { useMediaQuery } from '@mantine/hooks';
+import { IconPencil, IconPlus, IconX } from '@tabler/icons-react';
+import { useState } from 'react';
+import type { Item, ItemType, Rarity, Specification } from '../api/types';
 import { categoryImage } from '../domain/itemImages';
 import { RARITY_COLORS } from '../domain/rarityColors';
 import { ITEM_TYPE_ICONS } from './icons';
+import { ItemSummary } from './ItemSummary';
+import { PointerFloat } from './PointerFloat';
 
-/** Azione sovrapposta in trasparenza all'immagine: aggiungere un pezzo mancante o modificare quello presente. */
-export type ThumbnailAction = 'add' | 'edit';
+/**
+ * Simbolo sovrapposto all'immagine: aggiungere un pezzo mancante, modificare quello presente,
+ * oppure la X rossa di un pezzo che manca e non si può aggiungere da lì.
+ */
+export type ThumbnailAction = 'add' | 'edit' | 'missing';
 
 interface Props {
   type: ItemType | null;
@@ -18,10 +25,12 @@ interface Props {
   action?: ThumbnailAction;
   /** Senza cornice colorata (censimento, dove la rarità non conta): solo l'immagine con il bordo. */
   plain?: boolean;
+  /** Item rappresentato: passandoci col mouse se ne vede il resoconto. */
+  summary?: Item;
 }
 
 const EMPTY_FRAME = '#c9c4b5';
-const ACTION_ICONS = { add: IconPlus, edit: IconPencil };
+const ACTION_ICONS = { add: IconPlus, edit: IconPencil, missing: IconX };
 
 /** Immagine predefinita della categoria nella cornice del colore della rarità, con l'eventuale azione in trasparenza. */
 export function ItemThumbnail({
@@ -32,7 +41,11 @@ export function ItemThumbnail({
   size = 44,
   action,
   plain = false,
+  summary,
 }: Props) {
+  const canHover = useMediaQuery('(hover: hover) and (pointer: fine)');
+  const [pointer, setPointer] = useState<{ x: number; y: number } | null>(null);
+  const hoverable = summary !== undefined && canHover;
   const src = categoryImage(type, specification);
   const frame = plain ? 0 : Math.max(3, Math.round(size / 14));
   const FallbackIcon = type ? ITEM_TYPE_ICONS[type] : IconPlus;
@@ -41,6 +54,8 @@ export function ItemThumbnail({
     <Box
       role="img"
       aria-label={label}
+      onMouseMove={hoverable ? (event) => setPointer({ x: event.clientX, y: event.clientY }) : undefined}
+      onMouseLeave={hoverable ? () => setPointer(null) : undefined}
       style={{
         position: 'relative',
         width: size,
@@ -63,7 +78,7 @@ export function ItemThumbnail({
             width: '100%',
             height: '100%',
             borderRadius: Math.max(2, Math.round(size / 9)),
-            opacity: action === 'add' ? 0.45 : 1,
+            opacity: action === 'add' || action === 'missing' ? 0.45 : 1,
           }}
         />
       ) : (
@@ -94,12 +109,17 @@ export function ItemThumbnail({
           }}
         >
           <ActionIcon
-            size={Math.round(size * (action === 'add' ? 0.55 : 0.4))}
-            stroke={2.6}
-            color="#1b2a17"
-            style={{ opacity: action === 'add' ? 0.75 : 0.85, filter: 'drop-shadow(0 0 2px #fff)' }}
+            size={Math.round(size * (action === 'edit' ? 0.4 : 0.55))}
+            stroke={action === 'missing' ? 3.2 : 2.6}
+            color={action === 'missing' ? '#e03131' : '#1b2a17'}
+            style={{ opacity: action === 'edit' ? 0.85 : 0.75, filter: 'drop-shadow(0 0 2px #fff)' }}
           />
         </Box>
+      )}
+      {hoverable && pointer && (
+        <PointerFloat x={pointer.x} y={pointer.y}>
+          <ItemSummary item={summary} />
+        </PointerFloat>
       )}
     </Box>
   );
