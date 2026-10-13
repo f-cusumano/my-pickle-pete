@@ -137,7 +137,7 @@ export function CustomSetEditor({ draft, items, slots, weaponCategories, units, 
 
   const editable = (
     <Stack gap="md">
-      <Group align="flex-start" gap="lg">
+      <Group align="flex-start" gap={24}>
         <SetPieces
           slots={slots}
           pieces={Object.values(selection)}
@@ -163,7 +163,7 @@ export function CustomSetEditor({ draft, items, slots, weaponCategories, units, 
   );
   const fixed = original && (
     <Stack gap="md">
-      <Group align="flex-start" gap="lg">
+      <Group align="flex-start" gap={24}>
         <SetPieces slots={slots} pieces={original.pieces} showNames />
         <WeaponSlot weapon={original.weapon} />
         <SetLevelStats levelStats={original.levelStats} />

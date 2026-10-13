@@ -125,7 +125,7 @@ function FullSetDetail({ fullSet, slots, units, threshold, onOpen, onAdd, onCust
         active={fullSet.bonusActive}
         description={fullSet.bonusDescription}
       />
-      <Group align="flex-start" gap="lg">
+      <Group align="flex-start" gap={24}>
         <SetPieces
           slots={slots}
           pieces={fullSet.pieces}

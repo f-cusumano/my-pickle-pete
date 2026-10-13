@@ -1,6 +1,8 @@
-import { Stack, Text, Tooltip } from '@mantine/core';
+import { Group, Stack, Text, Tooltip } from '@mantine/core';
+import type { ReactNode } from 'react';
 import type { LevelStats } from '../api/types';
 import { formatStatValue } from '../domain/format';
+import { FistIcon, HeartIcon } from './LevelStatIcons';
 
 /**
  * Danno e HP dovuti al livello di pezzi e arma, attuali e al massimo potenziale: stanno fuori dalla tabella
@@ -13,13 +15,13 @@ export function SetLevelStats({ levelStats }: { levelStats: LevelStats }) {
         Dal livello
       </Text>
       <LevelLine
-        symbol="👊"
+        symbol={<FistIcon />}
         label="Danno"
         now={formatStatValue(levelStats.damageNow, 'PERCENT')}
         top={formatStatValue(levelStats.damageTop, 'PERCENT')}
       />
       <LevelLine
-        symbol="❤️"
+        symbol={<HeartIcon />}
         label="HP"
         now={formatStatValue(levelStats.hpNow, 'FLAT')}
         top={formatStatValue(levelStats.hpTop, 'FLAT')}
@@ -29,7 +31,7 @@ export function SetLevelStats({ levelStats }: { levelStats: LevelStats }) {
 }
 
 interface LineProps {
-  symbol: string;
+  symbol: ReactNode;
   label: string;
   now: string;
   top: string;
@@ -39,15 +41,17 @@ function LevelLine({ symbol, label, now, top }: LineProps) {
   const description = `${label} dal livello: ${now} attuale, ${top} al massimo potenziale`;
   return (
     <Tooltip label={description} events={{ hover: true, focus: true, touch: false }}>
-      <Text size="sm" aria-label={description} style={{ whiteSpace: 'nowrap' }}>
-        <span aria-hidden="true">{symbol}</span>{' '}
-        <Text span fw={700}>
-          {now}
-        </Text>{' '}
-        <Text span c="dimmed">
-          / {top}
+      <Group gap={6} wrap="nowrap" aria-label={description}>
+        {symbol}
+        <Text size="sm" style={{ whiteSpace: 'nowrap' }}>
+          <Text span fw={700}>
+            {now}
+          </Text>{' '}
+          <Text span c="dimmed">
+            / {top}
+          </Text>
         </Text>
-      </Text>
+      </Group>
     </Tooltip>
   );
 }

@@ -1,8 +1,8 @@
 import { Text, Tooltip, UnstyledButton } from '@mantine/core';
-import { useMediaQuery } from '@mantine/hooks';
 import type { Item, Specification } from '../api/types';
 import { formatLevel } from '../domain/format';
 import { thumbnailOf } from '../domain/itemImages';
+import { useSlotSize } from '../hooks/useSlotSize';
 import { SPECIFICATION_LABELS } from '../i18n/labels';
 import { ItemThumbnail, type ThumbnailAction } from './ItemThumbnail';
 import classes from './SetPieces.module.css';
@@ -32,9 +32,7 @@ export function SetPieces({
   emptyLabel,
   showNames = false,
 }: Props) {
-  // Su cellulare i 5 slot stanno su una riga sola
-  const compact = useMediaQuery('(max-width: 36em)', false, { getInitialValueInEffect: false });
-  const size = compact ? 52 : 64;
+  const size = useSlotSize();
   return (
     <div className={classes.pieces}>
       {slots.map((slot) => {

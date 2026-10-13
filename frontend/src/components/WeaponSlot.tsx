@@ -2,6 +2,7 @@ import { Group, Stack, Text, UnstyledButton } from '@mantine/core';
 import type { Item } from '../api/types';
 import { formatLevel } from '../domain/format';
 import { thumbnailOf } from '../domain/itemImages';
+import { useSlotSize } from '../hooks/useSlotSize';
 import { SPECIFICATION_LABELS } from '../i18n/labels';
 import { ItemThumbnail, type ThumbnailAction } from './ItemThumbnail';
 
@@ -15,16 +16,17 @@ interface Props {
 
 /** Arma di un set custom, accanto alle armature: immagine della categoria con "+" se manca. */
 export function WeaponSlot({ weapon, onClick, action }: Props) {
+  const size = useSlotSize(); // Grande come i pezzi del set
   const content = (
     <Group gap="sm" wrap="nowrap">
       {weapon ? (
-        <ItemThumbnail {...thumbnailOf(weapon)} size={52} action={action} />
+        <ItemThumbnail {...thumbnailOf(weapon)} size={size} action={action} />
       ) : (
         <ItemThumbnail
           type="WEAPON"
           specification="RANGED"
           label="Arma"
-          size={52}
+          size={size}
           action={onClick ? 'add' : undefined}
         />
       )}

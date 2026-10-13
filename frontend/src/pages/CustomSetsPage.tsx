@@ -184,7 +184,7 @@ function CustomSetList({ constants, customSets, items, customizing, onCustomizin
                     </Button>
                   </Group>
                   <CustomSetBonus set={set} threshold={constants.armorSetBonusThreshold} />
-                  <Group align="flex-start" gap="lg">
+                  <Group align="flex-start" gap={24}>
                     <SetPieces slots={slots} pieces={set.pieces} onPiece={(piece) => setOpenedId(piece.id)} />
                     <WeaponSlot
                       weapon={set.weapon}
