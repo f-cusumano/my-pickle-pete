@@ -13,9 +13,11 @@ import {
   Tooltip,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
+import { useQueryClient } from '@tanstack/react-query';
+import { IconArrowRight } from '@tabler/icons-react';
 import { useFullScreenModal } from '../hooks/useFullScreenModal';
 import { useState, type ReactNode } from 'react';
-import { errorMessage, useItemCensus } from '../api/queries';
+import { errorMessage, useItemCensus, useItemProgress, useRefreshSets } from '../api/queries';
 import type { GameConstants, Item, ItemType, Rarity, Stat, StatUnit } from '../api/types';
 import { statKeyId } from '../domain/customSets';
 import { statSign } from '../domain/format';
@@ -41,6 +43,7 @@ import {
   STAT_UNIT_LABELS,
   ownStatLabel,
 } from '../i18n/labels';
+import { ItemDetail } from './ItemDetail';
 import { ItemThumbnail } from './ItemThumbnail';
 import { RarityBadge } from './RarityBadge';
 import classes from './ItemFormModal.module.css';
@@ -51,16 +54,26 @@ interface Props {
   item: Item | null;
   /** Valori di partenza di un nuovo item (es. set e slot del pezzo mancante da aggiungere). */
   preset?: Partial<ItemFormValues>;
-  /** Item appena salvato (es. per metterlo subito nello slot da cui è partito il censimento). */
+  /**
+   * Item appena salvato (es. per metterlo subito nello slot da cui è partito il censimento): per un item nuovo con
+   * la rarità e il livello scelti nella seconda fase, se ci si passa.
+   */
   onSaved?: (saved: Item) => void;
   onClose: () => void;
 }
 
-/** Censimento di un item: dati fissi e potenziamento sbloccato da ogni rarità; l'immagine è quella della categoria. */
+/**
+ * Censimento di un item: dati fissi e potenziamento sbloccato da ogni rarità; l'immagine è quella della categoria.
+ * Un item nuovo si può salvare e chiudere, oppure salvare e passare alla seconda fase: rarità e livello.
+ */
 export function ItemFormModal({ constants, item, preset, onSaved, onClose }: Props) {
   const fullScreen = useFullScreenModal();
   const census = useItemCensus();
   const [serverError, setServerError] = useState<string | null>(null);
+  // Item nuovo appena creato col tasto "Rarità e livello": la modale passa alla seconda fase
+  const [created, setCreated] = useState<Item | null>(null);
+  // Tasto premuto per salvare un item nuovo: solo salvataggio o passaggio alla seconda fase
+  const [saving, setSaving] = useState<'close' | 'progress' | null>(null);
   const units = statUnits(constants);
   const form = useForm<ItemFormValues>({
     initialValues: item ? formOf(item) : { ...emptyForm(), ...preset },
@@ -70,16 +83,26 @@ export function ItemFormModal({ constants, item, preset, onSaved, onClose }: Pro
   const rarities = bonusRarities(constants);
   const fixed = fixedBonuses(constants, form.values.type);
 
-  const submit = form.onSubmit((values) => {
+  const submit = form.onSubmit((values, event) => {
     setServerError(null);
+    const submitter = (event?.nativeEvent as SubmitEvent | undefined)?.submitter;
+    const toProgress = submitter?.dataset.step === 'progress';
+    setSaving(toProgress ? 'progress' : 'close');
     census.save.mutate(
       { id: item?.id ?? null, request: toRequest(values, constants) },
       {
         onSuccess: (saved) => {
-          onSaved?.(saved);
-          onClose();
+          if (toProgress) {
+            setCreated(saved);
+          } else {
+            onSaved?.(saved);
+            onClose();
+          }
         },
-        onError: (error) => setServerError(errorMessage(error)),
+        onError: (error) => {
+          setSaving(null);
+          setServerError(errorMessage(error));
+        },
       },
     );
   });
@@ -94,6 +117,19 @@ export function ItemFormModal({ constants, item, preset, onSaved, onClose }: Pro
     form.setFieldValue('specification', null);
     form.setFieldValue('armorSet', null);
   };
+
+  if (created) {
+    return (
+      <NewItemProgress
+        item={created}
+        constants={constants}
+        onDone={(done) => {
+          onSaved?.(done);
+          onClose();
+        }}
+      />
+    );
+  }
 
   return (
     <Modal
@@ -200,12 +236,105 @@ export function ItemFormModal({ constants, item, preset, onSaved, onClose }: Pro
             <Button variant="default" onClick={onClose}>
               Annulla
             </Button>
-            <Button type="submit" loading={census.save.isPending}>
-              Salva
-            </Button>
+            {item ? (
+              <Button type="submit" loading={census.save.isPending}>
+                Salva
+              </Button>
+            ) : (
+              <>
+                <Button
+                  type="submit"
+                  variant="light"
+                  loading={census.save.isPending && saving === 'close'}
+                  disabled={census.save.isPending}
+                >
+                  Salva
+                </Button>
+                <Button
+                  type="submit"
+                  rightSection={<IconArrowRight size={18} />}
+                  loading={census.save.isPending && saving === 'progress'}
+                  disabled={census.save.isPending}
+                  data-step="progress"
+                >
+                  Rarità e livello
+                </Button>
+              </>
+            )}
           </Group>
         </Stack>
       </form>
+    </Modal>
+  );
+}
+
+interface ProgressProps {
+  item: Item;
+  constants: GameConstants;
+  onDone: (item: Item) => void;
+}
+
+/**
+ * Seconda fase del censimento di un item nuovo: rarità e livello, come nel dettaglio dell'item.
+ * Alla fine si aspetta l'ultimo salvataggio in corso (es. il livello scritto a mano), così chi riceve l'item lo ha
+ * aggiornato.
+ */
+function NewItemProgress({ item, constants, onDone }: ProgressProps) {
+  const fullScreen = useFullScreenModal();
+  const refreshSets = useRefreshSets();
+  const [current, setCurrent] = useState(item);
+  const [finishing, setFinishing] = useState(false);
+  const finish = (done: Item) => {
+    // Un pezzo nuovo compare subito nel suo Full Set: i set si rileggono con rarità e livello scelti
+    void refreshSets();
+    onDone(done);
+  };
+  const progress = useItemProgress((updated) => {
+    setCurrent(updated);
+    if (finishing) {
+      finish(updated);
+    }
+  });
+  const busy = progress.rarity.isPending || progress.level.isPending;
+  const queryClient = useQueryClient();
+  const done = () => {
+    // Si guarda il client e non "busy": il livello scritto a mano si salva uscendo dal campo, cioè proprio col clic su Fine
+    if (queryClient.isMutating() > 0) {
+      setFinishing(true);
+    } else {
+      finish(current);
+    }
+  };
+  const rarities = constants.rarities.map((rarity) => rarity.code);
+  return (
+    <Modal
+      opened
+      onClose={done}
+      title="Rarità e livello"
+      size="lg"
+      fullScreen={fullScreen}
+      centered={!fullScreen}
+    >
+      <ItemDetail
+        item={current}
+        rarities={rarities}
+        units={statUnits(constants)}
+        editing={{
+          baseStatPerLevel: constants.baseStatPerLevel,
+          busy,
+          onRarityChange: (rarity) => {
+            if (rarity !== current.rarity) {
+              progress.rarity.mutate({ id: current.id, rarity });
+            }
+          },
+          onLevelChange: (level) => progress.level.mutate({ id: current.id, level }),
+        }}
+      />
+      <Group justify="flex-end" mt="xl">
+        <Button onClick={done} loading={busy && finishing}>
+          Fine
+        </Button>
+      </Group>
     </Modal>
   );
 }

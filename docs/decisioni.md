@@ -99,6 +99,10 @@ Il prompt è chiaro nella struttura generale (header, menu, Items, Full Sets, Cu
 - In fondo alla scelta di un pezzo, dell'arma o dell'abilità c'è "Censisci nuovo" (0.5.4): apre il censimento con
   tipologia e specifica dello slot e un nome da cambiare ("Nuovo cappello", "Nuovi occhiali", "Nuova arma", "Nuova
   abilità"); per l'arma la categoria si sceglie nel censimento. L'item salvato va subito nello slot del set in modifica.
+- Censimento in due fasi (0.5.5): un item nuovo si salva con "Salva" (chiude) oppure con "Rarità e livello", che lo
+  salva e passa alla seconda fase, uguale al dettaglio dell'item; con "Fine" (o chiudendo) l'item passa a chi l'ha
+  chiesto (es. lo slot del set custom) con la rarità e il livello scelti. Vale ovunque si censisca un item nuovo
+  (Censimento, "+" dei Full Sets, "Censisci nuovo"); la modifica di un item esistente resta in una fase.
 
 ## 5. Aspetti tecnici
 16. ✅ **Architettura.** App solo per te con database H2. Regole da Dropbox/MyClaudeProjects/MyCodingStyle (vedi sotto).
