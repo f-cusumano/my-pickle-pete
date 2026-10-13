@@ -4,6 +4,7 @@ import type {
   FullSet,
   GameConstants,
   Item,
+  RarityBonus,
   Specification,
   Stat,
   StatComparison,
@@ -195,3 +196,64 @@ export function fullSetAsCustomSet(fullSet: FullSet): CustomSet {
 export function sameSelection(first: SlotSelection, second: SlotSelection, slots: Specification[]): boolean {
   return slots.every((slot) => first[slot]?.id === second[slot]?.id);
 }
+
+/** Variazione di una caratteristica scegliendo un candidato: attuale (potenziamenti sbloccati) e top (tutti). */
+export interface StatDelta extends StatKey {
+  own: boolean;
+  current: number;
+  top: number;
+}
+
+/** Somma i potenziamenti di un item per riga, con segno: +1 per il candidato, -1 per l'item che sostituisce. */
+function addBonuses(totals: Map<string, StatDelta>, bonuses: RarityBonus[], sign: 1 | -1) {
+  bonuses.forEach((bonus) => {
+    const id = statKeyId(bonus);
+    const delta = totals.get(id) ?? {
+      stat: bonus.stat,
+      unit: bonus.unit,
+      own: bonus.own,
+      current: 0,
+      top: 0,
+    };
+    delta.top += sign * bonus.amount;
+    if (bonus.unlocked) {
+      delta.current += sign * bonus.amount;
+    }
+    totals.set(id, delta);
+  });
+}
+
+/**
+ * Caratteristiche che cambiano mettendo il candidato al posto dell'item dello slot (o nello slot vuoto):
+ * solo le righe con una variazione, nell'ordine delle caratteristiche del gioco e con quelle proprie in fondo.
+ * Le caratteristiche di un set sono la somma dei potenziamenti, quindi basta la differenza tra i due item.
+ */
+export function swapPreview(candidate: Item, replaced: Item | null, constants: GameConstants): StatDelta[] {
+  const totals = new Map<string, StatDelta>();
+  addBonuses(totals, candidate.bonuses, 1);
+  if (replaced) {
+    addBonuses(totals, replaced.bonuses, -1);
+  }
+  // Le abilità seguono il loro elenco chiuso, le altre l'ordine del gioco
+  const fixed = (constants.itemTypes.find((type) => type.code === candidate.type)?.fixedBonuses ?? []).map(
+    (key) => statKeyId(key),
+  );
+  const stats = constants.stats.map((stat) => stat.code);
+  const rank = (delta: StatDelta) => {
+    const index = fixed.indexOf(statKeyId(delta));
+    return index >= 0 ? index : fixed.length;
+  };
+  return [...totals.values()]
+    .map((delta) => ({ ...delta, current: round(delta.current), top: round(delta.top) }))
+    .filter((delta) => delta.current !== 0 || delta.top !== 0)
+    .sort(
+      (first, second) =>
+        rank(first) - rank(second) ||
+        Number(first.own) - Number(second.own) ||
+        stats.indexOf(first.stat) - stats.indexOf(second.stat) ||
+        first.unit.localeCompare(second.unit),
+    );
+}
+
+/** Le quantità hanno al massimo due decimali: si tolgono gli errori delle somme in virgola mobile. */
+const round = (value: number) => Math.round(value * 100) / 100;
