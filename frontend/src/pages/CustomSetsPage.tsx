@@ -29,6 +29,7 @@ import { CustomSetBonus } from '../components/CustomSetBonus';
 import { CustomSetEditor, type SetDraft } from '../components/CustomSetEditor';
 import { ItemModal } from '../components/ItemModal';
 import { SetPieces } from '../components/SetPieces';
+import { SetLevelStats } from '../components/SetLevelStats';
 import { SetStatsTable } from '../components/SetStatsTable';
 import { WeaponAdviceCard } from '../components/WeaponAdviceCard';
 import { WeaponSlot } from '../components/WeaponSlot';
@@ -183,11 +184,14 @@ function CustomSetList({ constants, customSets, items, customizing, onCustomizin
                     </Button>
                   </Group>
                   <CustomSetBonus set={set} threshold={constants.armorSetBonusThreshold} />
-                  <SetPieces slots={slots} pieces={set.pieces} onPiece={(piece) => setOpenedId(piece.id)} />
-                  <WeaponSlot
-                    weapon={set.weapon}
-                    onClick={set.weapon ? () => setOpenedId(set.weapon?.id ?? null) : undefined}
-                  />
+                  <Group align="flex-start" gap="lg">
+                    <SetPieces slots={slots} pieces={set.pieces} onPiece={(piece) => setOpenedId(piece.id)} />
+                    <WeaponSlot
+                      weapon={set.weapon}
+                      onClick={set.weapon ? () => setOpenedId(set.weapon?.id ?? null) : undefined}
+                    />
+                    <SetLevelStats levelStats={set.levelStats} />
+                  </Group>
                   <WeaponAdviceCard advice={set.weaponAdvice} />
                   <SetStatsTable stats={set.stats} units={units} />
                 </Stack>

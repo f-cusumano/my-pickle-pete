@@ -8,6 +8,7 @@ import com.fcusumano.mpp.core.enums.StatUnit;
 import com.fcusumano.mpp.core.model.Item;
 import com.fcusumano.mpp.core.model.StatKey;
 import com.fcusumano.mpp.core.utils.bo.Highlight;
+import com.fcusumano.mpp.core.utils.bo.LevelStats;
 import com.fcusumano.mpp.core.utils.bo.SetStatistics;
 import com.fcusumano.mpp.core.utils.bo.StatComparison;
 import com.fcusumano.mpp.core.utils.bo.WeaponAdvice;
@@ -28,7 +29,8 @@ class SetStatisticsCalculatorTest {
     private static final List<Item> COWBOY = List.of(
             armor(1, "Cappello", ArmorSet.COWBOY, Specification.HAT, Rarity.UNCOMMON, 5, bonus(Rarity.UNCOMMON, Stat.CRIT_CHANCE, "2")),
             armor(2, "Occhiali", ArmorSet.COWBOY, Specification.GLASSES, Rarity.COMMON, 3, bonus(Rarity.UNCOMMON, Stat.CRIT_CHANCE, "2")),
-            armor(3, "Petto", ArmorSet.COWBOY, Specification.CHEST, Rarity.COMMON, 10),
+            armor(3, "Petto", ArmorSet.COWBOY, Specification.CHEST, Rarity.UNCOMMON, 10,
+                  bonus(Rarity.UNCOMMON, Stat.MAX_HP, "5"), bonus(Rarity.RARE, Stat.ARMOR, "3")),
             armor(4, "Schiena", ArmorSet.COWBOY, Specification.BACK, Rarity.COMMON, 1),
             armor(5, "Stivali", ArmorSet.COWBOY, Specification.BOOTS, Rarity.COMMON, 1));
 
@@ -53,43 +55,56 @@ class SetStatisticsCalculatorTest {
     }
 
     @Test
-    void currentAndTopSums() {
+    void currentAndTopSumsOnlyBonuses() {
         final List<StatComparison> rows = SetStatisticsCalculator.compare(COWBOY, null).rows();
-        final StatComparison damage = row(rows, Stat.DAMAGE);
-        Assertions.assertEquals(0, new BigDecimal("32").compareTo(damage.current())); //4 x (5 + 3)
-        Assertions.assertEquals(0, new BigDecimal("792").compareTo(damage.top())); //2 x 4 x 99
-        final StatComparison hp = row(rows, Stat.MAX_HP);
-        Assertions.assertEquals(0, new BigDecimal("48").compareTo(hp.current())); //4 x (10 + 1 + 1)
-        Assertions.assertEquals(0, new BigDecimal("1188").compareTo(hp.top()));
         final StatComparison crit = row(rows, Stat.CRIT_CHANCE);
         Assertions.assertEquals(0, new BigDecimal("2").compareTo(crit.current())); //Solo il cappello è Incomune
         Assertions.assertEquals(0, new BigDecimal("4").compareTo(crit.top()));
+        final StatComparison armor = row(rows, Stat.ARMOR);
+        Assertions.assertEquals(0, BigDecimal.ZERO.compareTo(armor.current())); //Raro non ancora raggiunto
+        Assertions.assertEquals(0, new BigDecimal("3").compareTo(armor.top()));
+        //Danno e HP del livello stanno fuori dalla tabella: restano solo i potenziamenti
+        final StatComparison hp = row(rows, Stat.MAX_HP);
+        Assertions.assertEquals(0, new BigDecimal("5").compareTo(hp.current()));
+        Assertions.assertEquals(0, new BigDecimal("5").compareTo(hp.top()));
+        Assertions.assertEquals(0, BigDecimal.ZERO.compareTo(row(rows, Stat.DAMAGE).top()));
+    }
+
+    @Test
+    void levelStatsSumBaseStatsOfPiecesAndWeapon() {
+        Assertions.assertEquals(new LevelStats(32, 792, 48, 1188), //Danno 4 x (5 + 3) e 2 x 4 x 99, HP 4 x (10 + 1 + 1) e 3 x 4 x 99
+                                SetStatisticsCalculator.compare(COWBOY, null).levelStats());
+        final Item pistol = weapon(8, "Pistola", Specification.RANGED, Rarity.UNCOMMON, 2);
+        Assertions.assertEquals(new LevelStats(40, 1188, 48, 1188), SetStatisticsCalculator.compare(COWBOY, pistol).levelStats());
+        Assertions.assertEquals(new LevelStats(0, 0, 0, 0), SetStatisticsCalculator.compare(List.of(), null).levelStats());
     }
 
     @Test
     void highlightsPerColumn() {
         final List<StatComparison> rows = SetStatisticsCalculator.compare(COWBOY, null).rows();
-        //Attuale: HP 48 unico, poi Danno 32; il minimo è 0
+        //Attuale: HP 5 unico, poi Critico 2; il minimo è 0
         Assertions.assertEquals(Highlight.BEST, row(rows, Stat.MAX_HP).currentHighlight());
-        Assertions.assertEquals(Highlight.BEST, row(rows, Stat.DAMAGE).currentHighlight());
-        Assertions.assertEquals(Highlight.NONE, row(rows, Stat.CRIT_CHANCE).currentHighlight());
-        Assertions.assertEquals(Highlight.WORST, row(rows, Stat.LUCK).currentHighlight());
-        Assertions.assertEquals(Highlight.BEST, row(rows, Stat.DAMAGE).topHighlight());
+        Assertions.assertEquals(Highlight.BEST, row(rows, Stat.CRIT_CHANCE).currentHighlight());
+        Assertions.assertEquals(Highlight.WORST, row(rows, Stat.ARMOR).currentHighlight());
+        Assertions.assertEquals(Highlight.WORST, row(rows, Stat.DAMAGE).currentHighlight());
+        //Top: HP 5 unico, poi Critico 4; l'Armatura (3) non è evidenziata
+        Assertions.assertEquals(Highlight.BEST, row(rows, Stat.CRIT_CHANCE).topHighlight());
+        Assertions.assertEquals(Highlight.NONE, row(rows, Stat.ARMOR).topHighlight());
     }
 
     @Test
     void weaponValuesStaySeparateButCountForHighlights() {
-        //Arma Incomune 1/20: +4% Danno dal livello, +3 Fortuna sbloccata, +10% al proprio danno ancora bloccato al Raro
+        //Arma Incomune 1/20: +3 Fortuna sbloccata, +10% al proprio danno ancora bloccato al Raro
         final Item pistol = weapon(8, "Pistola", Specification.RANGED, Rarity.UNCOMMON, 1,
                                    bonus(Rarity.UNCOMMON, Stat.LUCK, "3"), ownBonus(Rarity.RARE, Stat.DAMAGE, "10"));
         final List<StatComparison> rows = SetStatisticsCalculator.compare(COWBOY, pistol).rows();
         final StatComparison luck = row(rows, Stat.LUCK);
         Assertions.assertEquals(0, BigDecimal.ZERO.compareTo(luck.current())); //Il set da solo
         Assertions.assertEquals(0, new BigDecimal("3").compareTo(luck.weaponCurrent()));
-        //Senza arma la Fortuna (0) sarebbe tra i minimi; col totale vale 3 e non è evidenziata
-        Assertions.assertEquals(Highlight.NONE, luck.currentHighlight());
+        //Senza arma la Fortuna (0) sarebbe tra i minimi; col totale vale 3, secondo valore dopo gli HP (5)
+        Assertions.assertEquals(Highlight.BEST, luck.currentHighlight());
         Assertions.assertNull(row(rows, Stat.CRIT_CHANCE).weaponCurrent()); //L'arma non porta la caratteristica
-        Assertions.assertEquals(0, new BigDecimal("4").compareTo(row(rows, Stat.DAMAGE).weaponCurrent()));
+        Assertions.assertNull(row(rows, Stat.DAMAGE).weaponCurrent()); //Il Danno del livello sta fuori dalla tabella
         //In fondo la riga propria dell'arma, con i soli valori dell'arma e senza evidenziazione
         final StatComparison own = rows.getLast();
         Assertions.assertEquals(StatKey.ownOf(Stat.DAMAGE, StatUnit.PERCENT), own.key());

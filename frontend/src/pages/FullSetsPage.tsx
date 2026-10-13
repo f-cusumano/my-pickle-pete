@@ -7,6 +7,7 @@ import { ItemFormModal } from '../components/ItemFormModal';
 import { ItemModal } from '../components/ItemModal';
 import { SetBonusCard } from '../components/SetBonusCard';
 import { SetPieces } from '../components/SetPieces';
+import { SetLevelStats } from '../components/SetLevelStats';
 import { SetStatsTable } from '../components/SetStatsTable';
 import { WeaponAdviceCard } from '../components/WeaponAdviceCard';
 import { armorSlots } from '../domain/customSets';
@@ -124,13 +125,18 @@ function FullSetDetail({ fullSet, slots, units, threshold, onOpen, onAdd, onCust
         active={fullSet.bonusActive}
         description={fullSet.bonusDescription}
       />
-      <SetPieces
-        slots={slots}
-        pieces={fullSet.pieces}
-        onPiece={(piece) => onOpen(piece.id)}
-        onEmpty={onAdd}
-        emptyLabel={(slot) => `Aggiungi ${SPECIFICATION_LABELS[slot]} ${ARMOR_SET_LABELS[fullSet.armorSet]}`}
-      />
+      <Group align="flex-start" gap="lg">
+        <SetPieces
+          slots={slots}
+          pieces={fullSet.pieces}
+          onPiece={(piece) => onOpen(piece.id)}
+          onEmpty={onAdd}
+          emptyLabel={(slot) =>
+            `Aggiungi ${SPECIFICATION_LABELS[slot]} ${ARMOR_SET_LABELS[fullSet.armorSet]}`
+          }
+        />
+        <SetLevelStats levelStats={fullSet.levelStats} />
+      </Group>
       <WeaponAdviceCard advice={fullSet.weaponAdvice} />
       <SetStatsTable stats={fullSet.stats} units={units} />
     </Stack>

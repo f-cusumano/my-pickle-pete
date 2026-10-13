@@ -6,12 +6,16 @@ import com.fcusumano.mpp.core.utils.bo.FullSet;
 
 import java.util.List;
 
-/** Set completo: pezzi in ordine di slot, tabella delle caratteristiche attuali e top con le evidenziazioni e armi consigliate. */
+/**
+ * Set completo: pezzi in ordine di slot, Danno e HP dovuti al livello, tabella delle caratteristiche attuali e top
+ * con le evidenziazioni e armi consigliate.
+ */
 public record FullSetResponse(ArmorSet armorSet, String bonusDescription, boolean bonusActive, List<ItemResponse> pieces,
-                              List<StatComparisonResponse> stats, WeaponAdviceResponse weaponAdvice) {
+                              LevelStatsResponse levelStats, List<StatComparisonResponse> stats, WeaponAdviceResponse weaponAdvice) {
 
     public FullSetResponse(FullSet fullSet) {
         this(fullSet.armorSet(), fullSet.bonusDescription(), fullSet.bonusActive(), ItemResponse.of(fullSet.pieces()),
-             StatComparisonResponse.of(fullSet.statistics().rows()), new WeaponAdviceResponse(fullSet.statistics()));
+             new LevelStatsResponse(fullSet.statistics().levelStats()), StatComparisonResponse.of(fullSet.statistics().rows()),
+             new WeaponAdviceResponse(fullSet.statistics()));
     }
 }

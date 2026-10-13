@@ -57,6 +57,11 @@ public record Item(Long id,
         return baseStatValue(level);
     }
 
+    /** Valore della caratteristica base al livello massimo della rarità top. */
+    public int topBaseStatValue() {
+        return baseStatValue(Rarity.top().maxLevel());
+    }
+
     public Optional<RarityBonus> bonus4(Rarity bonusRarity) {
         return bonuses.stream().filter(b -> b.rarity() == bonusRarity).findFirst();
     }
@@ -65,23 +70,22 @@ public record Item(Long id,
         return bonus.rarity().reachedBy(rarity);
     }
 
-    /** Caratteristiche alla rarità e al livello effettivi. */
+    /** Potenziamenti sbloccati dalla rarità effettiva (senza la caratteristica base del livello). */
     public SortedMap<StatKey, BigDecimal> currentStats() {
-        return stats4(rarity, level);
+        return stats4(rarity);
     }
 
-    /** Caratteristiche a rarità e livello massimi. */
+    /** Potenziamenti di tutte le rarità (senza la caratteristica base del livello). */
     public SortedMap<StatKey, BigDecimal> topStats() {
-        return stats4(Rarity.top(), Rarity.top().maxLevel());
+        return stats4(Rarity.top());
     }
 
     /**
-     * Somma per caratteristica e unità: valore base del livello (nell'unità predefinita della caratteristica)
-     * più i potenziamenti delle rarità raggiunte.
+     * Somma per caratteristica e unità dei potenziamenti delle rarità raggiunte. La caratteristica base del livello
+     * (Danno/HP x4) resta fuori: altrimenti sarebbe sempre il valore più alto della tabella di un set.
      */
-    public SortedMap<StatKey, BigDecimal> stats4(Rarity reachedRarity, int reachedLevel) {
+    public SortedMap<StatKey, BigDecimal> stats4(Rarity reachedRarity) {
         final SortedMap<StatKey, BigDecimal> stats = new TreeMap<>();
-        stats.put(StatKey.defaultOf(baseStat()), BigDecimal.valueOf(baseStatValue(reachedLevel)));
         for (RarityBonus bonus : bonuses) { //Al massimo 5 elementi: ciclo classico (R30)
             if (bonus.rarity().reachedBy(reachedRarity)) stats.merge(bonus.key(), bonus.amount(), BigDecimal::add);
         }

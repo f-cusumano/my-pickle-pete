@@ -54,7 +54,7 @@ class ItemFlowIntegrationTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("LEVEL_OUT_OF_RANGE"));
 
-        //Set Cowboy con un solo pezzo: bonus non attivo, Danno attuale 60 e top 396 + 0
+        //Set Cowboy con un solo pezzo: bonus non attivo, Danno del livello attuale 60 e top 396, fuori dalla tabella
         mockMvc.perform(get("/api/armor-set/full-set/list"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(11)))
@@ -62,10 +62,12 @@ class ItemFlowIntegrationTest {
                 .andExpect(jsonPath("$[8].bonusActive").value(false))
                 .andExpect(jsonPath("$[8].bonusDescription").value("+30% velocità d'attacco sotto il 30% di HP"))
                 .andExpect(jsonPath("$[8].pieces", hasSize(1)))
+                .andExpect(jsonPath("$[8].levelStats.damageNow").value(60))
+                .andExpect(jsonPath("$[8].levelStats.damageTop").value(396))
+                .andExpect(jsonPath("$[8].levelStats.hpTop").value(0))
                 .andExpect(jsonPath("$[8].stats[0].stat").value("DAMAGE"))
-                .andExpect(jsonPath("$[8].stats[0].current").value(60))
-                .andExpect(jsonPath("$[8].stats[0].top").value(396))
-                .andExpect(jsonPath("$[8].stats[0].currentHighlight").value("BEST"))
+                .andExpect(jsonPath("$[8].stats[0].current").value(0))
+                .andExpect(jsonPath("$[8].stats[0].top").value(0))
                 //Fortuna in percentuale: riga in più subito dopo la Fortuna a valore
                 .andExpect(jsonPath("$[8].stats", hasSize(23)))
                 .andExpect(jsonPath("$[8].stats[18].stat").value("LUCK"))

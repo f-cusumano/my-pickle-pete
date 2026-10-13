@@ -23,6 +23,7 @@ import { useFullScreenModal } from '../hooks/useFullScreenModal';
 import { SPECIFICATION_LABELS } from '../i18n/labels';
 import { CustomSetBonus } from './CustomSetBonus';
 import { SetPieces } from './SetPieces';
+import { SetLevelStats } from './SetLevelStats';
 import { SetStatsTable } from './SetStatsTable';
 import { SlotPickerModal, type PickerSlot } from './SlotPickerModal';
 import { WeaponAdviceCard } from './WeaponAdviceCard';
@@ -136,16 +137,19 @@ export function CustomSetEditor({ draft, items, slots, weaponCategories, units, 
 
   const editable = (
     <Stack gap="md">
-      <SetPieces
-        slots={slots}
-        pieces={Object.values(selection)}
-        onPiece={(piece) => piece.specification && setPicking(piece.specification)}
-        onEmpty={setPicking}
-        pieceAction="edit"
-        emptyLabel={(slot) => `Aggiungi ${SPECIFICATION_LABELS[slot]}`}
-        showNames
-      />
-      <WeaponSlot weapon={weapon} onClick={() => setPicking('WEAPON')} action="edit" />
+      <Group align="flex-start" gap="lg">
+        <SetPieces
+          slots={slots}
+          pieces={Object.values(selection)}
+          onPiece={(piece) => piece.specification && setPicking(piece.specification)}
+          onEmpty={setPicking}
+          pieceAction="edit"
+          emptyLabel={(slot) => `Aggiungi ${SPECIFICATION_LABELS[slot]}`}
+          showNames
+        />
+        <WeaponSlot weapon={weapon} onClick={() => setPicking('WEAPON')} action="edit" />
+        {evaluation.data && <SetLevelStats levelStats={evaluation.data.levelStats} />}
+      </Group>
       {evaluation.data ? (
         <>
           <CustomSetBonus set={evaluation.data} threshold={threshold} />
@@ -159,8 +163,11 @@ export function CustomSetEditor({ draft, items, slots, weaponCategories, units, 
   );
   const fixed = original && (
     <Stack gap="md">
-      <SetPieces slots={slots} pieces={original.pieces} showNames />
-      <WeaponSlot weapon={original.weapon} />
+      <Group align="flex-start" gap="lg">
+        <SetPieces slots={slots} pieces={original.pieces} showNames />
+        <WeaponSlot weapon={original.weapon} />
+        <SetLevelStats levelStats={original.levelStats} />
+      </Group>
       <CustomSetBonus set={original} threshold={threshold} />
       <WeaponAdviceCard advice={original.weaponAdvice} />
       <SetStatsTable stats={original.stats} units={units} />
