@@ -12,6 +12,7 @@ import {
   Text,
   Title,
 } from '@mantine/core';
+import { useMediaQuery } from '@mantine/hooks';
 import { modals } from '@mantine/modals';
 import {
   IconBolt,
@@ -21,7 +22,7 @@ import {
   IconTrash,
   IconTrendingUp,
 } from '@tabler/icons-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useCustomSetCensus, useCustomSets, useGameConstants, useItems } from '../api/queries';
 import type { BestSetMode, CustomSet, FullSet, GameConstants, Item, Rarity } from '../api/types';
 import { BestSetModal } from '../components/BestSetModal';
@@ -79,6 +80,8 @@ interface ListProps extends Props {
 
 function CustomSetList({ constants, customSets, items, customizing, onCustomizingOpened }: ListProps) {
   const census = useCustomSetCensus();
+  // Su cellulare i tasti dei set mostrano solo il simbolo, per lasciare spazio al nome
+  const compact = useMediaQuery('(max-width: 36em)', false, { getInitialValueInEffect: false });
   const units = useMemo(() => statUnits(constants), [constants]);
   const rarities = useMemo<Rarity[]>(() => constants.rarities.map((rarity) => rarity.code), [constants]);
   const slots = useMemo(() => armorSlots(constants), [constants]);
@@ -144,7 +147,7 @@ function CustomSetList({ constants, customSets, items, customizing, onCustomizin
           {customSets.map((set) => (
             <Accordion.Item key={set.id} value={String(set.id)}>
               <Group wrap="nowrap" gap={0} pr="sm">
-                <Accordion.Control>
+                <Accordion.Control style={{ minWidth: 0, flex: 1 }}>
                   {/* Su cellulare i badge vanno a capo sotto il nome invece di troncarsi */}
                   <Group justify="space-between" gap="xs" pr="xs">
                     <Group gap="lg" style={{ rowGap: 2 }}>
@@ -165,27 +168,27 @@ function CustomSetList({ constants, customSets, items, customizing, onCustomizin
                     </Group>
                   </Group>
                 </Accordion.Control>
-                <ActionIcon
-                  variant="subtle"
-                  color="red"
-                  size="lg"
-                  onClick={() => confirmDelete(set)}
-                  aria-label={`Elimina ${set.name ?? ''}`}
-                >
-                  <IconTrash size={18} />
-                </ActionIcon>
+                <Group gap={6} wrap="nowrap">
+                  <SetAction
+                    label="Modifica"
+                    color="pickle"
+                    icon={<IconPencil size={18} />}
+                    ariaLabel={`Modifica ${set.name ?? ''}`}
+                    compact={compact}
+                    onClick={() => setDraft({ id: set.id, name: set.name ?? '', original: set })}
+                  />
+                  <SetAction
+                    label="Elimina"
+                    color="red"
+                    icon={<IconTrash size={18} />}
+                    ariaLabel={`Elimina ${set.name ?? ''}`}
+                    compact={compact}
+                    onClick={() => confirmDelete(set)}
+                  />
+                </Group>
               </Group>
               <Accordion.Panel>
                 <Stack gap="md">
-                  <Group justify="flex-end">
-                    <Button
-                      variant="light"
-                      leftSection={<IconPencil size={18} />}
-                      onClick={() => setDraft({ id: set.id, name: set.name ?? '', original: set })}
-                    >
-                      Modifica
-                    </Button>
-                  </Group>
                   <CustomSetBonus set={set} threshold={constants.armorSetBonusThreshold} />
                   <SetDetailColumns
                     left={
@@ -240,5 +243,31 @@ function CustomSetList({ constants, customSets, items, customizing, onCustomizin
         />
       )}
     </>
+  );
+}
+
+interface SetActionProps {
+  label: string;
+  color: string;
+  icon: ReactNode;
+  ariaLabel: string;
+  /** Solo il simbolo (cellulare). */
+  compact: boolean;
+  onClick: () => void;
+}
+
+/** Tasto accanto alla freccia di un set (Modifica, Elimina): con la scritta, o solo il simbolo su cellulare. */
+function SetAction({ label, color, icon, ariaLabel, compact, onClick }: SetActionProps) {
+  if (compact) {
+    return (
+      <ActionIcon variant="light" color={color} size="lg" onClick={onClick} aria-label={ariaLabel}>
+        {icon}
+      </ActionIcon>
+    );
+  }
+  return (
+    <Button variant="light" color={color} leftSection={icon} onClick={onClick} aria-label={ariaLabel}>
+      {label}
+    </Button>
   );
 }
