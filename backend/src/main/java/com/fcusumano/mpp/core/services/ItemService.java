@@ -1,6 +1,7 @@
 package com.fcusumano.mpp.core.services;
 
 import com.fcusumano.mpp.core.enums.ItemSortOrder;
+import com.fcusumano.mpp.core.enums.Rarity;
 import com.fcusumano.mpp.core.model.Item;
 import com.fcusumano.mpp.core.model.ItemDefinition;
 import com.fcusumano.mpp.core.repository.CustomSetRepository;
@@ -79,13 +80,8 @@ public class ItemService {
     }
 
     @Transactional
-    public Item promoteRarity(long id) {
-        return saveProgress(single(id).promoted());
-    }
-
-    @Transactional
-    public Item resetRarity(long id) {
-        return saveProgress(single(id).reset());
+    public Item updateRarity(long id, Rarity rarity) {
+        return saveProgress(single(id).withRarity(rarity));
     }
 
     @Transactional

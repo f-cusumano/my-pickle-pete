@@ -3,6 +3,7 @@ package com.fcusumano.mpp.application.rest.item.controller;
 import com.fcusumano.mpp.application.rest.item.request.ItemRequest;
 import com.fcusumano.mpp.application.rest.item.response.ItemResponse;
 import com.fcusumano.mpp.core.enums.ItemSortOrder;
+import com.fcusumano.mpp.core.enums.Rarity;
 import com.fcusumano.mpp.core.services.ItemService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
@@ -69,16 +70,10 @@ public class ItemEndpoint {
 
     /* --------------- INVENTARIO --------------- */
 
-    @Operation(summary = "Promote the item to the next rarity, keeping its level")
-    @PostMapping("/promote-rarity")
-    public ItemResponse promoteRarity(@RequestParam(required = true) long id) {
-        return new ItemResponse(itemService.promoteRarity(id));
-    }
-
-    @Operation(summary = "Bring the item back to Common, capping its level to 10")
-    @PostMapping("/reset-rarity")
-    public ItemResponse resetRarity(@RequestParam(required = true) long id) {
-        return new ItemResponse(itemService.resetRarity(id));
+    @Operation(summary = "Set the current rarity of the item (all lower ones are reached too), capping its level to the new maximum")
+    @PutMapping("/rarity")
+    public ItemResponse updateRarity(@RequestParam(required = true) long id, @RequestParam(required = true) Rarity rarity) {
+        return new ItemResponse(itemService.updateRarity(id, rarity));
     }
 
     @Operation(summary = "Set the current level of the item, within the maximum of its rarity")

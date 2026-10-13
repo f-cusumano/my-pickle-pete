@@ -1,8 +1,7 @@
 import { Button, Group, Modal } from '@mantine/core';
+import { useEffect, useRef, useState } from 'react';
 import { useFullScreenModal } from '../hooks/useFullScreenModal';
-import { modals } from '@mantine/modals';
-import { IconArrowUp, IconRefresh } from '@tabler/icons-react';
-import { useItemProgress } from '../api/queries';
+import { useGameConstants, useItemProgress, useRefreshSets } from '../api/queries';
 import type { Item, Rarity, Stat, StatUnit } from '../api/types';
 import { ItemDetail } from './ItemDetail';
 
@@ -13,59 +12,72 @@ interface Props {
   onClose: () => void;
 }
 
-/** Modale di un item: promozione di rarità, reset a Comune e livello modificabile. */
+/**
+ * Modale di un item: rarità cliccabili e livello modificabile.
+ * I set che contengono l'item si rileggono alla chiusura, se qualcosa è cambiato.
+ */
 export function ItemModal({ item, rarities, units, onClose }: Props) {
   const fullScreen = useFullScreenModal();
-  const progress = useItemProgress();
-  const busy = progress.promote.isPending || progress.reset.isPending || progress.level.isPending;
+  const constants = useGameConstants();
+  const refreshSets = useRefreshSets();
+  // Ultimo salvataggio: la modale lo mostra subito anche se l'elenco da cui è aperta non è ancora riletto
+  const [saved, setSaved] = useState<Item | null>(null);
+  const changed = useRef(false);
+  const opened = useRef(false);
+  useEffect(() => {
+    opened.current = item !== null;
+  });
+  const progress = useItemProgress((updated) => {
+    setSaved(updated);
+    if (opened.current) {
+      changed.current = true;
+    } else {
+      // Livello salvato alla chiusura (frecce appena usate): la modale è già chiusa
+      void refreshSets();
+    }
+  });
+  const shown = item && saved?.id === item.id ? saved : item;
+  const busy = progress.rarity.isPending || progress.level.isPending;
 
-  const confirmReset = (target: Item) =>
-    modals.openConfirmModal({
-      title: 'Reset della rarità',
-      children: `${target.name} torna a Comune e perde i potenziamenti delle rarità superiori.`,
-      labels: { confirm: 'Reset', cancel: 'Annulla' },
-      confirmProps: { color: 'red' },
-      onConfirm: () => progress.reset.mutate(target.id),
-    });
+  const close = () => {
+    if (changed.current) {
+      changed.current = false;
+      void refreshSets();
+    }
+    setSaved(null);
+    onClose();
+  };
 
   return (
     <Modal
-      opened={item !== null}
-      onClose={onClose}
+      opened={shown !== null}
+      onClose={close}
       title="Dettaglio item"
       size="lg"
       fullScreen={fullScreen}
       centered={!fullScreen}
     >
-      {item && (
+      {shown && (
         <>
           <ItemDetail
-            item={item}
+            item={shown}
             rarities={rarities}
             units={units}
-            onLevelChange={(level) => progress.level.mutate({ id: item.id, level })}
+            editing={
+              constants.data && {
+                baseStatPerLevel: constants.data.baseStatPerLevel,
+                busy,
+                onRarityChange: (rarity) => {
+                  if (rarity !== shown.rarity) {
+                    progress.rarity.mutate({ id: shown.id, rarity });
+                  }
+                },
+                onLevelChange: (level) => progress.level.mutate({ id: shown.id, level }),
+              }
+            }
           />
-          <Group justify="space-between" mt="xl" gap="sm">
-            <Group gap="sm">
-              <Button
-                leftSection={<IconArrowUp size={18} />}
-                onClick={() => progress.promote.mutate(item.id)}
-                disabled={item.rarity === 'ARTIFACT'}
-                loading={progress.promote.isPending}
-              >
-                Rarità++
-              </Button>
-              <Button
-                variant="light"
-                color="red"
-                leftSection={<IconRefresh size={18} />}
-                onClick={() => confirmReset(item)}
-                disabled={busy || item.rarity === 'COMMON'}
-              >
-                Reset
-              </Button>
-            </Group>
-            <Button variant="default" onClick={onClose}>
+          <Group justify="flex-end" mt="xl">
+            <Button variant="default" onClick={close}>
               Chiudi
             </Button>
           </Group>

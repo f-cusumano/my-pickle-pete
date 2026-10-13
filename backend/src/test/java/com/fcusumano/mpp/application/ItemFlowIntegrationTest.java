@@ -42,7 +42,7 @@ class ItemFlowIntegrationTest {
                 .andExpect(jsonPath("$.baseStatValue").value(4))
                 .andExpect(jsonPath("$.bonuses[0].unlocked").value(false));
 
-        mockMvc.perform(post("/api/item/promote-rarity").param("id", String.valueOf(hatId)))
+        mockMvc.perform(put("/api/item/rarity").param("id", String.valueOf(hatId)).param("rarity", "UNCOMMON"))
                 .andExpect(jsonPath("$.rarity").value("UNCOMMON"))
                 .andExpect(jsonPath("$.maxLevel").value(20))
                 .andExpect(jsonPath("$.bonuses[0].unlocked").value(true));
@@ -71,9 +71,17 @@ class ItemFlowIntegrationTest {
                 .andExpect(jsonPath("$[8].stats[18].unit").value("PERCENT"))
                 .andExpect(jsonPath("$[8].stats[18].top").value(3));
 
-        mockMvc.perform(post("/api/item/reset-rarity").param("id", String.valueOf(hatId)))
+        //Rarità più alta: livello invariato; poi di nuovo Comune: livello al nuovo massimo
+        mockMvc.perform(put("/api/item/rarity").param("id", String.valueOf(hatId)).param("rarity", "ARTIFACT"))
+                .andExpect(jsonPath("$.rarity").value("ARTIFACT"))
+                .andExpect(jsonPath("$.level").value(15))
+                .andExpect(jsonPath("$.bonuses[1].unlocked").value(true));
+        mockMvc.perform(put("/api/item/rarity").param("id", String.valueOf(hatId)).param("rarity", "COMMON"))
                 .andExpect(jsonPath("$.rarity").value("COMMON"))
-                .andExpect(jsonPath("$.level").value(10));
+                .andExpect(jsonPath("$.level").value(10))
+                .andExpect(jsonPath("$.bonuses[0].unlocked").value(false));
+        mockMvc.perform(put("/api/item/rarity").param("id", String.valueOf(hatId)).param("rarity", "MYTHIC"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test

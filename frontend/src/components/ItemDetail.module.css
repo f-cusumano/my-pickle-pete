@@ -1,0 +1,23 @@
+.rarityRow {
+  display: flex;
+  align-items: center;
+  gap: var(--mantine-spacing-sm);
+  width: calc(100% + 12px);
+  margin: 0 -6px;
+  padding: 4px 6px;
+  border-radius: var(--mantine-radius-sm);
+}
+
+.rarityRow:focus-visible {
+  outline: 2px solid var(--mantine-color-pickle-6);
+}
+
+.rarityRow:disabled {
+  cursor: progress;
+}
+
+@media (hover: hover) {
+  .rarityRow:not(:disabled):hover {
+    background: var(--mantine-color-gray-1);
+  }
+}

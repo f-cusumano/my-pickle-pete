@@ -26,8 +26,8 @@ export function RarityBadge({ rarity, dimmed = false }: Props) {
         fontSize: 14,
         textAlign: 'center',
         whiteSpace: 'nowrap',
-        opacity: dimmed ? 0.35 : 1,
-        filter: dimmed ? 'grayscale(0.8)' : 'none',
+        opacity: dimmed ? 0.7 : 1,
+        filter: dimmed ? 'grayscale(0.6)' : 'none',
       }}
     >
       {RARITY_LABELS[rarity]}
