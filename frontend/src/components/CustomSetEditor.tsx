@@ -21,16 +21,19 @@ import {
   alignRows,
   itemIdsOf,
   sameSelection,
+  slotSpecification,
+  slotType,
   selectionOf,
   statTrends,
   type SlotSelection,
 } from '../domain/customSets';
 import { useFullScreenModal } from '../hooks/useFullScreenModal';
-import { SPECIFICATION_LABELS } from '../i18n/labels';
+import { NEW_ITEM_NAMES, SPECIFICATION_LABELS } from '../i18n/labels';
 import { CustomSetBonus } from './CustomSetBonus';
 import { SetGearList, SetItemList } from './SetItemList';
 import { SetLevelStats } from './SetLevelStats';
 import { SetStatsTable } from './SetStatsTable';
+import { ItemFormModal } from './ItemFormModal';
 import { SlotPickerModal, type PickerSlot } from './SlotPickerModal';
 import { WeaponAdviceCard } from './WeaponAdviceCard';
 import classes from './CustomSetEditor.module.css';
@@ -153,19 +156,25 @@ export function CustomSetEditor({ draft, items, slots, weaponCategories, units, 
     return slot ? (selection[slot] ?? null) : null;
   };
 
-  const pick = (item: Item | null) => {
-    if (picking === 'WEAPON') {
+  /** Item censito da "Censisci nuovo": appena salvato va nello slot da cui è partito. */
+  const [censusSlot, setCensusSlot] = useState<PickerSlot | null>(null);
+  const assign = (slot: PickerSlot, item: Item | null) => {
+    if (slot === 'WEAPON') {
       setWeapon(item);
-    } else if (picking === 'ABILITY') {
+    } else if (slot === 'ABILITY') {
       setAbility(item);
-    } else if (picking) {
-      const slot = picking;
+    } else {
       setSelection((current) => {
         const others = Object.fromEntries(
           Object.entries(current).filter(([key]) => key !== slot),
         ) as SlotSelection;
         return item ? { ...others, [slot]: item } : others;
       });
+    }
+  };
+  const pick = (item: Item | null) => {
+    if (picking) {
+      assign(picking, item);
     }
     setPicking(null);
   };
@@ -301,8 +310,25 @@ export function CustomSetEditor({ draft, items, slots, weaponCategories, units, 
         weaponCategories={weaponCategories}
         selected={selectedOf(picking)}
         onPick={pick}
+        onCensus={() => {
+          setCensusSlot(picking);
+          setPicking(null);
+        }}
         onClose={() => setPicking(null)}
       />
+      {censusSlot && constants.data && (
+        <ItemFormModal
+          constants={constants.data}
+          item={null}
+          preset={{
+            name: NEW_ITEM_NAMES[censusSlot],
+            type: slotType(censusSlot),
+            specification: slotSpecification(censusSlot),
+          }}
+          onSaved={(saved) => assign(censusSlot, saved)}
+          onClose={() => setCensusSlot(null)}
+        />
+      )}
       {askingNewName && (
         <NewNameModal
           initialName={`${name.trim()} (copia)`}

@@ -5,6 +5,8 @@ import {
   itemIdsOf,
   sameSelection,
   selectionOf,
+  slotSpecification,
+  slotType,
   slotCandidates,
   statKeyLabel,
   customizedName,
@@ -258,5 +260,13 @@ describe('compare two sets side by side', () => {
     );
     expect(left.map((r) => r.stat)).toEqual(['COOLDOWN', 'DURATION']);
     expect(right.map((r) => r.stat)).toEqual(['COOLDOWN', 'DURATION']);
+  });
+});
+
+describe('slotType / slotSpecification', () => {
+  it('armatura con la sua specifica, arma e abilità senza', () => {
+    expect([slotType('HAT'), slotSpecification('HAT')]).toEqual(['ARMOR', 'HAT']);
+    expect([slotType('WEAPON'), slotSpecification('WEAPON')]).toEqual(['WEAPON', null]);
+    expect([slotType('ABILITY'), slotSpecification('ABILITY')]).toEqual(['ABILITY', null]);
   });
 });
