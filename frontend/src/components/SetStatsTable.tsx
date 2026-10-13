@@ -131,17 +131,41 @@ function StatRow({ row, label, units, trends }: RowProps) {
           </Text>
         )}
       </Table.Td>
-      <Table.Td ta="right" className={HIGHLIGHT_CLASSES[row.currentHighlight]}>
-        <TrendArrow trend={trend?.current ?? null} />
-        <span className={classes.value}>{formatStatValue(row.current, row.unit, row.stat)}</span>
-        <WeaponValue value={row.weaponCurrent} unit={row.unit} />
-      </Table.Td>
-      <Table.Td ta="right" className={HIGHLIGHT_CLASSES[row.topHighlight]}>
-        <TrendArrow trend={trend?.top ?? null} />
-        <span className={classes.value}>{formatStatValue(row.top, row.unit, row.stat)}</span>
-        <WeaponValue value={row.weaponTop} unit={row.unit} />
-      </Table.Td>
+      <ValueCell
+        row={row}
+        value={row.current}
+        highlight={row.currentHighlight}
+        weapon={row.weaponCurrent}
+        trend={trend?.current ?? null}
+      />
+      <ValueCell
+        row={row}
+        value={row.top}
+        highlight={row.topHighlight}
+        weapon={row.weaponTop}
+        trend={trend?.top ?? null}
+      />
     </Table.Tr>
+  );
+}
+
+interface ValueCellProps {
+  row: StatComparison;
+  value: number;
+  highlight: Highlight;
+  weapon: number | null;
+  trend: Trend;
+}
+
+/** Valore attuale o top: "-" se è 0, e uno 0 non è mai un minimo da segnalare in rosso. */
+function ValueCell({ row, value, highlight, weapon, trend }: ValueCellProps) {
+  const shown = value === 0 && highlight === 'WORST' ? 'NONE' : highlight;
+  return (
+    <Table.Td ta="right" className={HIGHLIGHT_CLASSES[shown]}>
+      <TrendArrow trend={trend} />
+      <span className={classes.value}>{value === 0 ? '-' : formatStatValue(value, row.unit, row.stat)}</span>
+      <WeaponValue value={weapon} unit={row.unit} />
+    </Table.Td>
   );
 }
 

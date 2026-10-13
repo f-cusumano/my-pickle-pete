@@ -91,6 +91,7 @@ Il prompt è chiaro nella struttura generale (header, menu, Items, Full Sets, Cu
   sta tra il numero di pezzi e la freccia (0.5.3), che è un tasto a parte fuori dall'intestazione cliccabile.
 - Tabelle compatte (0.5.3): righe basse e alternate (zebrate) senza linee, solo una linea sotto l'intestazione. Massimi
   e minimi colorano solo il testo, in verde o rosso e in grassetto, non la casella.
+- Nelle tabelle delle caratteristiche un valore 0 si mostra come "-" e un minimo che vale 0 non è rosso (0.5.6).
 - In modifica le sezioni dei due set stanno sulle stesse righe, e le due tabelle hanno le stesse righe (quelle che ha
   solo l'altro set valgono 0) e colonne della stessa larghezza, così si confrontano riga per riga.
 - Riepilogo dell'item al passaggio del mouse sull'icona (Items, Censimento, set, proposte Best, modifica): nome e
