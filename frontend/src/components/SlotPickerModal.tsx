@@ -9,6 +9,7 @@ import { formatLevel } from '../domain/format';
 import { thumbnailOf } from '../domain/itemImages';
 import { statUnits } from '../domain/units';
 import { useFullScreenModal } from '../hooks/useFullScreenModal';
+import { useLongPress } from '../hooks/useLongPress';
 import { ARMOR_SET_LABELS, SPECIFICATION_LABELS } from '../i18n/labels';
 import { ItemThumbnail } from './ItemThumbnail';
 import { RarityBadge } from './RarityBadge';
@@ -45,14 +46,19 @@ interface Props {
 /**
  * Scelta del pezzo di uno slot tra le armature censite, per rarità decrescente e poi per nome;
  * per l'arma, tra le armi censite per categoria; per l'abilità, tra le abilità censite.
- * Con il mouse, passando su un candidato si vedono le caratteristiche che cambierebbero scegliendolo.
+ * Passando col mouse su un candidato, o tenendoci il dito sopra, si vedono le caratteristiche che cambierebbero
+ * scegliendolo.
  */
 export function SlotPickerModal({ slot, items, weaponCategories, selected, onPick, onClose }: Props) {
   const fullScreen = useFullScreenModal();
   const constants = useGameConstants();
   // Solo con un puntatore che passa sopra gli elementi (no touch)
   const canHover = useMediaQuery('(hover: hover) and (pointer: fine)');
-  const [hovered, setHovered] = useState<{ item: Item; x: number; y: number } | null>(null);
+  const [hovered, setHovered] = useState<{ item: Item; x: number; y: number; touch: boolean } | null>(null);
+  const longPress = useLongPress<Item>(
+    (item, x, y) => setHovered({ item, x, y, touch: true }),
+    () => setHovered(null),
+  );
   const selectedId = selected?.id ?? null;
   const choose = (item: Item | null) => {
     setHovered(null);
@@ -105,12 +111,16 @@ export function SlotPickerModal({ slot, items, weaponCategories, selected, onPic
           return (
             <UnstyledButton
               key={candidate.id}
-              onClick={() => choose(candidate)}
+              onClick={() => {
+                if (!longPress.consumeClick()) choose(candidate);
+              }}
               onMouseMove={
                 canHover
-                  ? (event) => setHovered({ item: candidate, x: event.clientX, y: event.clientY })
+                  ? (event) =>
+                      setHovered({ item: candidate, x: event.clientX, y: event.clientY, touch: false })
                   : undefined
               }
+              {...longPress.handlers(candidate)}
               onMouseLeave={() => setHovered(null)}
               p="xs"
               aria-pressed={selected}
@@ -118,6 +128,8 @@ export function SlotPickerModal({ slot, items, weaponCategories, selected, onPic
                 borderRadius: 8,
                 background: selected ? 'var(--mantine-color-pickle-0)' : undefined,
                 outline: selected ? '2px solid var(--mantine-color-pickle-5)' : undefined,
+                userSelect: 'none',
+                WebkitTouchCallout: 'none',
               }}
             >
               <Group gap="sm" wrap="nowrap">
@@ -154,6 +166,7 @@ export function SlotPickerModal({ slot, items, weaponCategories, selected, onPic
           units={statUnits(constants.data)}
           x={hovered.x}
           y={hovered.y}
+          touch={hovered.touch}
         />
       )}
     </Modal>

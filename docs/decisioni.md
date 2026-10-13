@@ -73,7 +73,10 @@ Il prompt è chiaro nella struttura generale (header, menu, Items, Full Sets, Cu
   mini-tabella con le sole caratteristiche che cambierebbero, attuali e top: verde se migliorano, rosso se peggiorano,
   "Nessuna variazione" se non cambia nulla. Vale anche per gli slot già pieni: il confronto è con l'item che c'è.
 - La tabella segue il puntatore con l'angolo in alto a sinistra; vicino ai bordi della finestra passa dall'altra
-  parte per restare visibile. Su telefono non c'è il passaggio del mouse, quindi non compare.
+  parte per restare visibile.
+- Su telefono (0.4.2) l'anteprima compare tenendo il dito fermo su un candidato per un attimo e sparisce al rilascio,
+  senza sceglierlo. La tabella sta sopra il dito, centrata sul tocco, o sotto se sopra non c'è posto.
+  Se il dito si muove prima, è uno scorrimento dell'elenco e l'anteprima non compare.
 - Danno e HP dal livello non ci sono, come nelle tabelle dei set. Il bonus del set (testo) non è una caratteristica.
 
 ## 5. Aspetti tecnici
