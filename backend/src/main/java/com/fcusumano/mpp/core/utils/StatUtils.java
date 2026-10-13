@@ -15,10 +15,10 @@ public final class StatUtils {
     private StatUtils() {}
 
 
-    /** Tutte le caratteristiche del gioco, nella loro unità predefinita, a zero. */
+    /** Tutte le caratteristiche generali del gioco (non quelle delle sole abilità), nella loro unità predefinita, a zero. */
     public static SortedMap<StatKey, BigDecimal> zeroStats() {
         final SortedMap<StatKey, BigDecimal> stats = new TreeMap<>();
-        for (Stat stat : Stat.values()) stats.put(StatKey.defaultOf(stat), BigDecimal.ZERO);
+        for (Stat stat : Stat.general()) stats.put(StatKey.defaultOf(stat), BigDecimal.ZERO);
         return stats;
     }
 

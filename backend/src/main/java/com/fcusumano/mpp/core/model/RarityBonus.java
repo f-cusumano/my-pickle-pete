@@ -9,7 +9,7 @@ import java.util.Objects;
 
 /**
  * Potenziamento di caratteristica sbloccato da un item quando raggiunge la rarità indicata.
- * {@code own} (solo armi) indica un potenziamento della sola arma, es. "+10% al proprio danno".
+ * {@code own} (armi e abilità) indica un potenziamento del solo item, es. "+10% al proprio danno".
  */
 public record RarityBonus(Rarity rarity, Stat stat, StatUnit unit, BigDecimal amount, boolean own) {
 

@@ -48,14 +48,16 @@ export function statKeyOptions(constants: GameConstants, items: Item[]): StatKey
       .flatMap((item) => item.bonuses)
       .map((bonus) => statKeyId(bonus)),
   );
-  return constants.stats.flatMap((stat) => {
-    const keys: StatKey[] = [{ stat: stat.code, unit: stat.defaultUnit }];
-    const other: StatKey = { stat: stat.code, unit: stat.defaultUnit === 'PERCENT' ? 'FLAT' : 'PERCENT' };
-    if (otherUnits.has(statKeyId(other))) {
-      keys.push(other);
-    }
-    return keys;
-  });
+  return constants.stats
+    .filter((stat) => stat.general)
+    .flatMap((stat) => {
+      const keys: StatKey[] = [{ stat: stat.code, unit: stat.defaultUnit }];
+      const other: StatKey = { stat: stat.code, unit: stat.defaultUnit === 'PERCENT' ? 'FLAT' : 'PERCENT' };
+      if (otherUnits.has(statKeyId(other))) {
+        keys.push(other);
+      }
+      return keys;
+    });
 }
 
 const RARITY_ORDER = ['ARTIFACT', 'LEGENDARY', 'EPIC', 'RARE', 'UNCOMMON', 'COMMON'];
@@ -79,6 +81,17 @@ export function weaponCandidates(items: Item[], categories: Specification[]): It
       (first, second) =>
         categories.indexOf(first.specification ?? 'RANGED') -
           categories.indexOf(second.specification ?? 'RANGED') ||
+        RARITY_ORDER.indexOf(first.rarity) - RARITY_ORDER.indexOf(second.rarity) ||
+        first.name.localeCompare(second.name, 'it'),
+    );
+}
+
+/** Abilità in ordine di rarità decrescente e poi di nome. */
+export function abilityCandidates(items: Item[]): Item[] {
+  return items
+    .filter((item) => item.type === 'ABILITY')
+    .sort(
+      (first, second) =>
         RARITY_ORDER.indexOf(first.rarity) - RARITY_ORDER.indexOf(second.rarity) ||
         first.name.localeCompare(second.name, 'it'),
     );
@@ -161,7 +174,7 @@ export function customizedName(armorSet: ArmorSet): string {
   return `Set ${ARMOR_SET_OF_LABELS[armorSet]} personalizzato`;
 }
 
-/** Full Set come set di partenza di un set custom non ancora salvato (senza arma). */
+/** Full Set come set di partenza di un set custom non ancora salvato (senza arma né abilità). */
 export function fullSetAsCustomSet(fullSet: FullSet): CustomSet {
   return {
     id: null,
@@ -170,8 +183,10 @@ export function fullSetAsCustomSet(fullSet: FullSet): CustomSet {
     bonusDescription: fullSet.bonusActive ? fullSet.bonusDescription : null,
     pieces: fullSet.pieces,
     weapon: null,
+    ability: null,
     levelStats: fullSet.levelStats,
     stats: fullSet.stats,
+    abilityStats: [],
     weaponAdvice: fullSet.weaponAdvice,
   };
 }

@@ -36,6 +36,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.fcusumano.mpp.core.Constants.BEST_SET_PROPOSALS;
+import static com.fcusumano.mpp.infrastructure.exception.InternalErrorCode.CUSTOM_SET_INVALID_ABILITY;
 import static com.fcusumano.mpp.infrastructure.exception.InternalErrorCode.CUSTOM_SET_INVALID_PIECES;
 import static com.fcusumano.mpp.infrastructure.exception.InternalErrorCode.CUSTOM_SET_INVALID_WEAPON;
 import static com.fcusumano.mpp.infrastructure.exception.InternalErrorCode.CUSTOM_SET_NAME_ALREADY_EXISTS;
@@ -43,7 +44,10 @@ import static com.fcusumano.mpp.infrastructure.exception.InternalErrorCode.CUSTO
 import static com.fcusumano.mpp.infrastructure.exception.InternalErrorCode.ITEM_NOT_FOUND;
 import static com.fcusumano.mpp.tools.FunctionUtils.exception;
 
-/** Casi d'uso sui set custom: salvataggio, valutazione di un set non salvato e proposte Best now / Best potential (senza arma). */
+/**
+ * Casi d'uso sui set custom: salvataggio, valutazione di un set non salvato e proposte Best now / Best potential
+ * (senza arma né abilità).
+ */
 @Service
 public class CustomSetService {
 
@@ -80,9 +84,10 @@ public class CustomSetService {
         checkName(definition.name(), null);
         checkPieces(definition.itemIds());
         checkWeapon(definition.weaponId());
+        checkAbility(definition.abilityId());
         final long id = customSetRepository.insert(definition);
-        log.info("Custom set '{}' created with name '{}', {} pieces and weapon '{}'", id, definition.name(), definition.itemIds().size(),
-                 definition.weaponId());
+        log.info("Custom set '{}' created with name '{}', {} pieces, weapon '{}' and ability '{}'", id, definition.name(),
+                 definition.itemIds().size(), definition.weaponId(), definition.abilityId());
         return single(id);
     }
 
@@ -92,9 +97,10 @@ public class CustomSetService {
         checkName(definition.name(), id);
         checkPieces(definition.itemIds());
         checkWeapon(definition.weaponId());
+        checkAbility(definition.abilityId());
         customSetRepository.update(id, definition);
-        log.info("Custom set '{}' updated with name '{}', {} pieces and weapon '{}'", id, definition.name(), definition.itemIds().size(),
-                 definition.weaponId());
+        log.info("Custom set '{}' updated with name '{}', {} pieces, weapon '{}' and ability '{}'", id, definition.name(),
+                 definition.itemIds().size(), definition.weaponId(), definition.abilityId());
         return single(id);
     }
 
@@ -107,10 +113,11 @@ public class CustomSetService {
 
     /** Set non salvato (da zero o in modifica): stessi calcoli di un set salvato. */
     @Transactional(readOnly = true)
-    public EvaluatedSet evaluate(List<Long> itemIds, Long weaponId) {
+    public EvaluatedSet evaluate(List<Long> itemIds, Long weaponId, Long abilityId) {
         final List<Item> pieces = checkPieces(itemIds);
         final Item weapon = checkWeapon(weaponId);
-        return context().evaluate(null, null, pieces, weapon);
+        final Item ability = checkAbility(abilityId);
+        return context().evaluate(null, null, pieces, weapon, ability);
     }
 
     /** Al massimo 3 set che massimizzano la caratteristica principale (e a parità la secondaria) nella configurazione scelta. */
@@ -119,7 +126,7 @@ public class CustomSetService {
         final Context context = context();
         final List<EvaluatedSet> proposals = BestSetFinder.find(context.id2item().values(), configuration, primary, secondary, BEST_SET_PROPOSALS)
                 .stream()
-                .map(pieces -> context.evaluate(null, null, pieces, null))
+                .map(pieces -> context.evaluate(null, null, pieces, null, null))
                 .toList();
         log.info("Best sets for {} by {} then {}: {} proposals", configuration, primary, secondary, proposals.size());
         return proposals;
@@ -163,12 +170,26 @@ public class CustomSetService {
     /** Arma facoltativa: se indicata deve esistere ed essere un'arma. */
     private Item checkWeapon(Long weaponId) {
         if (weaponId == null) return null;
-        final Item weapon = itemRepository.retrieve(weaponId)
-                .orElseThrow(exception(message -> new ObjectNotFoundException(ITEM_NOT_FOUND, message), "Item '%s' not found.", weaponId));
+        final Item weapon = retrieveItem(weaponId);
         if (weapon.type() != ItemType.WEAPON) {
             throw new BadRequestException(CUSTOM_SET_INVALID_WEAPON, "Item '%s' is not a weapon.", weaponId);
         }
         return weapon;
+    }
+
+    /** Abilità facoltativa: se indicata deve esistere ed essere un'abilità. */
+    private Item checkAbility(Long abilityId) {
+        if (abilityId == null) return null;
+        final Item ability = retrieveItem(abilityId);
+        if (ability.type() != ItemType.ABILITY) {
+            throw new BadRequestException(CUSTOM_SET_INVALID_ABILITY, "Item '%s' is not an ability.", abilityId);
+        }
+        return ability;
+    }
+
+    private Item retrieveItem(long itemId) {
+        return itemRepository.retrieve(itemId)
+                .orElseThrow(exception(message -> new ObjectNotFoundException(ITEM_NOT_FOUND, message), "Item '%s' not found.", itemId));
     }
 
     private Context context() {
@@ -187,14 +208,19 @@ public class CustomSetService {
         }
 
         EvaluatedSet evaluate(CustomSet customSet) {
-            return evaluate(customSet.id(), customSet.name(), items(customSet.itemIds()),
-                            customSet.weaponId() == null ? null : id2item.get(customSet.weaponId()));
+            return evaluate(customSet.id(), customSet.name(), items(customSet.itemIds()), item(customSet.weaponId()),
+                            item(customSet.abilityId()));
         }
 
-        EvaluatedSet evaluate(Long id, String name, List<Item> pieces, Item weapon) {
+        EvaluatedSet evaluate(Long id, String name, List<Item> pieces, Item weapon, Item ability) {
             final ArmorSet bonusArmorSet = SetStatisticsCalculator.activeBonus(pieces).orElse(null);
-            return new EvaluatedSet(id, name, pieces, weapon, bonusArmorSet, bonusArmorSet == null ? null : set2description.get(bonusArmorSet),
-                                    SetStatisticsCalculator.compare(pieces, weapon));
+            return new EvaluatedSet(id, name, pieces, weapon, ability, bonusArmorSet,
+                                    bonusArmorSet == null ? null : set2description.get(bonusArmorSet),
+                                    SetStatisticsCalculator.compare(pieces, weapon, ability));
+        }
+
+        private Item item(Long itemId) {
+            return itemId == null ? null : id2item.get(itemId);
         }
     }
 }

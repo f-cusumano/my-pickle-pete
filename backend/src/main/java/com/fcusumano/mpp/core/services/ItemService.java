@@ -64,7 +64,7 @@ public class ItemService {
     public Item update(long id, ItemDefinition definition) {
         final Item current = single(id);
         checkUniqueness(definition, id);
-        //Cambiando tipologia (o slot di armatura) l'item non può più stare nei set custom che lo usavano; un'arma resta arma
+        //Cambiando tipologia (o slot di armatura) l'item non può più stare nei set custom che lo usavano; armi e abilità restano tali
         if (current.type() != definition.type()) removeFromCustomSets(id);
         else if (current.specification() != definition.specification()) removePieces(id);
         itemRepository.update(id, definition);
@@ -94,6 +94,8 @@ public class ItemService {
         removePieces(id);
         final int cleared = customSetRepository.clearWeapon(id);
         if (cleared > 0) log.info("Weapon '{}' removed from {} custom sets", id, cleared);
+        final int clearedAbility = customSetRepository.clearAbility(id);
+        if (clearedAbility > 0) log.info("Ability '{}' removed from {} custom sets", id, clearedAbility);
     }
 
     private void removePieces(long id) {

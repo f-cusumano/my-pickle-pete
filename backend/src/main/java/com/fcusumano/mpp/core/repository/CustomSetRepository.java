@@ -6,7 +6,7 @@ import com.fcusumano.mpp.core.model.CustomSetDefinition;
 import java.util.List;
 import java.util.Optional;
 
-/** Persistenza dei set custom, dei loro pezzi e dell'arma. */
+/** Persistenza dei set custom, dei loro pezzi, dell'arma e dell'abilità. */
 public interface CustomSetRepository {
 
     List<CustomSet> retrieveAll();
@@ -26,4 +26,7 @@ public interface CustomSetRepository {
 
     /** Toglie l'arma da tutti i set custom che la usano (cancellazione dell'item o cambio di tipologia). */
     int clearWeapon(long itemId);
+
+    /** Toglie l'abilità da tutti i set custom che la usano (cancellazione dell'item o cambio di tipologia). */
+    int clearAbility(long itemId);
 }

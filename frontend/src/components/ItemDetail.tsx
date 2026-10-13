@@ -62,6 +62,15 @@ export function ItemDetail({ item, rarities, units, editing }: Props) {
         </Stack>
       </Group>
 
+      {item.description && (
+        <Stack gap={2}>
+          <Text fw={700}>Effetti</Text>
+          <Text size="sm" style={{ whiteSpace: 'pre-line' }}>
+            {item.description}
+          </Text>
+        </Stack>
+      )}
+
       <Stack gap={editing ? 2 : 6}>
         <Text fw={700}>Rarità e potenziamenti</Text>
         {editing && (

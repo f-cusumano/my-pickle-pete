@@ -14,16 +14,20 @@ const HIGHLIGHT_CLASSES: Record<Highlight, string | undefined> = {
 
 interface Props {
   stats: StatComparison[];
+  /** Caratteristiche dell'abilità scelta: sezione a parte, senza evidenziazioni. */
+  abilityStats?: StatComparison[];
   units: Record<Stat, StatUnit>;
   /** Frecce rispetto al set di partenza (solo in modifica). */
   trends?: Map<string, StatTrend>;
+  abilityTrends?: Map<string, StatTrend>;
 }
 
 /**
  * Tabella delle caratteristiche di un set: valore attuale e top, con massimi e minimi evidenziati.
- * Il contributo dell'arma scelta è tra parentesi; le caratteristiche proprie dell'arma stanno in fondo, separate.
+ * Il contributo dell'arma scelta è tra parentesi; le caratteristiche proprie dell'arma e quelle dell'abilità
+ * stanno in fondo, ciascuna nella sua sezione.
  */
-export function SetStatsTable({ stats, units, trends }: Props) {
+export function SetStatsTable({ stats, abilityStats = [], units, trends, abilityTrends }: Props) {
   const general = stats.filter((row) => !row.own);
   const own = stats.filter((row) => row.own);
   return (
@@ -64,6 +68,24 @@ export function SetStatsTable({ stats, units, trends }: Props) {
           ))}
         </Table.Tbody>
       )}
+      {abilityStats.length > 0 && (
+        <Table.Tbody className={classes.ownSection}>
+          <Table.Tr>
+            <Table.Th colSpan={3} className={classes.ownTitle}>
+              Proprie dell&apos;abilità
+            </Table.Th>
+          </Table.Tr>
+          {abilityStats.map((row) => (
+            <StatRow
+              key={statKeyId(row)}
+              row={row}
+              label={row.own ? ownStatLabel(row.stat) : STAT_LABELS[row.stat]}
+              units={units}
+              trends={abilityTrends}
+            />
+          ))}
+        </Table.Tbody>
+      )}
     </Table>
   );
 }
@@ -91,12 +113,12 @@ function StatRow({ row, label, units, trends }: RowProps) {
       </Table.Td>
       <Table.Td ta="right" className={HIGHLIGHT_CLASSES[row.currentHighlight]}>
         <TrendArrow trend={trend?.current ?? null} />
-        <span className={classes.value}>{formatStatValue(row.current, row.unit)}</span>
+        <span className={classes.value}>{formatStatValue(row.current, row.unit, row.stat)}</span>
         <WeaponValue value={row.weaponCurrent} unit={row.unit} />
       </Table.Td>
       <Table.Td ta="right" className={HIGHLIGHT_CLASSES[row.topHighlight]}>
         <TrendArrow trend={trend?.top ?? null} />
-        <span className={classes.value}>{formatStatValue(row.top, row.unit)}</span>
+        <span className={classes.value}>{formatStatValue(row.top, row.unit, row.stat)}</span>
         <WeaponValue value={row.weaponTop} unit={row.unit} />
       </Table.Td>
     </Table.Tr>

@@ -9,6 +9,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 
+import static com.fcusumano.mpp.TestItems.abilityBonusesJson;
 import static com.fcusumano.mpp.TestItems.allBonusesJson;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -152,11 +153,68 @@ class CustomSetFlowIntegrationTest {
                 .andExpect(status().isOk());
         mockMvc.perform(get("/api/custom-set").param("id", String.valueOf(setId))).andExpect(jsonPath("$.weapon.id").value(pistol));
         mockMvc.perform(put("/api/item").param("id", String.valueOf(pistol)).contentType(MediaType.APPLICATION_JSON)
-                                .content("{\"name\": \"Pistola ad acqua\", \"type\": \"ABILITY\", \"bonuses\": %s}".formatted(allBonusesJson())))
+                                .content("{\"name\": \"Pistola ad acqua\", \"type\": \"ABILITY\", \"bonuses\": %s}".formatted(abilityBonusesJson())))
                 .andExpect(status().isOk());
         mockMvc.perform(get("/api/custom-set").param("id", String.valueOf(setId)))
                 .andExpect(jsonPath("$.weapon").doesNotExist())
                 .andExpect(jsonPath("$.pieces", hasSize(1)));
+    }
+
+    @Test
+    void abilityInCustomSet() throws Exception {
+        final long grenade = id(postJson("/api/item", """
+                {"name": "Granata", "type": "ABILITY", "description": "  Lancia una granata che esplode  ", "bonuses": %s}"""
+                                                 .formatted(abilityBonusesJson(
+                                                         "{\"rarity\": \"UNCOMMON\", \"stat\": \"ACTION_RADIUS\", \"unit\": \"PERCENT\", \"amount\": 5}",
+                                                         "{\"rarity\": \"RARE\", \"stat\": \"DAMAGE\", \"unit\": \"PERCENT\", \"amount\": 10, \"own\": true}",
+                                                         "{\"rarity\": \"EPIC\", \"stat\": \"DAMAGE\", \"unit\": \"PERCENT\", \"amount\": 4}",
+                                                         "{\"rarity\": \"LEGENDARY\", \"stat\": \"COOLDOWN\", \"unit\": \"SECONDS\", \"amount\": 2}")))
+                                        .andExpect(status().isCreated())
+                                        .andExpect(jsonPath("$.description").value("Lancia una granata che esplode"))
+                                        .andReturn());
+        final long sword = id(postJson("/api/item", "{\"name\": \"Sciabola\", \"type\": \"WEAPON\", \"specification\": \"MELEE\", \"bonuses\": %s}"
+                                               .formatted(allBonusesJson()))
+                                      .andExpect(status().isCreated()).andReturn());
+        //Le abilità hanno solo le loro caratteristiche; la descrizione solo le abilità
+        postJson("/api/item", "{\"name\": \"Barattolo\", \"type\": \"ABILITY\", \"bonuses\": %s}"
+                .formatted(abilityBonusesJson("{\"rarity\": \"RARE\", \"stat\": \"LUCK\", \"unit\": \"FLAT\", \"amount\": 3}")))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
+        postJson("/api/item", "{\"name\": \"Ascia\", \"type\": \"WEAPON\", \"specification\": \"MELEE\", \"description\": \"Taglia\", \"bonuses\": %s}"
+                .formatted(allBonusesJson()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
+
+        //Caratteristiche dell'abilità a parte, nel loro ordine; il Danno dell'abilità non tocca quello del set
+        postJson("/api/custom-set/evaluate", "{\"itemIds\": [], \"weaponId\": %d, \"abilityId\": %d}".formatted(sword, grenade))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.ability.name").value("Granata"))
+                .andExpect(jsonPath("$.stats[0].stat").value("DAMAGE"))
+                .andExpect(jsonPath("$.stats[0].top").value(0))
+                .andExpect(jsonPath("$.stats[22]").doesNotExist())
+                .andExpect(jsonPath("$.levelStats.damageNow").value(4)) //Solo la spada
+                .andExpect(jsonPath("$.abilityStats", hasSize(5)))
+                .andExpect(jsonPath("$.abilityStats[0].stat").value("COOLDOWN"))
+                .andExpect(jsonPath("$.abilityStats[0].current").value(0)) //Abilità ancora Comune
+                .andExpect(jsonPath("$.abilityStats[0].top").value(2))
+                .andExpect(jsonPath("$.abilityStats[1].stat").value("DURATION"))
+                .andExpect(jsonPath("$.abilityStats[2].stat").value("DAMAGE"))
+                .andExpect(jsonPath("$.abilityStats[2].own").value(false))
+                .andExpect(jsonPath("$.abilityStats[3].own").value(true))
+                .andExpect(jsonPath("$.abilityStats[4].stat").value("ACTION_RADIUS"))
+                .andExpect(jsonPath("$.abilityStats[4].currentHighlight").value("NONE"));
+        postJson("/api/custom-set/evaluate", "{\"itemIds\": [], \"abilityId\": %d}".formatted(sword))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("CUSTOM_SET_INVALID_ABILITY"));
+
+        //Cancellando l'abilità esce dal set
+        final long setId = createSet("{\"name\": \"Granatiere\", \"itemIds\": [], \"abilityId\": %d}".formatted(grenade));
+        mockMvc.perform(get("/api/custom-set").param("id", String.valueOf(setId))).andExpect(jsonPath("$.ability.id").value(grenade));
+        mockMvc.perform(delete("/api/item").param("id", String.valueOf(grenade))).andExpect(status().isNoContent());
+        mockMvc.perform(get("/api/custom-set").param("id", String.valueOf(setId)))
+                .andExpect(jsonPath("$.ability").doesNotExist())
+                .andExpect(jsonPath("$.abilityStats", hasSize(0)));
+        mockMvc.perform(delete("/api/custom-set").param("id", String.valueOf(setId))).andExpect(status().isNoContent());
     }
 
     private long createItem(String name, String slot, String armorSet, String bonus) throws Exception {

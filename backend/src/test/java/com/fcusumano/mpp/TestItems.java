@@ -21,15 +21,15 @@ public final class TestItems {
 
 
     public static Item armor(long id, String name, ArmorSet armorSet, Specification slot, Rarity rarity, int level, RarityBonus... bonuses) {
-        return new Item(id, name, ItemType.ARMOR, slot, armorSet, rarity, level, List.of(bonuses));
+        return new Item(id, name, ItemType.ARMOR, slot, armorSet, null, rarity, level, List.of(bonuses));
     }
 
     public static Item weapon(long id, String name, Specification kind, Rarity rarity, int level, RarityBonus... bonuses) {
-        return new Item(id, name, ItemType.WEAPON, kind, null, rarity, level, List.of(bonuses));
+        return new Item(id, name, ItemType.WEAPON, kind, null, null, rarity, level, List.of(bonuses));
     }
 
     public static Item ability(long id, String name, Rarity rarity, int level, RarityBonus... bonuses) {
-        return new Item(id, name, ItemType.ABILITY, null, null, rarity, level, List.of(bonuses));
+        return new Item(id, name, ItemType.ABILITY, null, null, null, rarity, level, List.of(bonuses));
     }
 
     /** Potenziamento nell'unità predefinita della caratteristica. */
@@ -59,6 +59,26 @@ public final class TestItems {
         for (Rarity rarity : Rarity.bonusRarities()) {
             if (Arrays.stream(given).noneMatch(json -> json.contains("\"%s\"".formatted(rarity)))) {
                 bonuses.add("{\"rarity\": \"%s\", \"stat\": \"KNOCKBACK\", \"unit\": \"FLAT\", \"amount\": 1}".formatted(rarity));
+            }
+        }
+        return "[" + String.join(", ", bonuses) + "]";
+    }
+
+    /** I 5 potenziamenti obbligatori di un'abilità: quelli dati più +1s Durata per ogni rarità mancante. */
+    public static List<RarityBonus> abilityBonuses(RarityBonus... given) {
+        final List<RarityBonus> bonuses = new ArrayList<>(List.of(given));
+        for (Rarity rarity : Rarity.bonusRarities()) {
+            if (bonuses.stream().noneMatch(bonus -> bonus.rarity() == rarity)) bonuses.add(bonus(rarity, Stat.DURATION, "1"));
+        }
+        return bonuses;
+    }
+
+    /** Come {@link #abilityBonuses(RarityBonus...)}, in JSON per le richieste REST. */
+    public static String abilityBonusesJson(String... given) {
+        final List<String> bonuses = new ArrayList<>(List.of(given));
+        for (Rarity rarity : Rarity.bonusRarities()) {
+            if (Arrays.stream(given).noneMatch(json -> json.contains("\"%s\"".formatted(rarity)))) {
+                bonuses.add("{\"rarity\": \"%s\", \"stat\": \"DURATION\", \"unit\": \"SECONDS\", \"amount\": 1}".formatted(rarity));
             }
         }
         return "[" + String.join(", ", bonuses) + "]";

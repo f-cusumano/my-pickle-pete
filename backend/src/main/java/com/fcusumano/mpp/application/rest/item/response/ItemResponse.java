@@ -15,6 +15,7 @@ public record ItemResponse(long id,
                            ItemType type,
                            Specification specification,
                            ArmorSet armorSet,
+                           String description,
                            Rarity rarity,
                            int level,
                            int maxLevel,
@@ -23,7 +24,7 @@ public record ItemResponse(long id,
                            List<RarityBonusResponse> bonuses) {
 
     public ItemResponse(Item item) {
-        this(item.id(), item.name(), item.type(), item.specification(), item.armorSet(), item.rarity(), item.level(), item.maxLevel(),
+        this(item.id(), item.name(), item.type(), item.specification(), item.armorSet(), item.description(), item.rarity(), item.level(), item.maxLevel(),
              item.baseStat(), item.baseStatValue(),
              item.bonuses().stream()
                      .sorted((first, second) -> first.rarity().compareTo(second.rarity()))

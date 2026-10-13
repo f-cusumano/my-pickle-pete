@@ -26,6 +26,7 @@ public record Item(Long id,
                    ItemType type,
                    Specification specification,
                    ArmorSet armorSet,
+                   String description,
                    Rarity rarity,
                    int level,
                    List<RarityBonus> bonuses) {
@@ -36,7 +37,7 @@ public record Item(Long id,
 
     /** Item appena censito: parte da Comune 1/10. */
     public static Item of(Long id, ItemDefinition definition) {
-        return new Item(id, definition.name(), definition.type(), definition.specification(), definition.armorSet(),
+        return new Item(id, definition.name(), definition.type(), definition.specification(), definition.armorSet(), definition.description(),
                         Rarity.base(), 1, definition.bonuses());
     }
 
@@ -109,6 +110,6 @@ public record Item(Long id,
     }
 
     private Item withProgress(Rarity newRarity, int newLevel) {
-        return new Item(id, name, type, specification, armorSet, newRarity, newLevel, bonuses);
+        return new Item(id, name, type, specification, armorSet, description, newRarity, newLevel, bonuses);
     }
 }

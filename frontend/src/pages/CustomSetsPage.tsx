@@ -32,7 +32,7 @@ import { SetPieces } from '../components/SetPieces';
 import { SetLevelStats } from '../components/SetLevelStats';
 import { SetStatsTable } from '../components/SetStatsTable';
 import { WeaponAdviceCard } from '../components/WeaponAdviceCard';
-import { WeaponSlot } from '../components/WeaponSlot';
+import { GearSlot } from '../components/GearSlot';
 import { armorSlots, customizedName, fullSetAsCustomSet, weaponSpecifications } from '../domain/customSets';
 import { statUnits } from '../domain/units';
 import { ARMOR_SET_LABELS, BEST_SET_TITLES } from '../i18n/labels';
@@ -186,14 +186,19 @@ function CustomSetList({ constants, customSets, items, customizing, onCustomizin
                   <CustomSetBonus set={set} threshold={constants.armorSetBonusThreshold} />
                   <Group align="flex-start" gap={24}>
                     <SetPieces slots={slots} pieces={set.pieces} onPiece={(piece) => setOpenedId(piece.id)} />
-                    <WeaponSlot
-                      weapon={set.weapon}
+                    <GearSlot
+                      item={set.weapon}
                       onClick={set.weapon ? () => setOpenedId(set.weapon?.id ?? null) : undefined}
+                    />
+                    <GearSlot
+                      kind="ABILITY"
+                      item={set.ability}
+                      onClick={set.ability ? () => setOpenedId(set.ability?.id ?? null) : undefined}
                     />
                     <SetLevelStats levelStats={set.levelStats} />
                   </Group>
                   <WeaponAdviceCard advice={set.weaponAdvice} />
-                  <SetStatsTable stats={set.stats} units={units} />
+                  <SetStatsTable stats={set.stats} abilityStats={set.abilityStats} units={units} />
                 </Stack>
               </Accordion.Panel>
             </Accordion.Item>

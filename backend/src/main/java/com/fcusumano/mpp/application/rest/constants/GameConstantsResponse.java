@@ -27,11 +27,15 @@ public record GameConstantsResponse(List<RarityConstant> rarities,
 
     public record RarityConstant(Rarity code, int maxLevel) {}
 
-    public record ItemTypeConstant(ItemType code, boolean specified, boolean partOfArmorSet) {}
+    /** {@code fixedBonuses}: potenziamenti possibili quando sono un elenco chiuso (abilità), vuoto altrimenti. */
+    public record ItemTypeConstant(ItemType code, boolean specified, boolean partOfArmorSet, List<StatKeyConstant> fixedBonuses) {}
+
+    public record StatKeyConstant(Stat stat, StatUnit unit, boolean own) {}
 
     public record SpecificationConstant(Specification code, ItemType itemType, Stat baseStat) {}
 
-    public record StatConstant(Stat code, StatUnit defaultUnit) {}
+    /** {@code general}: caratteristica di armature e armi (le altre valgono solo per le abilità). */
+    public record StatConstant(Stat code, StatUnit defaultUnit, boolean general) {}
 
     public record SortOrderConstant(ItemSortOrder code, List<ItemType> typeOrder, boolean preselected) {}
 
@@ -39,11 +43,14 @@ public record GameConstantsResponse(List<RarityConstant> rarities,
     public static GameConstantsResponse build() {
         return new GameConstantsResponse(
                 Arrays.stream(Rarity.values()).map(r -> new RarityConstant(r, r.maxLevel())).toList(),
-                Arrays.stream(ItemType.values()).map(t -> new ItemTypeConstant(t, t.isSpecified(), t.isPartOfArmorSet())).toList(),
+                Arrays.stream(ItemType.values())
+                        .map(t -> new ItemTypeConstant(t, t.isSpecified(), t.isPartOfArmorSet(),
+                                                       t.fixedBonusKeys().stream().map(k -> new StatKeyConstant(k.stat(), k.unit(), k.own())).toList()))
+                        .toList(),
                 Arrays.stream(Specification.values()).map(s -> new SpecificationConstant(s, s.itemType(), s.baseStat())).toList(),
                 List.of(ArmorSet.values()),
                 List.of(StatUnit.values()),
-                Arrays.stream(Stat.values()).map(s -> new StatConstant(s, s.defaultUnit())).toList(),
+                Arrays.stream(Stat.values()).map(s -> new StatConstant(s, s.defaultUnit(), s.isGeneral())).toList(),
                 Arrays.stream(ItemSortOrder.values()).map(o -> new SortOrderConstant(o, o.typeOrder(), o == ItemSortOrder.defaultOrder())).toList(),
                 BASE_STAT_PER_LEVEL,
                 ARMOR_SET_BONUS_THRESHOLD);

@@ -13,7 +13,7 @@
 
     <groupId>com.fcusumano.mpp</groupId>
     <artifactId>my-pickle-pete</artifactId>
-    <version>0.3.2</version>
+    <version>0.4.0</version>
     <name>my-pickle-pete</name>
     <description>My Pickle Pete - inventario e set degli item di Pickle Pete: Survivor</description>
 

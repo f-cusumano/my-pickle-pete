@@ -26,8 +26,8 @@ import { SetPieces } from './SetPieces';
 import { SetLevelStats } from './SetLevelStats';
 import { SetStatsTable } from './SetStatsTable';
 import { SlotPickerModal, type PickerSlot } from './SlotPickerModal';
+import { GearSlot } from './GearSlot';
 import { WeaponAdviceCard } from './WeaponAdviceCard';
-import { WeaponSlot } from './WeaponSlot';
 
 /** Set da modificare: id null se non è ancora salvato; original è il set di partenza (null per "Da zero"). */
 export interface SetDraft {
@@ -70,6 +70,7 @@ export function CustomSetEditor({ draft, items, slots, weaponCategories, units, 
   const [name, setName] = useState(draft.name);
   const [selection, setSelection] = useState<SlotSelection>(initialSelection);
   const [weapon, setWeapon] = useState<Item | null>(draft.original?.weapon ?? null);
+  const [ability, setAbility] = useState<Item | null>(draft.original?.ability ?? null);
   const [picking, setPicking] = useState<PickerSlot | null>(null);
   const [view, setView] = useState<'modified' | 'original'>('modified');
   const [askingNewName, setAskingNewName] = useState(false);
@@ -79,17 +80,26 @@ export function CustomSetEditor({ draft, items, slots, weaponCategories, units, 
   const nameInput = useRef<HTMLInputElement>(null);
   const itemIds = itemIdsOf(selection, slots);
   const weaponId = weapon?.id ?? null;
-  const evaluation = useSetEvaluation(itemIds, weaponId);
+  const abilityId = ability?.id ?? null;
+  const evaluation = useSetEvaluation(itemIds, weaponId, abilityId);
   const original = draft.original;
   const trends = useMemo(
     () => (original && evaluation.data ? statTrends(original.stats, evaluation.data.stats) : undefined),
+    [original, evaluation.data],
+  );
+  const abilityTrends = useMemo(
+    () =>
+      original && evaluation.data
+        ? statTrends(original.abilityStats, evaluation.data.abilityStats)
+        : undefined,
     [original, evaluation.data],
   );
   const unchanged =
     draft.id !== null &&
     name.trim() === draft.name &&
     sameSelection(selection, initialSelection, slots) &&
-    weaponId === (draft.original?.weapon?.id ?? null);
+    weaponId === (draft.original?.weapon?.id ?? null) &&
+    abilityId === (draft.original?.ability?.id ?? null);
   const nameErrorOf = (candidate: string) => {
     if (candidate.trim() === '') return 'Dai un nome al set';
     return takenNames.includes(nameKey(candidate)) ? NAME_TAKEN : null;
@@ -99,7 +109,7 @@ export function CustomSetEditor({ draft, items, slots, weaponCategories, units, 
   const save = (id: number | null, targetName: string) => {
     setServerError(null);
     census.save.mutate(
-      { id, request: { name: targetName.trim(), itemIds, weaponId } },
+      { id, request: { name: targetName.trim(), itemIds, weaponId, abilityId } },
       {
         onSuccess: (saved) => {
           notifications.show({ color: 'pickle', message: `Set "${saved.name ?? targetName}" salvato.` });
@@ -120,9 +130,18 @@ export function CustomSetEditor({ draft, items, slots, weaponCategories, units, 
     );
   };
 
+  // Item già scelto nello slot che si sta riempiendo (null se vuoto)
+  const selectedIdOf = (slot: PickerSlot | null): number | null => {
+    if (slot === 'WEAPON') return weaponId;
+    if (slot === 'ABILITY') return abilityId;
+    return slot ? (selection[slot]?.id ?? null) : null;
+  };
+
   const pick = (item: Item | null) => {
     if (picking === 'WEAPON') {
       setWeapon(item);
+    } else if (picking === 'ABILITY') {
+      setAbility(item);
     } else if (picking) {
       const slot = picking;
       setSelection((current) => {
@@ -147,14 +166,21 @@ export function CustomSetEditor({ draft, items, slots, weaponCategories, units, 
           emptyLabel={(slot) => `Aggiungi ${SPECIFICATION_LABELS[slot]}`}
           showNames
         />
-        <WeaponSlot weapon={weapon} onClick={() => setPicking('WEAPON')} action="edit" />
+        <GearSlot item={weapon} onClick={() => setPicking('WEAPON')} action="edit" />
+        <GearSlot kind="ABILITY" item={ability} onClick={() => setPicking('ABILITY')} action="edit" />
         {evaluation.data && <SetLevelStats levelStats={evaluation.data.levelStats} />}
       </Group>
       {evaluation.data ? (
         <>
           <CustomSetBonus set={evaluation.data} threshold={threshold} />
           <WeaponAdviceCard advice={evaluation.data.weaponAdvice} />
-          <SetStatsTable stats={evaluation.data.stats} units={units} trends={trends} />
+          <SetStatsTable
+            stats={evaluation.data.stats}
+            abilityStats={evaluation.data.abilityStats}
+            units={units}
+            trends={trends}
+            abilityTrends={abilityTrends}
+          />
         </>
       ) : (
         <Loader />
@@ -165,12 +191,13 @@ export function CustomSetEditor({ draft, items, slots, weaponCategories, units, 
     <Stack gap="md">
       <Group align="flex-start" gap={24}>
         <SetPieces slots={slots} pieces={original.pieces} showNames />
-        <WeaponSlot weapon={original.weapon} />
+        <GearSlot item={original.weapon} />
+        <GearSlot kind="ABILITY" item={original.ability} />
         <SetLevelStats levelStats={original.levelStats} />
       </Group>
       <CustomSetBonus set={original} threshold={threshold} />
       <WeaponAdviceCard advice={original.weaponAdvice} />
-      <SetStatsTable stats={original.stats} units={units} />
+      <SetStatsTable stats={original.stats} abilityStats={original.abilityStats} units={units} />
     </Stack>
   );
 
@@ -259,7 +286,7 @@ export function CustomSetEditor({ draft, items, slots, weaponCategories, units, 
         slot={picking}
         items={items}
         weaponCategories={weaponCategories}
-        selectedId={picking === 'WEAPON' ? weaponId : picking ? (selection[picking]?.id ?? null) : null}
+        selectedId={selectedIdOf(picking)}
         onPick={pick}
         onClose={() => setPicking(null)}
       />

@@ -57,6 +57,17 @@ Il prompt è chiaro nella struttura generale (header, menu, Items, Full Sets, Cu
   Nei Custom Sets il Danno comprende quello dell'arma.
 - Anche Best now e Best potential confrontano solo i potenziamenti; Danno/HP dal livello restano l'ultimo spareggio.
 
+### Abilità (0.4.0)
+- **Censimento.** Le abilità hanno un campo libero "Effetti". I potenziamenti si scelgono solo tra Tempo di recupero
+  (secondi), Durata (secondi), Danno (%), Proprio danno (%) e Raggio d'azione (%), che non è il raggio di raccolta.
+  Il tempo di recupero si inserisce positivo e si mostra negativo ("-2s"). Ogni aumento vale almeno 1, decimali ammessi.
+  Cambiando tipologia tra abilità e altro i potenziamenti si azzerano, perché non valgono più.
+- **Le abilità censite prima** con altre caratteristiche restano leggibili, ma per modificarle vanno corrette.
+- **Abilità nei Custom Sets.** È facoltativa, si salva con il set e sta accanto all'arma. Le sue caratteristiche sono in
+  una sezione a parte in fondo alla tabella, solo quelle che ha, senza evidenziazioni e senza toccare quelle del set.
+  Il suo Danno dal livello non entra nel 👊 del set. Cancellandola, o cambiandole tipologia, la si toglie dai set.
+- **Rarità nel censimento.** Le icone del censimento non hanno la cornice colorata della rarità.
+
 ## 5. Aspetti tecnici
 16. ✅ **Architettura.** App solo per te con database H2. Regole da Dropbox/MyClaudeProjects/MyCodingStyle (vedi sotto).
 17. ✅ **Lingua.** Interfaccia in italiano.

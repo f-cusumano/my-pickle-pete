@@ -21,8 +21,8 @@ export const KEYS = {
   armorSets: ['armor-sets'] as const,
   fullSets: ['full-sets'] as const,
   customSets: ['custom-sets'] as const,
-  setEvaluation: (itemIds: number[], weaponId: number | null) =>
-    ['custom-sets', 'evaluate', weaponId, ...itemIds] as const,
+  setEvaluation: (itemIds: number[], weaponId: number | null, abilityId: number | null) =>
+    ['custom-sets', 'evaluate', weaponId, abilityId, ...itemIds] as const,
 };
 
 /** Messaggio in italiano per l'utente, con il dettaglio del backend per gli errori di validazione. */
@@ -69,14 +69,14 @@ export function useCustomSets() {
 }
 
 /**
- * Caratteristiche di un set non salvato (pezzi e arma facoltativa);
+ * Caratteristiche di un set non salvato (pezzi, arma e abilità facoltative);
  * cambiando pezzi si tiene il risultato precedente finché arriva il nuovo.
  */
-export function useSetEvaluation(itemIds: number[], weaponId: number | null) {
+export function useSetEvaluation(itemIds: number[], weaponId: number | null, abilityId: number | null) {
   const api = useApi();
   return useQuery({
-    queryKey: KEYS.setEvaluation(itemIds, weaponId),
-    queryFn: () => api.evaluateCustomSet(itemIds, weaponId),
+    queryKey: KEYS.setEvaluation(itemIds, weaponId, abilityId),
+    queryFn: () => api.evaluateCustomSet(itemIds, weaponId, abilityId),
     placeholderData: keepPreviousData,
   });
 }

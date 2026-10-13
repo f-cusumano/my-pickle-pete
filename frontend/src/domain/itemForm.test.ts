@@ -10,10 +10,21 @@ import {
 } from './itemForm';
 
 /** Tutti e 5 i potenziamenti compilati (+1 Fortuna), con quelli dati al posto dei rispettivi. */
-const allBonuses = (given: ItemFormValues['bonuses'] = {}): ItemFormValues['bonuses'] => {
-  const filler: BonusRow = { stat: 'LUCK', unit: 'FLAT', amount: 1, own: false };
-  return { UNCOMMON: filler, RARE: filler, EPIC: filler, LEGENDARY: filler, ARTIFACT: filler, ...given };
-};
+const allBonuses = (
+  given: ItemFormValues['bonuses'] = {},
+  filler: BonusRow = { stat: 'LUCK', unit: 'FLAT', amount: 1, own: false },
+): ItemFormValues['bonuses'] => ({
+  UNCOMMON: filler,
+  RARE: filler,
+  EPIC: filler,
+  LEGENDARY: filler,
+  ARTIFACT: filler,
+  ...given,
+});
+
+/** Come allBonuses, per un'abilità: +1s Durata dove non indicato. */
+const abilityBonuses = (given: ItemFormValues['bonuses'] = {}) =>
+  allBonuses(given, { stat: 'DURATION', unit: 'SECONDS', amount: 1, own: false });
 
 describe('item form', () => {
   it('requires name, type and the attributes of the type', () => {
@@ -24,7 +35,10 @@ describe('item form', () => {
       ),
     ).toEqual(['specification', 'armorSet']);
     expect(
-      validateForm({ ...emptyForm(), name: 'Barattolo', type: 'ABILITY', bonuses: allBonuses() }, CONSTANTS),
+      validateForm(
+        { ...emptyForm(), name: 'Barattolo', type: 'ABILITY', bonuses: abilityBonuses() },
+        CONSTANTS,
+      ),
     ).toEqual({});
   });
 
@@ -32,8 +46,9 @@ describe('item form', () => {
     const errors = validateForm(
       {
         ...emptyForm(),
-        name: 'Barattolo',
-        type: 'ABILITY',
+        name: 'Pistola',
+        type: 'WEAPON',
+        specification: 'RANGED',
         bonuses: allBonuses({
           RARE: { stat: null, unit: null, amount: 3, own: false },
           EPIC: { stat: 'LUCK', unit: 'FLAT', amount: '', own: false },
@@ -50,7 +65,12 @@ describe('item form', () => {
 
   it('requires a bonus for every rarity above Common', () => {
     const errors = validateForm(
-      { ...emptyForm(), name: 'Barattolo', type: 'ABILITY', bonuses: { UNCOMMON: allBonuses().UNCOMMON } },
+      {
+        ...emptyForm(),
+        name: 'Barattolo',
+        type: 'ABILITY',
+        bonuses: { UNCOMMON: abilityBonuses().UNCOMMON },
+      },
       CONSTANTS,
     );
     expect(Object.keys(errors).filter((key) => key.endsWith('.stat'))).toEqual([
@@ -68,6 +88,7 @@ describe('item form', () => {
         type: 'WEAPON',
         specification: 'RANGED',
         armorSet: 'BANDIT',
+        description: 'Spara acqua',
         bonuses: {
           EPIC: { stat: 'LUCK', unit: 'PERCENT', amount: '2,5', own: false },
           UNCOMMON: { stat: 'DAMAGE', unit: 'FLAT', amount: 3, own: true },
@@ -81,6 +102,7 @@ describe('item form', () => {
       type: 'WEAPON',
       specification: 'RANGED',
       armorSet: null,
+      description: null,
       bonuses: [
         { rarity: 'UNCOMMON', stat: 'DAMAGE', unit: 'FLAT', amount: 3, own: true },
         { rarity: 'EPIC', stat: 'LUCK', unit: 'PERCENT', amount: 2.5, own: false },
@@ -94,27 +116,50 @@ describe('item form', () => {
         ...emptyForm(),
         name: 'Barattolo',
         type: 'ABILITY',
-        bonuses: allBonuses({ RARE: { stat: 'LUCK', unit: 'FLAT', amount: 0.5, own: false } }),
+        bonuses: abilityBonuses({ RARE: { stat: 'COOLDOWN', unit: 'SECONDS', amount: 0.5, own: false } }),
       },
       CONSTANTS,
     );
     expect(errors).toEqual({ 'bonuses.RARE.amount': 'Almeno 1' });
   });
 
-  it('keeps own bonuses only for weapons', () => {
-    const request = toRequest(
-      {
-        name: 'Barattolo',
-        type: 'ABILITY',
-        specification: null,
-        armorSet: null,
-        bonuses: { RARE: { stat: 'DAMAGE', unit: 'PERCENT', amount: 10, own: true } },
-      },
-      CONSTANTS,
-    );
-    expect(request.bonuses).toEqual([
-      { rarity: 'RARE', stat: 'DAMAGE', unit: 'PERCENT', amount: 10, own: false },
-    ]);
+  it('keeps own bonuses only for weapons and abilities', () => {
+    const own: BonusRow = { stat: 'DAMAGE', unit: 'PERCENT', amount: 10, own: true };
+    const values: ItemFormValues = {
+      name: 'Elmo',
+      type: 'ARMOR',
+      specification: 'HAT',
+      armorSet: 'VIKING',
+      description: '',
+      bonuses: { RARE: own },
+    };
+    expect(toRequest(values, CONSTANTS).bonuses).toEqual([{ rarity: 'RARE', ...own, own: false }]);
+    expect(
+      toRequest({ ...values, type: 'ABILITY', specification: null, armorSet: null }, CONSTANTS).bonuses,
+    ).toEqual([{ rarity: 'RARE', ...own }]);
+  });
+
+  it('allows only the ability stats on abilities and keeps the description', () => {
+    const values: ItemFormValues = {
+      ...emptyForm(),
+      name: 'Granata',
+      type: 'ABILITY',
+      description: '  Esplode  ',
+      bonuses: abilityBonuses({
+        UNCOMMON: { stat: 'COOLDOWN', unit: 'SECONDS', amount: 2, own: false },
+        RARE: { stat: 'DAMAGE', unit: 'PERCENT', amount: 10, own: true },
+        EPIC: { stat: 'LUCK', unit: 'FLAT', amount: 3, own: false },
+      }),
+    };
+    expect(validateForm(values, CONSTANTS)).toEqual({ 'bonuses.EPIC.stat': "Non vale per un'abilità" });
+    expect(toRequest(values, CONSTANTS).description).toBe('Esplode');
+    // Le caratteristiche delle abilità non valgono per le armi
+    expect(
+      validateForm(
+        { ...values, type: 'WEAPON', specification: 'MELEE', bonuses: abilityBonuses() },
+        CONSTANTS,
+      )['bonuses.RARE.stat'],
+    ).toBe('Vale solo per le abilità');
   });
 
   it('names the missing piece of a full set after slot and set', () => {

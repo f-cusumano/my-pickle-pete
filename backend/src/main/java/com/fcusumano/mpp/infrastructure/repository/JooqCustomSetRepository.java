@@ -17,7 +17,7 @@ import static com.fcusumano.mpp.infrastructure.repository.jooq.Tables.MPP_CUSTOM
 import static com.fcusumano.mpp.infrastructure.repository.jooq.Tables.MPP_CUSTOM_SET_PIECE;
 import static org.jooq.impl.DSL.noCondition;
 
-/** Set custom su jOOQ: l'elenco si legge con due query (set con l'arma e pezzi), mai una per set (R32). */
+/** Set custom su jOOQ: l'elenco si legge con due query (set con arma e abilità, poi pezzi), mai una per set (R32). */
 @Repository
 public class JooqCustomSetRepository implements CustomSetRepository {
 
@@ -48,6 +48,7 @@ public class JooqCustomSetRepository implements CustomSetRepository {
         final long id = dsl.insertInto(MPP_CUSTOM_SET)
                 .set(MPP_CUSTOM_SET.NAME, definition.name())
                 .set(MPP_CUSTOM_SET.ID_MPP_ITEM_WEAPON, definition.weaponId())
+                .set(MPP_CUSTOM_SET.ID_MPP_ITEM_ABILITY, definition.abilityId())
                 .returningResult(MPP_CUSTOM_SET.ID)
                 .fetchSingle(MPP_CUSTOM_SET.ID);
         insertPieces(id, definition.itemIds());
@@ -60,6 +61,7 @@ public class JooqCustomSetRepository implements CustomSetRepository {
         dsl.update(MPP_CUSTOM_SET)
                 .set(MPP_CUSTOM_SET.NAME, definition.name())
                 .set(MPP_CUSTOM_SET.ID_MPP_ITEM_WEAPON, definition.weaponId())
+                .set(MPP_CUSTOM_SET.ID_MPP_ITEM_ABILITY, definition.abilityId())
                 .where(MPP_CUSTOM_SET.ID.eq(id))
                 .execute();
         dsl.deleteFrom(MPP_CUSTOM_SET_PIECE).where(MPP_CUSTOM_SET_PIECE.ID_MPP_CUSTOM_SET.eq(id)).execute();
@@ -86,6 +88,14 @@ public class JooqCustomSetRepository implements CustomSetRepository {
                 .execute();
     }
 
+    @Override
+    public int clearAbility(long itemId) {
+        return dsl.update(MPP_CUSTOM_SET)
+                .setNull(MPP_CUSTOM_SET.ID_MPP_ITEM_ABILITY)
+                .where(MPP_CUSTOM_SET.ID_MPP_ITEM_ABILITY.eq(itemId))
+                .execute();
+    }
+
     private List<CustomSet> retrieveWhere(Condition condition) {
         final Map<Long, List<Long>> set2items = dsl.select(MPP_CUSTOM_SET_PIECE.fields())
                 .from(MPP_CUSTOM_SET_PIECE)
@@ -97,7 +107,8 @@ public class JooqCustomSetRepository implements CustomSetRepository {
                                                Collectors.mapping(MppCustomSetPieceRecord::getIdMppItem, Collectors.toList())));
         return dsl.selectFrom(MPP_CUSTOM_SET)
                 .where(condition)
-                .fetch(r -> new CustomSet(r.getId(), r.getName(), set2items.getOrDefault(r.getId(), List.of()), r.getIdMppItemWeapon()));
+                .fetch(r -> new CustomSet(r.getId(), r.getName(), set2items.getOrDefault(r.getId(), List.of()), r.getIdMppItemWeapon(),
+                                         r.getIdMppItemAbility()));
     }
 
     private void insertPieces(long id, List<Long> itemIds) {

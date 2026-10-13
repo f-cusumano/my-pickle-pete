@@ -16,15 +16,25 @@ interface Props {
   label: string;
   size?: number;
   action?: ThumbnailAction;
+  /** Senza cornice colorata (censimento, dove la rarità non conta): solo l'immagine con il bordo. */
+  plain?: boolean;
 }
 
 const EMPTY_FRAME = '#c9c4b5';
 const ACTION_ICONS = { add: IconPlus, edit: IconPencil };
 
 /** Immagine predefinita della categoria nella cornice del colore della rarità, con l'eventuale azione in trasparenza. */
-export function ItemThumbnail({ type, specification, rarity = null, label, size = 44, action }: Props) {
+export function ItemThumbnail({
+  type,
+  specification,
+  rarity = null,
+  label,
+  size = 44,
+  action,
+  plain = false,
+}: Props) {
   const src = categoryImage(type, specification);
-  const frame = Math.max(3, Math.round(size / 14));
+  const frame = plain ? 0 : Math.max(3, Math.round(size / 14));
   const FallbackIcon = type ? ITEM_TYPE_ICONS[type] : IconPlus;
   const ActionIcon = action ? ACTION_ICONS[action] : null;
   return (
@@ -37,9 +47,9 @@ export function ItemThumbnail({ type, specification, rarity = null, label, size 
         height: size,
         flex: `0 0 ${String(size)}px`,
         borderRadius: Math.round(size / 5),
-        border: '2px solid #111',
+        border: plain ? '1px solid var(--mantine-color-gray-4)' : '2px solid #111',
         padding: frame,
-        background: rarity ? RARITY_COLORS[rarity] : EMPTY_FRAME,
+        background: rarity && !plain ? RARITY_COLORS[rarity] : EMPTY_FRAME,
         overflow: 'hidden',
       }}
     >

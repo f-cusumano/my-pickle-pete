@@ -55,12 +55,14 @@ export const ARMOR_SET_LABELS: Record<ArmorSet, string> = {
 export const STAT_UNIT_LABELS: Record<StatUnit, string> = {
   FLAT: '#',
   PERCENT: '%',
+  SECONDS: 's',
 };
 
 /** Descrizione dell'unità, mostrata al passaggio del mouse. */
 export const STAT_UNIT_DESCRIPTIONS: Record<StatUnit, string> = {
   FLAT: 'Aumento in valore',
   PERCENT: 'Aumento in percentuale',
+  SECONDS: 'Secondi',
 };
 
 export const STAT_LABELS: Record<Stat, string> = {
@@ -86,6 +88,9 @@ export const STAT_LABELS: Record<Stat, string> = {
   BOSS_DAMAGE: 'Danno ai boss',
   INTEREST: 'Interessi',
   KNOCKBACK: 'Contraccolpo',
+  COOLDOWN: 'Tempo di recupero',
+  DURATION: 'Durata',
+  ACTION_RADIUS: "Raggio d'azione",
 };
 
 /** Aggettivo concordato con la caratteristica, per i potenziamenti propri dell'arma ("Proprio danno", "Propria fortuna"). */
@@ -112,6 +117,9 @@ const OWN_ADJECTIVES: Record<Stat, 'Proprio' | 'Propria' | 'Propri'> = {
   BOSS_DAMAGE: 'Proprio',
   INTEREST: 'Propri',
   KNOCKBACK: 'Proprio',
+  COOLDOWN: 'Proprio',
+  DURATION: 'Propria',
+  ACTION_RADIUS: 'Proprio',
 };
 
 /**
@@ -162,4 +170,5 @@ export const ERROR_MESSAGES: Record<InternalErrorCode, string> = {
   CUSTOM_SET_NAME_ALREADY_EXISTS: 'Esiste già un set con questo nome.',
   CUSTOM_SET_INVALID_PIECES: 'Il set può contenere solo armature, al massimo una per slot.',
   CUSTOM_SET_INVALID_WEAPON: "L'item scelto come arma non è un'arma.",
+  CUSTOM_SET_INVALID_ABILITY: "L'item scelto come abilità non è un'abilità.",
 };

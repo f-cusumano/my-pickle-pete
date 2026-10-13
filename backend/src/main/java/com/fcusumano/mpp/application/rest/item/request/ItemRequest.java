@@ -14,6 +14,7 @@ import jakarta.validation.constraints.Size;
 import java.util.List;
 import java.util.Objects;
 
+import static com.fcusumano.mpp.core.Constants.MAX_ITEM_DESCRIPTION_LENGTH;
 import static com.fcusumano.mpp.core.Constants.MAX_ITEM_NAME_LENGTH;
 
 /** Dati di censimento di un item (creazione e modifica). */
@@ -23,13 +24,14 @@ public record ItemRequest(@NotBlank(message = "Item name must be specified.")
                           @NotNull(message = "Item type must be specified.") ItemType type,
                           Specification specification,
                           ArmorSet armorSet,
+                          @Size(max = MAX_ITEM_DESCRIPTION_LENGTH, message = "Item description allows at most 1000 characters.") String description,
                           @Size(max = 5, message = "An item has at most 5 rarity bonuses.") List<@NotNull @Valid RarityBonusRequest> bonuses)
         implements ItemDefinitionProvider {
 
     @Override
     public ItemDefinition toDefinition() {
         final List<RarityBonusRequest> requestedBonuses = bonuses == null ? List.of() : bonuses;
-        return new ItemDefinition(name, type, specification, armorSet,
+        return new ItemDefinition(name, type, specification, armorSet, description,
                                   requestedBonuses.stream().filter(Objects::nonNull)
                                           .filter(b -> b.rarity() != null && b.stat() != null && b.unit() != null && b.amount() != null) //Gli incompleti li segnala @Valid
                                           .map(RarityBonusRequest::toModel)
