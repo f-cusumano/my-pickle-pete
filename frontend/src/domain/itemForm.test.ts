@@ -1,5 +1,13 @@
 import { CONSTANTS, HAT } from '../test/fixtures';
-import { emptyForm, formOf, toRequest, validateForm, type BonusRow, type ItemFormValues } from './itemForm';
+import {
+  emptyForm,
+  formOf,
+  missingPieceName,
+  toRequest,
+  validateForm,
+  type BonusRow,
+  type ItemFormValues,
+} from './itemForm';
 
 /** Tutti e 5 i potenziamenti compilati (+1 Fortuna), con quelli dati al posto dei rispettivi. */
 const allBonuses = (given: ItemFormValues['bonuses'] = {}): ItemFormValues['bonuses'] => {
@@ -107,6 +115,11 @@ describe('item form', () => {
     expect(request.bonuses).toEqual([
       { rarity: 'RARE', stat: 'DAMAGE', unit: 'PERCENT', amount: 10, own: false },
     ]);
+  });
+
+  it('names the missing piece of a full set after slot and set', () => {
+    expect(missingPieceName('HAT', 'KNIGHT')).toBe('Cappello da Cavaliere');
+    expect(missingPieceName('BOOTS', 'SUPERMAN')).toBe('Stivali da Superman');
   });
 
   it('starts editing from the saved item', () => {

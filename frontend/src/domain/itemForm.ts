@@ -9,6 +9,7 @@ import type {
   Stat,
   StatUnit,
 } from '../api/types';
+import { ARMOR_SET_LABELS, SPECIFICATION_LABELS } from '../i18n/labels';
 
 /** Aumento minimo di un potenziamento (in valore o in percentuale). */
 export const MIN_BONUS_AMOUNT = 1;
@@ -29,6 +30,11 @@ export interface ItemFormValues {
   specification: Specification | null;
   armorSet: ArmorSet | null;
   bonuses: Partial<Record<Rarity, BonusRow>>;
+}
+
+/** Nome proposto per il pezzo mancante di un Full Set: "<Specifica> da <Set>", es. "Cappello da Cavaliere". */
+export function missingPieceName(slot: Specification, armorSet: ArmorSet): string {
+  return `${SPECIFICATION_LABELS[slot]} da ${ARMOR_SET_LABELS[armorSet]}`;
 }
 
 export function emptyForm(): ItemFormValues {

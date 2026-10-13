@@ -7,6 +7,7 @@ import { ItemFormModal } from '../components/ItemFormModal';
 import { ItemModal } from '../components/ItemModal';
 import { SetBonusCard } from '../components/SetBonusCard';
 import { SetPieces } from '../components/SetPieces';
+import { missingPieceName } from '../domain/itemForm';
 import { SetLevelStats } from '../components/SetLevelStats';
 import { SetStatsTable } from '../components/SetStatsTable';
 import { WeaponAdviceCard } from '../components/WeaponAdviceCard';
@@ -89,7 +90,12 @@ function FullSetList({ constants, fullSets, onCustomize }: ListProps) {
         <ItemFormModal
           constants={constants}
           item={null}
-          preset={{ type: 'ARMOR', specification: adding.slot, armorSet: adding.armorSet }}
+          preset={{
+            name: missingPieceName(adding.slot, adding.armorSet),
+            type: 'ARMOR',
+            specification: adding.slot,
+            armorSet: adding.armorSet,
+          }}
           onClose={() => setAdding(null)}
         />
       )}
