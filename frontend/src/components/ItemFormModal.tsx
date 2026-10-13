@@ -1,5 +1,6 @@
 import {
   Button,
+  Checkbox,
   Group,
   Modal,
   NumberInput,
@@ -8,6 +9,7 @@ import {
   Stack,
   Text,
   TextInput,
+  Tooltip,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useFullScreenModal } from '../hooks/useFullScreenModal';
@@ -15,6 +17,8 @@ import { useState, type ReactNode } from 'react';
 import { errorMessage, useItemCensus } from '../api/queries';
 import type { GameConstants, Item, ItemType, Rarity, Stat, StatUnit } from '../api/types';
 import {
+  MIN_BONUS_AMOUNT,
+  bonusRarities,
   emptyForm,
   formOf,
   toRequest,
@@ -28,6 +32,7 @@ import {
   ITEM_TYPE_LABELS,
   SPECIFICATION_LABELS,
   STAT_LABELS,
+  STAT_UNIT_DESCRIPTIONS,
   STAT_UNIT_LABELS,
 } from '../i18n/labels';
 import { ItemThumbnail } from './ItemThumbnail';
@@ -54,9 +59,7 @@ export function ItemFormModal({ constants, item, preset, onClose }: Props) {
     validate: (values) => validateForm(values, constants),
   });
   const type = constants.itemTypes.find((t) => t.code === form.values.type);
-  const bonusRarities = constants.rarities
-    .map((rarity) => rarity.code)
-    .filter((rarity) => rarity !== 'COMMON');
+  const rarities = bonusRarities(constants);
 
   const submit = form.onSubmit((values) => {
     setServerError(null);
@@ -134,17 +137,24 @@ export function ItemFormModal({ constants, item, preset, onClose }: Props) {
             Potenziamento per rarità
           </Text>
           <Text size="xs" c="dimmed" mt={-8}>
-            Comune non ne ha; lascia vuoto ciò che non conosci ancora.
+            Obbligatorio per ogni rarità tranne Comune, che non ne ha.
           </Text>
-          {bonusRarities.map((rarity) => (
+          {rarities.map((rarity) => (
             <BonusRowInput
               key={rarity}
               rarity={rarity}
-              row={form.values.bonuses[rarity] ?? { stat: null, unit: null, amount: '' }}
+              row={form.values.bonuses[rarity] ?? { stat: null, unit: null, amount: '', own: false }}
+              weapon={form.values.type === 'WEAPON'}
               statError={form.errors[`bonuses.${rarity}.stat`]}
               unitError={form.errors[`bonuses.${rarity}.unit`]}
               amountError={form.errors[`bonuses.${rarity}.amount`]}
-              onChange={(row) => form.setFieldValue(`bonuses.${rarity}`, row)}
+              onChange={(row) => {
+                form.setFieldValue(`bonuses.${rarity}`, row);
+                // Gli errori della riga si ricalcolano al prossimo salvataggio
+                (['stat', 'unit', 'amount'] as const).forEach((field) =>
+                  form.clearFieldError(`bonuses.${rarity}.${field}`),
+                );
+              }}
               units={units}
               constants={constants}
             />
@@ -172,6 +182,8 @@ export function ItemFormModal({ constants, item, preset, onClose }: Props) {
 interface BonusRowProps {
   rarity: Rarity;
   row: BonusRow;
+  /** Solo per le armi si può indicare un potenziamento proprio dell'arma. */
+  weapon: boolean;
   statError: ReactNode;
   unitError: ReactNode;
   amountError: ReactNode;
@@ -183,6 +195,7 @@ interface BonusRowProps {
 function BonusRowInput({
   rarity,
   row,
+  weapon,
   statError,
   unitError,
   amountError,
@@ -216,7 +229,11 @@ function BonusRowInput({
           aria-label={`Unità ${rarity}`}
           data={(['FLAT', 'PERCENT'] as const).map((unit) => ({
             value: unit,
-            label: STAT_UNIT_LABELS[unit],
+            label: (
+              <Tooltip label={STAT_UNIT_DESCRIPTIONS[unit]} withinPortal>
+                <span aria-label={STAT_UNIT_DESCRIPTIONS[unit]}>{STAT_UNIT_LABELS[unit]}</span>
+              </Tooltip>
+            ),
           }))}
           value={row.unit ?? ''}
           onChange={(value) => onChange({ ...row, unit: value as StatUnit })}
@@ -234,13 +251,24 @@ function BonusRowInput({
         value={row.amount}
         onChange={(value) => onChange({ ...row, amount: value })}
         error={amountError}
-        min={0}
+        min={MIN_BONUS_AMOUNT}
         decimalScale={2}
         decimalSeparator=","
+        allowNegative={false}
+        prefix="+"
         suffix={row.unit === 'PERCENT' ? '%' : undefined}
         inputMode="decimal"
         className={classes.bonusAmount}
       />
+      {weapon && (
+        <Checkbox
+          label="Proprio dell'arma (es. +10% al proprio danno)"
+          checked={row.own}
+          onChange={(event) => onChange({ ...row, own: event.currentTarget.checked })}
+          size="xs"
+          className={classes.bonusOwn}
+        />
+      )}
     </div>
   );
 }

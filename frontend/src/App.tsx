@@ -7,7 +7,8 @@ import {
   IconTools,
   type Icon,
 } from '@tabler/icons-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import type { FullSet } from './api/types';
 import { PickleLogo } from './components/PickleLogo';
 import { HOME, hashOf, sectionFromHash, type Section } from './domain/navigation';
 import { CensusPage } from './pages/CensusPage';
@@ -35,6 +36,9 @@ const MENU: { section: Section; label: string; description: string; icon: Icon }
 /** Intestazione con logo, menu laterale (a scomparsa su cellulare) e sezione corrente. */
 export function App() {
   const [section, setSection] = useState<Section>(() => sectionFromHash(window.location.hash));
+  // Full Set da personalizzare: passa da Full Sets a Custom Sets, che apre subito la modifica
+  const [customizing, setCustomizing] = useState<FullSet | null>(null);
+  const customizingOpened = useCallback(() => setCustomizing(null), []);
   const [menuOpened, { toggle: toggleMenu, close: closeMenu }] = useDisclosure(false);
 
   useEffect(() => {
@@ -96,8 +100,17 @@ export function App() {
 
       <AppShell.Main>
         {section === 'items' && <ItemsPage onGoToCensus={() => navigate('census')} />}
-        {section === 'full-sets' && <FullSetsPage />}
-        {section === 'custom-sets' && <CustomSetsPage />}
+        {section === 'full-sets' && (
+          <FullSetsPage
+            onCustomize={(fullSet) => {
+              setCustomizing(fullSet);
+              navigate('custom-sets');
+            }}
+          />
+        )}
+        {section === 'custom-sets' && (
+          <CustomSetsPage customizing={customizing} onCustomizingOpened={customizingOpened} />
+        )}
         {section === 'census' && <CensusPage />}
       </AppShell.Main>
     </AppShell>

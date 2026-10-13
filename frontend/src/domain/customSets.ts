@@ -1,4 +1,7 @@
 import type {
+  ArmorSet,
+  CustomSet,
+  FullSet,
   GameConstants,
   Item,
   Specification,
@@ -7,7 +10,7 @@ import type {
   StatKey,
   StatUnit,
 } from '../api/types';
-import { STAT_LABELS, STAT_UNIT_LABELS } from '../i18n/labels';
+import { ARMOR_SET_OF_LABELS, SPECIFICATION_LABELS, STAT_LABELS, STAT_UNIT_LABELS } from '../i18n/labels';
 
 /** Variazione di un valore rispetto al set di partenza: freccia verde in su o rossa in giù. */
 export type Trend = 'up' | 'down' | null;
@@ -17,14 +20,16 @@ export interface StatTrend {
   top: Trend;
 }
 
-export const statKeyId = (key: StatKey) => `${key.stat}-${key.unit}`;
+/** Chiave di una riga: caratteristica, unità e, per quelle proprie dell'arma, "own". */
+export const statKeyId = (key: StatKey & { own?: boolean }) =>
+  `${key.stat}-${key.unit}${key.own ? '-own' : ''}`;
 
 /** Unità tra parentesi, solo se non è quella predefinita della caratteristica: "", " (%)", " (valore)". */
 export function unitSuffix(key: StatKey, units: Record<Stat, StatUnit>): string {
   if (key.unit === units[key.stat]) {
     return '';
   }
-  return ` (${key.unit === 'PERCENT' ? STAT_UNIT_LABELS.PERCENT : STAT_UNIT_LABELS.FLAT.toLowerCase()})`;
+  return ` (${key.unit === 'PERCENT' ? STAT_UNIT_LABELS.PERCENT : 'valore'})`;
 }
 
 /** Nome della caratteristica con l'eventuale unità: "Fortuna", "Fortuna (%)". */
@@ -66,6 +71,24 @@ export function slotCandidates(items: Item[], slot: Specification): Item[] {
     );
 }
 
+/** Armi per categoria (nell'ordine del gioco), poi per rarità decrescente e nome. */
+export function weaponCandidates(items: Item[], categories: Specification[]): Item[] {
+  return items
+    .filter((item) => item.type === 'WEAPON')
+    .sort(
+      (first, second) =>
+        categories.indexOf(first.specification ?? 'RANGED') -
+          categories.indexOf(second.specification ?? 'RANGED') ||
+        RARITY_ORDER.indexOf(first.rarity) - RARITY_ORDER.indexOf(second.rarity) ||
+        first.name.localeCompare(second.name, 'it'),
+    );
+}
+
+/** Categorie di arma nell'ordine del gioco (A distanza, Elementale, Meccanica, Ravvicinata). */
+export function weaponSpecifications(constants: GameConstants): Specification[] {
+  return constants.specifications.filter((spec) => spec.itemType === 'WEAPON').map((spec) => spec.code);
+}
+
 /** Slot di armatura nell'ordine del gioco (Cappello, Occhiali, Petto, Schiena, Stivali). */
 export function armorSlots(constants: GameConstants): Specification[] {
   return constants.specifications.filter((spec) => spec.itemType === 'ARMOR').map((spec) => spec.code);
@@ -94,7 +117,15 @@ const trendOf = (before: number, after: number): Trend => {
   return null;
 };
 
-/** Frecce della tabella modificata: confronto riga per riga (caratteristica e unità) con il set di partenza. */
+/** Valore di una riga compreso il contributo dell'arma: è quello che conta per evidenziazioni e frecce. */
+export function totalOf(row: StatComparison, column: 'current' | 'top'): number {
+  return column === 'current' ? row.current + (row.weaponCurrent ?? 0) : row.top + (row.weaponTop ?? 0);
+}
+
+/**
+ * Frecce della tabella modificata: confronto riga per riga (caratteristica e unità) con il set di partenza,
+ * sui totali con l'arma.
+ */
 export function statTrends(original: StatComparison[], modified: StatComparison[]): Map<string, StatTrend> {
   const before = new Map(original.map((row) => [statKeyId(row), row]));
   return new Map(
@@ -102,10 +133,46 @@ export function statTrends(original: StatComparison[], modified: StatComparison[
       const previous = before.get(statKeyId(row));
       return [
         statKeyId(row),
-        { current: trendOf(previous?.current ?? 0, row.current), top: trendOf(previous?.top ?? 0, row.top) },
+        {
+          current: trendOf(previous ? totalOf(previous, 'current') : 0, totalOf(row, 'current')),
+          top: trendOf(previous ? totalOf(previous, 'top') : 0, totalOf(row, 'top')),
+        },
       ];
     }),
   );
+}
+
+/** Tipi di arma in minuscolo: "a distanza, elementale"; nessuno se tutti i tipi sono pari. */
+export function weaponTypesText(types: Specification[]): string {
+  return types.length === 0
+    ? 'nessuna in particolare'
+    : types.map((type) => SPECIFICATION_LABELS[type].toLowerCase()).join(', ');
+}
+
+/** Armi consigliate o sconsigliate: quelle attuali e, se diverse, quelle al massimo potenziale tra parentesi. */
+export function weaponAdviceText(now: Specification[], top: Specification[]): string {
+  const nowText = weaponTypesText(now);
+  const topText = weaponTypesText(top);
+  return nowText === topText ? nowText : `${nowText} (al massimo potenziale: ${topText})`;
+}
+
+/** Nome proposto per un set custom nato da un Full Set: "Set del Bandito personalizzato". */
+export function customizedName(armorSet: ArmorSet): string {
+  return `Set ${ARMOR_SET_OF_LABELS[armorSet]} personalizzato`;
+}
+
+/** Full Set come set di partenza di un set custom non ancora salvato (senza arma). */
+export function fullSetAsCustomSet(fullSet: FullSet): CustomSet {
+  return {
+    id: null,
+    name: null,
+    bonusArmorSet: fullSet.bonusActive ? fullSet.armorSet : null,
+    bonusDescription: fullSet.bonusActive ? fullSet.bonusDescription : null,
+    pieces: fullSet.pieces,
+    weapon: null,
+    stats: fullSet.stats,
+    weaponAdvice: fullSet.weaponAdvice,
+  };
 }
 
 /** Stessi pezzi negli stessi slot: nulla da salvare. */

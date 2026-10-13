@@ -79,8 +79,8 @@ export function createApi(fetchApi: FetchApi = (input, init) => fetch(input, ini
     updateCustomSet: (setId: number, request: CustomSetRequest) =>
       call<CustomSet>(`/custom-set?${id(setId)}`, json('PUT', request)),
     deleteCustomSet: (setId: number) => call<undefined>(`/custom-set?${id(setId)}`, { method: 'DELETE' }),
-    evaluateCustomSet: (itemIds: number[]) =>
-      call<CustomSet>('/custom-set/evaluate', json('POST', { itemIds })),
+    evaluateCustomSet: (itemIds: number[], weaponId: number | null) =>
+      call<CustomSet>('/custom-set/evaluate', json('POST', { itemIds, weaponId })),
     bestCustomSets: (mode: BestSetMode, request: BestSetRequest) =>
       call<CustomSet[]>(`/custom-set/calculate-best-${mode}`, json('POST', request)),
   };

@@ -1,4 +1,5 @@
-import { Accordion, Alert, Badge, Group, Loader, Stack, Text, Title } from '@mantine/core';
+import { Accordion, Alert, Badge, Button, Group, Loader, Stack, Text, Title } from '@mantine/core';
+import { IconAdjustments } from '@tabler/icons-react';
 import { useMemo, useState } from 'react';
 import { useFullSets, useGameConstants } from '../api/queries';
 import type { ArmorSet, FullSet, GameConstants, Rarity, Specification, Stat, StatUnit } from '../api/types';
@@ -7,12 +8,13 @@ import { ItemModal } from '../components/ItemModal';
 import { SetBonusCard } from '../components/SetBonusCard';
 import { SetPieces } from '../components/SetPieces';
 import { SetStatsTable } from '../components/SetStatsTable';
+import { WeaponAdviceCard } from '../components/WeaponAdviceCard';
 import { armorSlots } from '../domain/customSets';
 import { statUnits } from '../domain/units';
 import { ARMOR_SET_LABELS, SPECIFICATION_LABELS } from '../i18n/labels';
 
 /** Set completi: righe espandibili (anche più di una) con bonus, pezzi e confronto attuale/top delle caratteristiche. */
-export function FullSetsPage() {
+export function FullSetsPage({ onCustomize }: { onCustomize: (fullSet: FullSet) => void }) {
   const constants = useGameConstants();
   const fullSets = useFullSets();
 
@@ -26,7 +28,7 @@ export function FullSetsPage() {
       </Alert>
     );
   }
-  return <FullSetList constants={constants.data} fullSets={fullSets.data} />;
+  return <FullSetList constants={constants.data} fullSets={fullSets.data} onCustomize={onCustomize} />;
 }
 
 /** Pezzo mancante da censire: set e slot già scelti nel modulo. */
@@ -35,7 +37,13 @@ interface MissingSlot {
   slot: Specification;
 }
 
-function FullSetList({ constants, fullSets }: { constants: GameConstants; fullSets: FullSet[] }) {
+interface ListProps {
+  constants: GameConstants;
+  fullSets: FullSet[];
+  onCustomize: (fullSet: FullSet) => void;
+}
+
+function FullSetList({ constants, fullSets, onCustomize }: ListProps) {
   const units = useMemo(() => statUnits(constants), [constants]);
   const rarities = useMemo<Rarity[]>(() => constants.rarities.map((rarity) => rarity.code), [constants]);
   const [openedId, setOpenedId] = useState<number | null>(null);
@@ -69,6 +77,7 @@ function FullSetList({ constants, fullSets }: { constants: GameConstants; fullSe
                 threshold={constants.armorSetBonusThreshold}
                 onOpen={setOpenedId}
                 onAdd={(slot) => setAdding({ armorSet: fullSet.armorSet, slot })}
+                onCustomize={() => onCustomize(fullSet)}
               />
             </Accordion.Panel>
           </Accordion.Item>
@@ -94,11 +103,22 @@ interface DetailProps {
   threshold: number;
   onOpen: (itemId: number) => void;
   onAdd: (slot: Specification) => void;
+  onCustomize: () => void;
 }
 
-function FullSetDetail({ fullSet, slots, units, threshold, onOpen, onAdd }: DetailProps) {
+function FullSetDetail({ fullSet, slots, units, threshold, onOpen, onAdd, onCustomize }: DetailProps) {
   return (
     <Stack gap="md">
+      <Group justify="flex-end">
+        <Button
+          variant="light"
+          leftSection={<IconAdjustments size={18} />}
+          onClick={onCustomize}
+          disabled={fullSet.pieces.length === 0}
+        >
+          Personalizza
+        </Button>
+      </Group>
       <SetBonusCard
         title={`Bonus del set (${String(threshold)} pezzi su 5)`}
         active={fullSet.bonusActive}
@@ -111,6 +131,7 @@ function FullSetDetail({ fullSet, slots, units, threshold, onOpen, onAdd }: Deta
         onEmpty={onAdd}
         emptyLabel={(slot) => `Aggiungi ${SPECIFICATION_LABELS[slot]} ${ARMOR_SET_LABELS[fullSet.armorSet]}`}
       />
+      <WeaponAdviceCard advice={fullSet.weaponAdvice} />
       <SetStatsTable stats={fullSet.stats} units={units} />
     </Stack>
   );

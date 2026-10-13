@@ -122,7 +122,9 @@ function RarityRow({ item, rarity, rarities, onSelect, disabled }: RarityRowProp
   const bonus = item.bonuses.find((b) => b.rarity === rarity);
   let description = '-';
   if (rarity !== 'COMMON') {
-    description = bonus ? formatStatBonus(bonus.stat, bonus.amount, bonus.unit) : 'Potenziamento non censito';
+    description = bonus
+      ? formatStatBonus(bonus.stat, bonus.amount, bonus.unit, bonus.own)
+      : 'Potenziamento non censito';
   }
   const content = (
     <>

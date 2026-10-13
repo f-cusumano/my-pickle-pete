@@ -14,7 +14,8 @@ import {
 import { useMediaQuery } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { IconCopy, IconDeviceFloppy } from '@tabler/icons-react';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
+import { ApiError } from '../api/client';
 import { errorMessage, useCustomSetCensus, useSetEvaluation } from '../api/queries';
 import type { CustomSet, Item, Specification, Stat, StatUnit } from '../api/types';
 import { itemIdsOf, sameSelection, selectionOf, statTrends, type SlotSelection } from '../domain/customSets';
@@ -23,7 +24,9 @@ import { SPECIFICATION_LABELS } from '../i18n/labels';
 import { CustomSetBonus } from './CustomSetBonus';
 import { SetPieces } from './SetPieces';
 import { SetStatsTable } from './SetStatsTable';
-import { SlotPickerModal } from './SlotPickerModal';
+import { SlotPickerModal, type PickerSlot } from './SlotPickerModal';
+import { WeaponAdviceCard } from './WeaponAdviceCard';
+import { WeaponSlot } from './WeaponSlot';
 
 /** Set da modificare: id null se non è ancora salvato; original è il set di partenza (null per "Da zero"). */
 export interface SetDraft {
@@ -36,55 +39,90 @@ interface Props {
   draft: SetDraft;
   items: Item[];
   slots: Specification[];
+  /** Categorie di arma nell'ordine del gioco. */
+  weaponCategories: Specification[];
   units: Record<Stat, StatUnit>;
   threshold: number;
   onClose: () => void;
 }
 
 const MAX_NAME_LENGTH = 100;
+const NAME_TAKEN = 'Nome set già usato';
+
+/** Confronto dei nomi come fa il backend: senza spazi esterni e senza distinguere maiuscole e minuscole. */
+const nameKey = (name: string) => name.trim().toLowerCase();
+
+/** true se il salvataggio è fallito perché esiste già un set con quel nome. */
+const nameTaken = (error: unknown) =>
+  error instanceof ApiError && error.body?.code === 'CUSTOM_SET_NAME_ALREADY_EXISTS';
 
 /**
- * Costruzione o modifica di un set custom. In modifica a sinistra resta il set di partenza e a destra quello modificato,
- * con le frecce sulle caratteristiche cambiate; si salva sovrascrivendo o come nuovo set.
+ * Costruzione o modifica di un set custom, con l'arma facoltativa. In modifica a sinistra resta il set di partenza
+ * e a destra quello modificato, con le frecce sulle caratteristiche cambiate; si salva sovrascrivendo o come nuovo set.
+ * Con un nome già usato la modale resta aperta e il nome si evidenzia in rosso.
  */
-export function CustomSetEditor({ draft, items, slots, units, threshold, onClose }: Props) {
+export function CustomSetEditor({ draft, items, slots, weaponCategories, units, threshold, onClose }: Props) {
   const fullScreen = useFullScreenModal();
   const sideBySide = useMediaQuery('(min-width: 62em)', true, { getInitialValueInEffect: false });
   const census = useCustomSetCensus();
   const initialSelection = useMemo(() => selectionOf(draft.original?.pieces ?? []), [draft.original]);
   const [name, setName] = useState(draft.name);
   const [selection, setSelection] = useState<SlotSelection>(initialSelection);
-  const [picking, setPicking] = useState<Specification | null>(null);
+  const [weapon, setWeapon] = useState<Item | null>(draft.original?.weapon ?? null);
+  const [picking, setPicking] = useState<PickerSlot | null>(null);
   const [view, setView] = useState<'modified' | 'original'>('modified');
   const [askingNewName, setAskingNewName] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+  // Nomi rifiutati dal backend perché già usati: restano in rosso finché non si cambia nome
+  const [takenNames, setTakenNames] = useState<string[]>([]);
+  const nameInput = useRef<HTMLInputElement>(null);
   const itemIds = itemIdsOf(selection, slots);
-  const evaluation = useSetEvaluation(itemIds);
+  const weaponId = weapon?.id ?? null;
+  const evaluation = useSetEvaluation(itemIds, weaponId);
   const original = draft.original;
   const trends = useMemo(
     () => (original && evaluation.data ? statTrends(original.stats, evaluation.data.stats) : undefined),
     [original, evaluation.data],
   );
   const unchanged =
-    draft.id !== null && name.trim() === draft.name && sameSelection(selection, initialSelection, slots);
-  const nameError = name.trim() === '' ? 'Dai un nome al set' : null;
+    draft.id !== null &&
+    name.trim() === draft.name &&
+    sameSelection(selection, initialSelection, slots) &&
+    weaponId === (draft.original?.weapon?.id ?? null);
+  const nameErrorOf = (candidate: string) => {
+    if (candidate.trim() === '') return 'Dai un nome al set';
+    return takenNames.includes(nameKey(candidate)) ? NAME_TAKEN : null;
+  };
+  const nameError = nameErrorOf(name);
 
   const save = (id: number | null, targetName: string) => {
     setServerError(null);
     census.save.mutate(
-      { id, request: { name: targetName.trim(), itemIds } },
+      { id, request: { name: targetName.trim(), itemIds, weaponId } },
       {
         onSuccess: (saved) => {
           notifications.show({ color: 'pickle', message: `Set "${saved.name ?? targetName}" salvato.` });
           onClose();
         },
-        onError: (error) => setServerError(errorMessage(error)),
+        onError: (error) => {
+          if (nameTaken(error)) {
+            setTakenNames((names) => [...names, nameKey(targetName)]);
+            // Il nome sta in cima alla modale: lo si porta in vista per correggerlo
+            if (id === draft.id) {
+              nameInput.current?.focus();
+            }
+          } else {
+            setServerError(errorMessage(error));
+          }
+        },
       },
     );
   };
 
   const pick = (item: Item | null) => {
-    if (picking) {
+    if (picking === 'WEAPON') {
+      setWeapon(item);
+    } else if (picking) {
       const slot = picking;
       setSelection((current) => {
         const others = Object.fromEntries(
@@ -107,9 +145,11 @@ export function CustomSetEditor({ draft, items, slots, units, threshold, onClose
         emptyLabel={(slot) => `Aggiungi ${SPECIFICATION_LABELS[slot]}`}
         showNames
       />
+      <WeaponSlot weapon={weapon} onClick={() => setPicking('WEAPON')} action="edit" />
       {evaluation.data ? (
         <>
           <CustomSetBonus set={evaluation.data} threshold={threshold} />
+          <WeaponAdviceCard advice={evaluation.data.weaponAdvice} />
           <SetStatsTable stats={evaluation.data.stats} units={units} trends={trends} />
         </>
       ) : (
@@ -120,7 +160,9 @@ export function CustomSetEditor({ draft, items, slots, units, threshold, onClose
   const fixed = original && (
     <Stack gap="md">
       <SetPieces slots={slots} pieces={original.pieces} showNames />
+      <WeaponSlot weapon={original.weapon} />
       <CustomSetBonus set={original} threshold={threshold} />
+      <WeaponAdviceCard advice={original.weaponAdvice} />
       <SetStatsTable stats={original.stats} units={units} />
     </Stack>
   );
@@ -136,6 +178,7 @@ export function CustomSetEditor({ draft, items, slots, units, threshold, onClose
     >
       <Stack gap="md">
         <TextInput
+          ref={nameInput}
           label="Nome del set"
           withAsterisk
           value={name}
@@ -208,7 +251,8 @@ export function CustomSetEditor({ draft, items, slots, units, threshold, onClose
       <SlotPickerModal
         slot={picking}
         items={items}
-        selectedId={picking ? (selection[picking]?.id ?? null) : null}
+        weaponCategories={weaponCategories}
+        selectedId={picking === 'WEAPON' ? weaponId : picking ? (selection[picking]?.id ?? null) : null}
         onPick={pick}
         onClose={() => setPicking(null)}
       />
@@ -216,6 +260,7 @@ export function CustomSetEditor({ draft, items, slots, units, threshold, onClose
         <NewNameModal
           initialName={`${name.trim()} (copia)`}
           saving={census.save.isPending}
+          nameErrorOf={nameErrorOf}
           error={serverError}
           onSave={(newName) => save(null, newName)}
           onClose={() => setAskingNewName(false)}
@@ -228,20 +273,25 @@ export function CustomSetEditor({ draft, items, slots, units, threshold, onClose
 interface NewNameProps {
   initialName: string;
   saving: boolean;
+  /** Errore del nome (vuoto o già usato), null se valido. */
+  nameErrorOf: (name: string) => string | null;
   error: string | null;
   onSave: (name: string) => void;
   onClose: () => void;
 }
 
 /** Nome del nuovo set quando si salva una modifica senza sovrascrivere l'originale. */
-function NewNameModal({ initialName, saving, error, onSave, onClose }: NewNameProps) {
+function NewNameModal({ initialName, saving, nameErrorOf, error, onSave, onClose }: NewNameProps) {
   const [name, setName] = useState(initialName.slice(0, MAX_NAME_LENGTH));
+  const nameError = nameErrorOf(name);
   return (
     <Modal opened onClose={onClose} title="Salva come nuovo set" centered zIndex={300}>
       <form
         onSubmit={(event) => {
           event.preventDefault();
-          onSave(name);
+          if (nameError === null) {
+            onSave(name);
+          }
         }}
       >
         <Stack gap="md">
@@ -252,13 +302,13 @@ function NewNameModal({ initialName, saving, error, onSave, onClose }: NewNamePr
             value={name}
             onChange={(event) => setName(event.currentTarget.value)}
             maxLength={MAX_NAME_LENGTH}
-            error={error ?? undefined}
+            error={(name === '' ? null : nameError) ?? error ?? undefined}
           />
           <Group justify="flex-end" gap="sm">
             <Button variant="default" onClick={onClose}>
               Annulla
             </Button>
-            <Button type="submit" disabled={name.trim() === ''} loading={saving}>
+            <Button type="submit" disabled={nameError !== null} loading={saving}>
               Salva
             </Button>
           </Group>

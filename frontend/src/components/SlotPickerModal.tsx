@@ -1,7 +1,7 @@
 import { Badge, Group, Modal, Stack, Text, UnstyledButton } from '@mantine/core';
 import { IconX } from '@tabler/icons-react';
 import type { Item, Specification } from '../api/types';
-import { slotCandidates } from '../domain/customSets';
+import { slotCandidates, weaponCandidates } from '../domain/customSets';
 import { formatLevel } from '../domain/format';
 import { thumbnailOf } from '../domain/itemImages';
 import { useFullScreenModal } from '../hooks/useFullScreenModal';
@@ -9,23 +9,41 @@ import { ARMOR_SET_LABELS, SPECIFICATION_LABELS } from '../i18n/labels';
 import { ItemThumbnail } from './ItemThumbnail';
 import { RarityBadge } from './RarityBadge';
 
+/** Slot da riempire: uno slot di armatura oppure l'arma del set. */
+export type PickerSlot = Specification | 'WEAPON';
+
 interface Props {
-  slot: Specification | null;
+  slot: PickerSlot | null;
   items: Item[];
+  /** Categorie di arma nell'ordine del gioco (per ordinare le armi). */
+  weaponCategories: Specification[];
   selectedId: number | null;
   onPick: (item: Item | null) => void;
   onClose: () => void;
 }
 
-/** Scelta del pezzo di uno slot tra le armature censite, per rarità decrescente e poi per nome. */
-export function SlotPickerModal({ slot, items, selectedId, onPick, onClose }: Props) {
+/**
+ * Scelta del pezzo di uno slot tra le armature censite, per rarità decrescente e poi per nome;
+ * per l'arma, tra le armi censite per categoria.
+ */
+export function SlotPickerModal({ slot, items, weaponCategories, selectedId, onPick, onClose }: Props) {
   const fullScreen = useFullScreenModal();
-  const candidates = slot ? slotCandidates(items, slot) : [];
+  const weapon = slot === 'WEAPON';
+  let candidates: Item[] = [];
+  if (slot === 'WEAPON') {
+    candidates = weaponCandidates(items, weaponCategories);
+  } else if (slot) {
+    candidates = slotCandidates(items, slot);
+  }
+  let title = '';
+  if (slot) {
+    title = weapon ? "Scegli l'arma" : `Scegli ${SPECIFICATION_LABELS[slot].toLowerCase()}`;
+  }
   return (
     <Modal
       opened={slot !== null}
       onClose={onClose}
-      title={slot ? `Scegli ${SPECIFICATION_LABELS[slot].toLowerCase()}` : ''}
+      title={title}
       fullScreen={fullScreen}
       centered={!fullScreen}
       zIndex={300}
@@ -35,13 +53,15 @@ export function SlotPickerModal({ slot, items, selectedId, onPick, onClose }: Pr
           <UnstyledButton onClick={() => onPick(null)} p="xs" style={{ borderRadius: 8 }}>
             <Group gap="sm" wrap="nowrap">
               <IconX size={20} />
-              <Text>Lascia lo slot vuoto</Text>
+              <Text>{weapon ? 'Nessuna arma' : 'Lascia lo slot vuoto'}</Text>
             </Group>
           </UnstyledButton>
         )}
         {candidates.length === 0 && (
           <Text c="dimmed" size="sm">
-            Nessun pezzo censito per questo slot: aggiungilo dal Censimento o da Full Sets.
+            {weapon
+              ? 'Nessuna arma censita: aggiungila dal Censimento.'
+              : 'Nessun pezzo censito per questo slot: aggiungilo dal Censimento o da Full Sets.'}
           </Text>
         )}
         {candidates.map((candidate) => {
@@ -74,6 +94,11 @@ export function SlotPickerModal({ slot, items, selectedId, onPick, onClose }: Pr
                 {candidate.armorSet && (
                   <Badge variant="light" color="gray">
                     {ARMOR_SET_LABELS[candidate.armorSet]}
+                  </Badge>
+                )}
+                {weapon && candidate.specification && (
+                  <Badge variant="light" color="orange">
+                    {SPECIFICATION_LABELS[candidate.specification]}
                   </Badge>
                 )}
               </Group>
