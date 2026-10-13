@@ -79,6 +79,17 @@ Il prompt è chiaro nella struttura generale (header, menu, Items, Full Sets, Cu
   Se il dito si muove prima, è uno scorrimento dell'elenco e l'anteprima non compare.
 - Danno e HP dal livello non ci sono, come nelle tabelle dei set. Il bonus del set (testo) non è una caratteristica.
 
+### Nuova visualizzazione dei set (0.5.0)
+- Danno e HP dal livello stanno tra parentesi accanto al nome del set (anche nelle proposte Best e nella modifica).
+- I pezzi sono uno sotto l'altro con nome e livello. Lo slot vuoto ha la X rossa sull'immagine, "Nessuno" o "Nessuna"
+  (accordato con lo slot) e "- / -"; dove lo slot si può riempire (censimento da Full Sets, modifica del set) resta il "+".
+- Ordine: bonus del set, pezzi, armi consigliate, poi arma e abilità (Custom Sets), infine la tabella.
+- In modifica le sezioni dei due set stanno sulle stesse righe, e le due tabelle hanno le stesse righe (quelle che ha
+  solo l'altro set valgono 0) e colonne della stessa larghezza, così si confrontano riga per riga.
+- Riepilogo dell'item al passaggio del mouse sull'icona (Items, Censimento, set, proposte Best, modifica): nome e
+  livello, tipologia - specifica - set, potenziamenti per rarità con un quadratino del colore della rarità, opacizzati
+  se non sbloccati. Non c'è nella scelta dei candidati (c'è già l'anteprima) né nel dettaglio dell'item.
+
 ## 5. Aspetti tecnici
 16. ✅ **Architettura.** App solo per te con database H2. Regole da Dropbox/MyClaudeProjects/MyCodingStyle (vedi sotto).
 17. ✅ **Lingua.** Interfaccia in italiano.

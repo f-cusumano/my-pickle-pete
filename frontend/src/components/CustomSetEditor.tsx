@@ -5,7 +5,6 @@ import {
   Modal,
   Paper,
   SegmentedControl,
-  SimpleGrid,
   Stack,
   Text,
   TextInput,
@@ -14,20 +13,27 @@ import {
 import { useMediaQuery } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { IconCopy, IconDeviceFloppy } from '@tabler/icons-react';
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState, type ReactNode } from 'react';
 import { ApiError } from '../api/client';
-import { errorMessage, useCustomSetCensus, useSetEvaluation } from '../api/queries';
-import type { CustomSet, Item, Specification, Stat, StatUnit } from '../api/types';
-import { itemIdsOf, sameSelection, selectionOf, statTrends, type SlotSelection } from '../domain/customSets';
+import { errorMessage, useCustomSetCensus, useGameConstants, useSetEvaluation } from '../api/queries';
+import type { CustomSet, Item, LevelStats, Specification, Stat, StatUnit } from '../api/types';
+import {
+  alignRows,
+  itemIdsOf,
+  sameSelection,
+  selectionOf,
+  statTrends,
+  type SlotSelection,
+} from '../domain/customSets';
 import { useFullScreenModal } from '../hooks/useFullScreenModal';
 import { SPECIFICATION_LABELS } from '../i18n/labels';
 import { CustomSetBonus } from './CustomSetBonus';
-import { SetPieces } from './SetPieces';
+import { SetGearList, SetItemList } from './SetItemList';
 import { SetLevelStats } from './SetLevelStats';
 import { SetStatsTable } from './SetStatsTable';
 import { SlotPickerModal, type PickerSlot } from './SlotPickerModal';
-import { GearSlot } from './GearSlot';
 import { WeaponAdviceCard } from './WeaponAdviceCard';
+import classes from './CustomSetEditor.module.css';
 
 /** Set da modificare: id null se non è ancora salvato; original è il set di partenza (null per "Da zero"). */
 export interface SetDraft {
@@ -82,7 +88,17 @@ export function CustomSetEditor({ draft, items, slots, weaponCategories, units, 
   const weaponId = weapon?.id ?? null;
   const abilityId = ability?.id ?? null;
   const evaluation = useSetEvaluation(itemIds, weaponId, abilityId);
+  const constants = useGameConstants();
   const original = draft.original;
+  const modified = evaluation.data;
+  // Le due tabelle hanno le stesse righe, così restano allineate nel confronto
+  const aligned = useMemo(() => {
+    if (!original || !modified || !constants.data) return null;
+    return {
+      stats: alignRows(original.stats, modified.stats, constants.data),
+      abilityStats: alignRows(original.abilityStats, modified.abilityStats, constants.data, true),
+    };
+  }, [original, modified, constants.data]);
   const trends = useMemo(
     () => (original && evaluation.data ? statTrends(original.stats, evaluation.data.stats) : undefined),
     [original, evaluation.data],
@@ -154,52 +170,57 @@ export function CustomSetEditor({ draft, items, slots, weaponCategories, units, 
     setPicking(null);
   };
 
-  const editable = (
-    <Stack gap="md">
-      <Group align="flex-start" gap={24}>
-        <SetPieces
-          slots={slots}
-          pieces={Object.values(selection)}
-          onPiece={(piece) => piece.specification && setPicking(piece.specification)}
-          onEmpty={setPicking}
-          pieceAction="edit"
-          emptyLabel={(slot) => `Aggiungi ${SPECIFICATION_LABELS[slot]}`}
-          showNames
-        />
-        <GearSlot item={weapon} onClick={() => setPicking('WEAPON')} action="edit" />
-        <GearSlot kind="ABILITY" item={ability} onClick={() => setPicking('ABILITY')} action="edit" />
-        {evaluation.data && <SetLevelStats levelStats={evaluation.data.levelStats} />}
-      </Group>
-      {evaluation.data ? (
-        <>
-          <CustomSetBonus set={evaluation.data} threshold={threshold} />
-          <WeaponAdviceCard advice={evaluation.data.weaponAdvice} />
-          <SetStatsTable
-            stats={evaluation.data.stats}
-            abilityStats={evaluation.data.abilityStats}
-            units={units}
-            trends={trends}
-            abilityTrends={abilityTrends}
-          />
-        </>
-      ) : (
-        <Loader />
-      )}
-    </Stack>
-  );
-  const fixed = original && (
-    <Stack gap="md">
-      <Group align="flex-start" gap={24}>
-        <SetPieces slots={slots} pieces={original.pieces} showNames />
-        <GearSlot item={original.weapon} />
-        <GearSlot kind="ABILITY" item={original.ability} />
-        <SetLevelStats levelStats={original.levelStats} />
-      </Group>
-      <CustomSetBonus set={original} threshold={threshold} />
-      <WeaponAdviceCard advice={original.weaponAdvice} />
-      <SetStatsTable stats={original.stats} abilityStats={original.abilityStats} units={units} />
-    </Stack>
-  );
+  // Sezioni nello stesso ordine dei set salvati: affiancate, ogni sezione si allinea con quella dell'altro set
+  const editable: ReactNode[] = [
+    <SectionTitle key="title" title={original ? 'Modificato' : null} levelStats={modified?.levelStats} />,
+    modified ? <CustomSetBonus key="bonus" set={modified} threshold={threshold} /> : <div key="bonus" />,
+    <SetItemList
+      key="items"
+      slots={slots}
+      pieces={Object.values(selection)}
+      onPiece={(piece) => piece.specification && setPicking(piece.specification)}
+      onEmpty={setPicking}
+      editable
+      emptyLabel={(slot) => `Aggiungi ${SPECIFICATION_LABELS[slot]}`}
+    />,
+    modified ? <WeaponAdviceCard key="advice" advice={modified.weaponAdvice} /> : <div key="advice" />,
+    <SetGearList
+      key="gear"
+      weapon={weapon}
+      ability={ability}
+      editable
+      onClick={(kind) => setPicking(kind)}
+    />,
+    modified ? (
+      <SetStatsTable
+        key="stats"
+        stats={aligned?.stats[1] ?? modified.stats}
+        abilityStats={aligned?.abilityStats[1] ?? modified.abilityStats}
+        units={units}
+        trends={trends}
+        abilityTrends={abilityTrends}
+        fixedLayout={sideBySide}
+      />
+    ) : (
+      <Loader key="stats" />
+    ),
+  ];
+  const fixed: ReactNode[] = original
+    ? [
+        <SectionTitle key="title" title="Set di partenza" levelStats={original.levelStats} />,
+        <CustomSetBonus key="bonus" set={original} threshold={threshold} />,
+        <SetItemList key="items" slots={slots} pieces={original.pieces} />,
+        <WeaponAdviceCard key="advice" advice={original.weaponAdvice} />,
+        <SetGearList key="gear" weapon={original.weapon} ability={original.ability} />,
+        <SetStatsTable
+          key="stats"
+          stats={aligned?.stats[0] ?? original.stats}
+          abilityStats={aligned?.abilityStats[0] ?? original.abilityStats}
+          units={units}
+          fixedLayout={sideBySide}
+        />,
+      ]
+    : [];
 
   return (
     <Modal
@@ -220,22 +241,16 @@ export function CustomSetEditor({ draft, items, slots, weaponCategories, units, 
           maxLength={MAX_NAME_LENGTH}
           error={name === '' ? undefined : nameError}
         />
-        {!original && editable}
+        {!original && <Stack gap="md">{editable}</Stack>}
         {original && sideBySide && (
-          <SimpleGrid cols={2} spacing="lg">
-            <Paper withBorder p="sm" radius="md" bg="gray.0">
-              <Title order={4} mb="sm">
-                Set di partenza
-              </Title>
+          <div className={classes.compare}>
+            <Paper withBorder p="sm" radius="md" bg="gray.0" className={classes.column}>
               {fixed}
             </Paper>
-            <Paper withBorder p="sm" radius="md">
-              <Title order={4} mb="sm">
-                Modificato
-              </Title>
+            <Paper withBorder p="sm" radius="md" className={classes.column}>
               {editable}
             </Paper>
-          </SimpleGrid>
+          </div>
         )}
         {original && !sideBySide && (
           <>
@@ -248,7 +263,7 @@ export function CustomSetEditor({ draft, items, slots, weaponCategories, units, 
                 { value: 'original', label: 'Set di partenza' },
               ]}
             />
-            {view === 'modified' ? editable : fixed}
+            <Stack gap="md">{view === 'modified' ? editable : fixed}</Stack>
           </>
         )}
 
@@ -349,5 +364,16 @@ function NewNameModal({ initialName, saving, nameErrorOf, error, onSave, onClose
         </Stack>
       </form>
     </Modal>
+  );
+}
+
+/** Titolo del set nel confronto, con Danno e HP dal livello tra parentesi accanto. */
+function SectionTitle({ title, levelStats }: { title: string | null; levelStats?: LevelStats }) {
+  if (!title && !levelStats) return <div />;
+  return (
+    <Group gap="lg" style={{ rowGap: 2 }}>
+      {title && <Title order={4}>{title}</Title>}
+      {levelStats && <SetLevelStats levelStats={levelStats} />}
+    </Group>
   );
 }

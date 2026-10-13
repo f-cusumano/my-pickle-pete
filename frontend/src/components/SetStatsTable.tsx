@@ -20,6 +20,8 @@ interface Props {
   /** Frecce rispetto al set di partenza (solo in modifica). */
   trends?: Map<string, StatTrend>;
   abilityTrends?: Map<string, StatTrend>;
+  /** Colonne di larghezza fissa: due tabelle affiancate restano allineate anche nelle colonne. */
+  fixedLayout?: boolean;
 }
 
 /**
@@ -27,14 +29,27 @@ interface Props {
  * Il contributo dell'arma scelta è tra parentesi; le caratteristiche proprie dell'arma e quelle dell'abilità
  * stanno in fondo, ciascuna nella sua sezione.
  */
-export function SetStatsTable({ stats, abilityStats = [], units, trends, abilityTrends }: Props) {
+export function SetStatsTable({
+  stats,
+  abilityStats = [],
+  units,
+  trends,
+  abilityTrends,
+  fixedLayout = false,
+}: Props) {
   const general = stats.filter((row) => !row.own);
   const own = stats.filter((row) => row.own);
   return (
-    <Table withTableBorder withColumnBorders verticalSpacing={6} fz="sm">
+    <Table
+      withTableBorder
+      withColumnBorders
+      verticalSpacing={6}
+      fz="sm"
+      layout={fixedLayout ? 'fixed' : undefined}
+    >
       <Table.Thead>
         <Table.Tr>
-          <Table.Th>Caratteristica</Table.Th>
+          <Table.Th w={fixedLayout ? '46%' : undefined}>Caratteristica</Table.Th>
           <Table.Th ta="right">Attuale</Table.Th>
           <Table.Th ta="right">Top</Table.Th>
         </Table.Tr>

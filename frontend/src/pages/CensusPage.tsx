@@ -102,7 +102,7 @@ function ItemCensus({ constants }: { constants: GameConstants }) {
                 {items.data.map((item) => (
                   <Table.Tr key={item.id}>
                     <Table.Td>
-                      <ItemThumbnail {...thumbnailOf(item)} size={40} plain />
+                      <ItemThumbnail {...thumbnailOf(item)} size={40} plain summary={item} />
                     </Table.Td>
                     <Table.Td fw={700}>{item.name}</Table.Td>
                     <Table.Td>{ITEM_TYPE_LABELS[item.type]}</Table.Td>

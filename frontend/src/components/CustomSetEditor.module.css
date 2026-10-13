@@ -1,0 +1,16 @@
+/* Set di partenza e modificato affiancati: le sezioni (titolo, bonus, pezzi, armi, tabella) stanno sulle stesse
+   righe della griglia, così le tabelle partono alla stessa altezza e si confrontano riga per riga. */
+.compare {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-rows: repeat(6, auto);
+  column-gap: var(--mantine-spacing-lg);
+}
+
+.column {
+  display: grid;
+  grid-row: span 6;
+  grid-template-rows: subgrid;
+  row-gap: var(--mantine-spacing-md);
+  min-width: 0;
+}

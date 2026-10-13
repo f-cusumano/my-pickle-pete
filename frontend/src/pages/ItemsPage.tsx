@@ -197,7 +197,7 @@ function ItemsTable({ constants, items, sortOrder, onSortOrderChange, onGoToCens
                 {visible.map((item) => (
                   <Table.Tr key={item.id} className={classes.row} onClick={() => setOpenItemId(item.id)}>
                     <Table.Td className={classes.stickyImage}>
-                      <ItemThumbnail {...thumbnailOf(item)} />
+                      <ItemThumbnail {...thumbnailOf(item)} summary={item} />
                     </Table.Td>
                     <Table.Td className={classes.stickyName}>
                       <Text fw={700} size="sm">

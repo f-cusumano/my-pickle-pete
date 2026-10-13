@@ -37,6 +37,21 @@ export const SPECIFICATION_LABELS: Record<Specification, string> = {
   BOOTS: 'Stivali',
 };
 
+/** Slot vuoto di un set, accordato col nome dello slot: "Nessuno" (cappello), "Nessuna" (schiena, arma, abilità). */
+export const EMPTY_SLOT_LABELS: Record<Specification | 'WEAPON' | 'ABILITY', string> = {
+  RANGED: 'Nessuna',
+  ELEMENTAL: 'Nessuna',
+  MECHANICAL: 'Nessuna',
+  MELEE: 'Nessuna',
+  HAT: 'Nessuno',
+  GLASSES: 'Nessuno',
+  CHEST: 'Nessuno',
+  BACK: 'Nessuna',
+  BOOTS: 'Nessuno',
+  WEAPON: 'Nessuna',
+  ABILITY: 'Nessuna',
+};
+
 export const ARMOR_SET_LABELS: Record<ArmorSet, string> = {
   BANDIT: 'Bandito',
   KNIGHT: 'Cavaliere',
