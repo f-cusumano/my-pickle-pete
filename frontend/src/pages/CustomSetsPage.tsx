@@ -1,17 +1,4 @@
-import {
-  Accordion,
-  ActionIcon,
-  Alert,
-  Badge,
-  Button,
-  Group,
-  Loader,
-  Menu,
-  Paper,
-  Stack,
-  Text,
-  Title,
-} from '@mantine/core';
+import { Accordion, Alert, Badge, Button, Group, Loader, Menu, Paper, Text, Title } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import { modals } from '@mantine/modals';
 import {
@@ -22,13 +9,14 @@ import {
   IconTrash,
   IconTrendingUp,
 } from '@tabler/icons-react';
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useCustomSetCensus, useCustomSets, useGameConstants, useItems } from '../api/queries';
 import type { BestSetMode, CustomSet, FullSet, GameConstants, Item, Rarity } from '../api/types';
 import { BestSetModal } from '../components/BestSetModal';
 import { CustomSetBonus } from '../components/CustomSetBonus';
 import { CustomSetEditor, type SetDraft } from '../components/CustomSetEditor';
 import { ItemModal } from '../components/ItemModal';
+import { SetAction } from '../components/SetAction';
 import { SetDetailColumns } from '../components/SetDetailColumns';
 import { SetGearList, SetItemList } from '../components/SetItemList';
 import { SetLevelStats } from '../components/SetLevelStats';
@@ -188,27 +176,25 @@ function CustomSetList({ constants, customSets, items, customizing, onCustomizin
                 </Group>
               </Group>
               <Accordion.Panel>
-                <Stack gap="md">
-                  <CustomSetBonus set={set} threshold={constants.armorSetBonusThreshold} />
-                  <SetDetailColumns
-                    left={
-                      <>
-                        <SetItemList
-                          slots={slots}
-                          pieces={set.pieces}
-                          onPiece={(piece) => setOpenedId(piece.id)}
-                        />
-                        <WeaponAdviceCard advice={set.weaponAdvice} />
-                        <SetGearList
-                          weapon={set.weapon}
-                          ability={set.ability}
-                          onClick={(_kind, item) => setOpenedId(item?.id ?? null)}
-                        />
-                      </>
-                    }
-                    right={<SetStatsTable stats={set.stats} abilityStats={set.abilityStats} units={units} />}
-                  />
-                </Stack>
+                <SetDetailColumns
+                  left={
+                    <>
+                      <CustomSetBonus set={set} threshold={constants.armorSetBonusThreshold} />
+                      <SetItemList
+                        slots={slots}
+                        pieces={set.pieces}
+                        onPiece={(piece) => setOpenedId(piece.id)}
+                      />
+                      <WeaponAdviceCard advice={set.weaponAdvice} />
+                      <SetGearList
+                        weapon={set.weapon}
+                        ability={set.ability}
+                        onClick={(_kind, item) => setOpenedId(item?.id ?? null)}
+                      />
+                    </>
+                  }
+                  right={<SetStatsTable stats={set.stats} abilityStats={set.abilityStats} units={units} />}
+                />
               </Accordion.Panel>
             </Accordion.Item>
           ))}
@@ -243,31 +229,5 @@ function CustomSetList({ constants, customSets, items, customizing, onCustomizin
         />
       )}
     </>
-  );
-}
-
-interface SetActionProps {
-  label: string;
-  color: string;
-  icon: ReactNode;
-  ariaLabel: string;
-  /** Solo il simbolo (cellulare). */
-  compact: boolean;
-  onClick: () => void;
-}
-
-/** Tasto accanto alla freccia di un set (Modifica, Elimina): con la scritta, o solo il simbolo su cellulare. */
-function SetAction({ label, color, icon, ariaLabel, compact, onClick }: SetActionProps) {
-  if (compact) {
-    return (
-      <ActionIcon variant="light" color={color} size="lg" onClick={onClick} aria-label={ariaLabel}>
-        {icon}
-      </ActionIcon>
-    );
-  }
-  return (
-    <Button variant="light" color={color} leftSection={icon} onClick={onClick} aria-label={ariaLabel}>
-      {label}
-    </Button>
   );
 }
