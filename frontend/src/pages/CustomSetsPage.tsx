@@ -28,6 +28,7 @@ import { BestSetModal } from '../components/BestSetModal';
 import { CustomSetBonus } from '../components/CustomSetBonus';
 import { CustomSetEditor, type SetDraft } from '../components/CustomSetEditor';
 import { ItemModal } from '../components/ItemModal';
+import { SetDetailColumns } from '../components/SetDetailColumns';
 import { SetGearList, SetItemList } from '../components/SetItemList';
 import { SetLevelStats } from '../components/SetLevelStats';
 import { SetStatsTable } from '../components/SetStatsTable';
@@ -186,14 +187,24 @@ function CustomSetList({ constants, customSets, items, customizing, onCustomizin
                     </Button>
                   </Group>
                   <CustomSetBonus set={set} threshold={constants.armorSetBonusThreshold} />
-                  <SetItemList slots={slots} pieces={set.pieces} onPiece={(piece) => setOpenedId(piece.id)} />
-                  <WeaponAdviceCard advice={set.weaponAdvice} />
-                  <SetGearList
-                    weapon={set.weapon}
-                    ability={set.ability}
-                    onClick={(_kind, item) => setOpenedId(item?.id ?? null)}
+                  <SetDetailColumns
+                    left={
+                      <>
+                        <SetItemList
+                          slots={slots}
+                          pieces={set.pieces}
+                          onPiece={(piece) => setOpenedId(piece.id)}
+                        />
+                        <WeaponAdviceCard advice={set.weaponAdvice} />
+                        <SetGearList
+                          weapon={set.weapon}
+                          ability={set.ability}
+                          onClick={(_kind, item) => setOpenedId(item?.id ?? null)}
+                        />
+                      </>
+                    }
+                    right={<SetStatsTable stats={set.stats} abilityStats={set.abilityStats} units={units} />}
                   />
-                  <SetStatsTable stats={set.stats} abilityStats={set.abilityStats} units={units} />
                 </Stack>
               </Accordion.Panel>
             </Accordion.Item>

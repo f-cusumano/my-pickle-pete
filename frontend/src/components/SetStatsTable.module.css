@@ -32,15 +32,3 @@
   color: var(--mantine-color-orange-8);
   font-weight: 600;
 }
-
-/* Caratteristiche proprie dell'arma: staccate dalle altre con una linea più marcata */
-.ownSection {
-  border-top: 3px solid var(--mantine-color-gray-6);
-}
-
-.ownTitle {
-  background: var(--mantine-color-gray-1);
-  font-size: var(--mantine-font-size-xs);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
