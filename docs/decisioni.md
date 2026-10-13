@@ -34,6 +34,23 @@ Il prompt è chiaro nella struttura generale (header, menu, Items, Full Sets, Cu
   su ogni valore (attuale e top) migliorato o peggiorato.
 - Cancellando un item, o cambiandone tipologia o slot nel censimento, lo si toglie dai set custom che lo indossano.
 
+### Scelte fatte nello sviluppo di armi e Personalizza (0.3.0)
+- **Armi consigliate e sconsigliate.** Ogni categoria di arma ha la sua caratteristica: A distanza → Danno a distanza,
+  Elementale → Danno elementale, Meccanica → Danno meccanico, Ravvicinata → Danno ravvicinato. Conta il valore nell'unità
+  predefinita, a parità quello nell'altra unità. Si calcolano sia sui valori attuali sia su quelli top: se sono diversi,
+  i top si aggiungono tra parentesi. Se tutti i tipi sono pari si mostra "nessuna in particolare". L'arma del set non conta.
+- **Arma nei Custom Sets.** È facoltativa e si salva con il set. Il suo contributo appare tra parentesi in arancione,
+  mentre le evidenziazioni usano il totale. Il Danno base del livello dell'arma conta come Danno.
+  Best now e Best potential non scelgono l'arma.
+- **Potenziamenti "propri".** Nel censimento delle armi una casella segna i potenziamenti della sola arma
+  ("+10% al proprio danno"). Stanno in fondo alla tabella, sotto una linea, senza evidenziazioni.
+- **Arma tolta dai set.** Cambiando tipologia a un'arma (o cancellandola) la si toglie dai set custom.
+  Cambiandone solo la categoria resta.
+- **Personalizza.** Il nuovo set non è salvato finché non premi Salva. A sinistra resta il Full Set di partenza.
+  Il tasto è disattivato se il Full Set non ha pezzi.
+- **Censimento.** I 5 potenziamenti sono obbligatori e ogni aumento vale almeno 1, controllato anche dal backend.
+  Gli item censiti prima con potenziamenti mancanti restano validi, ma per modificarli vanno completati.
+
 ## 5. Aspetti tecnici
 16. ✅ **Architettura.** App solo per te con database H2. Regole da Dropbox/MyClaudeProjects/MyCodingStyle (vedi sotto).
 17. ✅ **Lingua.** Interfaccia in italiano.
