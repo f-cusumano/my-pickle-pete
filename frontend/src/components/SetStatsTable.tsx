@@ -25,7 +25,7 @@ interface Props {
 }
 
 /**
- * Tabelle delle caratteristiche di un set: valore attuale e top, con massimi e minimi evidenziati.
+ * Tabelle delle caratteristiche di un set: valore attuale e top, con massimi (verde) e minimi (rosso) in grassetto.
  * Il contributo dell'arma scelta è tra parentesi; le caratteristiche proprie dell'arma e quelle dell'abilità
  * sono in tabelle a parte, sotto.
  */
@@ -84,12 +84,15 @@ interface SectionProps {
 
 function StatsSection({ title, rows, labelOf, units, trends, fixedLayout }: SectionProps) {
   return (
+    // Compatta: righe basse e alternate al posto delle linee, solo una linea sotto l'intestazione
     <Table
-      withTableBorder
-      withColumnBorders
-      verticalSpacing={6}
+      striped
+      withRowBorders={false}
+      verticalSpacing={2}
+      horizontalSpacing={8}
       fz="sm"
       layout={fixedLayout ? 'fixed' : undefined}
+      className={classes.table}
     >
       <Table.Thead>
         <Table.Tr>
