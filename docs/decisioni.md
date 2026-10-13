@@ -40,7 +40,7 @@ Il prompt è chiaro nella struttura generale (header, menu, Items, Full Sets, Cu
   predefinita, a parità quello nell'altra unità. Si calcolano sia sui valori attuali sia su quelli top: se sono diversi,
   i top si aggiungono tra parentesi. Se tutti i tipi sono pari si mostra "nessuna in particolare". L'arma del set non conta.
 - **Arma nei Custom Sets.** È facoltativa e si salva con il set. Il suo contributo appare tra parentesi in arancione,
-  mentre le evidenziazioni usano il totale. Il Danno base del livello dell'arma conta come Danno.
+  mentre le evidenziazioni usano il totale.
   Best now e Best potential non scelgono l'arma.
 - **Potenziamenti "propri".** Nel censimento delle armi una casella segna i potenziamenti della sola arma
   ("+10% al proprio danno"). Stanno in fondo alla tabella, sotto una linea, senza evidenziazioni.
@@ -50,6 +50,12 @@ Il prompt è chiaro nella struttura generale (header, menu, Items, Full Sets, Cu
   Il tasto è disattivato se il Full Set non ha pezzi.
 - **Censimento.** I 5 potenziamenti sono obbligatori e ogni aumento vale almeno 1, controllato anche dal backend.
   Gli item censiti prima con potenziamenti mancanti restano validi, ma per modificarli vanno completati.
+
+### Danno e HP dal livello (0.3.1)
+- Il Danno e gli HP che crescono con il livello (x4) non entrano più nella tabella delle caratteristiche, dove sarebbero
+  sempre i valori più alti. Stanno accanto ai pezzi del set: 👊 Danno e ❤️ HP, attuale / a rarità e livello massimi.
+  Nei Custom Sets il Danno comprende quello dell'arma.
+- Anche Best now e Best potential confrontano solo i potenziamenti; Danno/HP dal livello restano l'ultimo spareggio.
 
 ## 5. Aspetti tecnici
 16. ✅ **Architettura.** App solo per te con database H2. Regole da Dropbox/MyClaudeProjects/MyCodingStyle (vedi sotto).

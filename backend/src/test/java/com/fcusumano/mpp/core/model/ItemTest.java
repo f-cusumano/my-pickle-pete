@@ -38,17 +38,17 @@ class ItemTest {
     @Test
     void currentStatsSumOnlyUnlockedBonuses() {
         final Map<StatKey, BigDecimal> stats = BOOTS.currentStats();
-        Assertions.assertEquals(0, new BigDecimal("100").compareTo(stats.get(StatKey.defaultOf(Stat.MAX_HP))));
         Assertions.assertEquals(0, new BigDecimal("3").compareTo(stats.get(StatKey.defaultOf(Stat.LUCK)))); //Epico non ancora sbloccato
         Assertions.assertEquals(0, new BigDecimal("5").compareTo(stats.get(StatKey.defaultOf(Stat.PICK_UP_RADIUS))));
-        Assertions.assertEquals(3, stats.size());
+        Assertions.assertEquals(2, stats.size()); //Gli HP del livello stanno fuori
     }
 
     @Test
-    void topStatsUseArtifactAtLevel99() {
+    void topStatsUseAllBonusesWithoutLevel() {
         final Map<StatKey, BigDecimal> stats = BOOTS.topStats();
-        Assertions.assertEquals(0, new BigDecimal("406").compareTo(stats.get(StatKey.defaultOf(Stat.MAX_HP)))); //4 x 99 + 10 dell'Artefatto
+        Assertions.assertEquals(0, new BigDecimal("10").compareTo(stats.get(StatKey.defaultOf(Stat.MAX_HP)))); //Solo l'Artefatto
         Assertions.assertEquals(0, new BigDecimal("5.5").compareTo(stats.get(StatKey.defaultOf(Stat.LUCK))));
+        Assertions.assertEquals(396, BOOTS.topBaseStatValue()); //4 x 99
     }
 
     @Test
@@ -60,11 +60,11 @@ class ItemTest {
         final Map<StatKey, BigDecimal> stats = hat.currentStats();
         Assertions.assertEquals(0, new BigDecimal("3").compareTo(stats.get(StatKey.of(Stat.LUCK, StatUnit.FLAT))));
         Assertions.assertEquals(0, new BigDecimal("5").compareTo(stats.get(StatKey.of(Stat.LUCK, StatUnit.PERCENT))));
-        Assertions.assertEquals(0, new BigDecimal("4").compareTo(stats.get(StatKey.of(Stat.DAMAGE, StatUnit.PERCENT)))); //Base 4 x 1
+        Assertions.assertFalse(stats.containsKey(StatKey.of(Stat.DAMAGE, StatUnit.PERCENT))); //Il Danno del livello sta fuori
         Assertions.assertEquals(0, new BigDecimal("2").compareTo(stats.get(StatKey.of(Stat.DAMAGE, StatUnit.FLAT))));
         //Ordine fisso, unità predefinita prima dell'altra
-        Assertions.assertEquals(List.of(StatKey.of(Stat.DAMAGE, StatUnit.PERCENT), StatKey.of(Stat.DAMAGE, StatUnit.FLAT),
-                                        StatKey.of(Stat.LUCK, StatUnit.FLAT), StatKey.of(Stat.LUCK, StatUnit.PERCENT)),
+        Assertions.assertEquals(List.of(StatKey.of(Stat.DAMAGE, StatUnit.FLAT), StatKey.of(Stat.LUCK, StatUnit.FLAT),
+                                        StatKey.of(Stat.LUCK, StatUnit.PERCENT)),
                                 List.copyOf(stats.keySet()));
     }
 

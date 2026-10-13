@@ -18,8 +18,8 @@ import java.util.Objects;
 
 /**
  * Migliori combinazioni di armature (un pezzo per slot) per una caratteristica principale e una secondaria facoltativa.
- * Ordine delle proposte: caratteristica principale, poi secondaria, poi bonus di set attivo, poi somma delle caratteristiche
- * base (Danno/HP) dei pezzi; a parità resta la combinazione trovata prima, con i pezzi di rarità più alta provati per primi.
+ * Ordine delle proposte: caratteristica principale, poi secondaria (entrambe dai soli potenziamenti), poi bonus di set attivo,
+ * poi somma delle caratteristiche base del livello (Danno/HP) dei pezzi; a parità resta la combinazione trovata prima, con i pezzi di rarità più alta provati per primi.
  * Al massimo 11 pezzi per slot: la ricerca esaustiva è al massimo 11^5 combinazioni, poche per una CPU.
  */
 public final class BestSetFinder {
@@ -51,18 +51,19 @@ public final class BestSetFinder {
                 .filter(item -> item.type() == ItemType.ARMOR)
                 .sorted(CANDIDATE_ORDER)
                 .forEach(item -> slot2candidates.computeIfAbsent(item.specification(), slot -> new ArrayList<>())
-                        .add(Candidate.of(item, configuration.stats(item), primary, secondary)));
+                        .add(Candidate.of(item, configuration, primary, secondary)));
         return List.copyOf(slot2candidates.values());
     }
 
     /** Pezzo candidato con i valori che servono al confronto già estratti. */
     private record Candidate(Item item, BigDecimal primary, BigDecimal secondary, BigDecimal base) {
 
-        static Candidate of(Item item, Map<StatKey, BigDecimal> stats, StatKey primary, StatKey secondary) {
+        static Candidate of(Item item, ItemConfiguration configuration, StatKey primary, StatKey secondary) {
+            final Map<StatKey, BigDecimal> stats = configuration.stats(item);
             return new Candidate(item,
                                  stats.getOrDefault(primary, BigDecimal.ZERO),
                                  secondary == null ? BigDecimal.ZERO : stats.getOrDefault(secondary, BigDecimal.ZERO),
-                                 stats.getOrDefault(StatKey.defaultOf(item.baseStat()), BigDecimal.ZERO));
+                                 BigDecimal.valueOf(configuration.baseStatValue(item)));
         }
     }
 

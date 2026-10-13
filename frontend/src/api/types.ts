@@ -113,11 +113,20 @@ export interface WeaponAdvice {
   discouragedTop: Specification[];
 }
 
+/** Danno (%) e HP (valore) dovuti al livello di pezzi e arma: fuori dalla tabella delle caratteristiche. */
+export interface LevelStats {
+  damageNow: number;
+  damageTop: number;
+  hpNow: number;
+  hpTop: number;
+}
+
 export interface FullSet {
   armorSet: ArmorSet;
   bonusDescription: string | null;
   bonusActive: boolean;
   pieces: Item[];
+  levelStats: LevelStats;
   stats: StatComparison[];
   weaponAdvice: WeaponAdvice;
 }
@@ -130,6 +139,7 @@ export interface CustomSet {
   bonusDescription: string | null;
   pieces: Item[];
   weapon: Item | null;
+  levelStats: LevelStats;
   stats: StatComparison[];
   weaponAdvice: WeaponAdvice;
 }

@@ -3,9 +3,11 @@ package com.fcusumano.mpp.core.utils;
 import com.fcusumano.mpp.core.enums.ArmorSet;
 import com.fcusumano.mpp.core.enums.ItemType;
 import com.fcusumano.mpp.core.enums.Specification;
+import com.fcusumano.mpp.core.enums.Stat;
 import com.fcusumano.mpp.core.model.Item;
 import com.fcusumano.mpp.core.model.StatKey;
 import com.fcusumano.mpp.core.utils.bo.Highlight;
+import com.fcusumano.mpp.core.utils.bo.LevelStats;
 import com.fcusumano.mpp.core.utils.bo.SetStatistics;
 import com.fcusumano.mpp.core.utils.bo.StatComparison;
 import com.fcusumano.mpp.core.utils.bo.StatHighlights;
@@ -35,7 +37,7 @@ public final class SetStatisticsCalculator {
      * Una riga per ogni caratteristica del gioco nell'unità predefinita, più una riga per ogni caratteristica
      * portata da qualche pezzo (o dall'arma) nell'altra unità; ordine fisso, con le evidenziazioni di ciascuna colonna
      * calcolate sul totale con l'arma. In fondo le caratteristiche proprie dell'arma, se ne ha.
-     * I tipi di arma consigliati e sconsigliati dipendono solo dalle armature.
+     * I tipi di arma consigliati e sconsigliati dipendono solo dalle armature. Danno e HP dovuti al livello sono a parte.
      *
      * @param weapon arma scelta per il set, null se nessuna
      */
@@ -59,7 +61,27 @@ public final class SetStatisticsCalculator {
         }
         weaponTop.keySet().stream().filter(StatKey::own).forEach(key -> rows.add(
                 new StatComparison(key, weaponCurrent.get(key), weaponTop.get(key), null, null, Highlight.NONE, Highlight.NONE)));
-        return new SetStatistics(rows, currentAdvice, topAdvice);
+        return new SetStatistics(rows, levelStats(pieces, weapon), currentAdvice, topAdvice);
+    }
+
+    /** Somma di Danno e HP dovuti al livello di pezzi e arma, ciascuno sulla propria caratteristica base. */
+    static LevelStats levelStats(Collection<Item> pieces, Item weapon) {
+        final List<Item> items = new ArrayList<>(pieces);
+        if (weapon != null) items.add(weapon);
+        int currentDamage = 0;
+        int topDamage = 0;
+        int currentHp = 0;
+        int topHp = 0;
+        for (Item item : items) { //Al massimo 6 elementi: ciclo classico (R30)
+            if (item.baseStat() == Stat.MAX_HP) {
+                currentHp += item.baseStatValue();
+                topHp += item.topBaseStatValue();
+            } else {
+                currentDamage += item.baseStatValue();
+                topDamage += item.topBaseStatValue();
+            }
+        }
+        return new LevelStats(currentDamage, topDamage, currentHp, topHp);
     }
 
     /** Stesse righe nelle due colonne: un potenziamento non ancora sbloccato vale 0 nella colonna attuale. */

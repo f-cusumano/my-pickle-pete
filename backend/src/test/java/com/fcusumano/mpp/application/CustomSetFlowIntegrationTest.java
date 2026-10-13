@@ -43,8 +43,11 @@ class CustomSetFlowIntegrationTest {
                 .andExpect(jsonPath("$.bonusArmorSet").value("WIZARD"))
                 .andExpect(jsonPath("$.pieces[0].specification").value("HAT"))
                 .andExpect(jsonPath("$.pieces[3].specification").value("BACK"))
+                .andExpect(jsonPath("$.levelStats.damageNow").value(8)) //Cappello e occhiali 1/10: 4 + 4
+                .andExpect(jsonPath("$.levelStats.damageTop").value(792))
+                .andExpect(jsonPath("$.levelStats.hpNow").value(8))
                 .andExpect(jsonPath("$.stats[0].stat").value("DAMAGE"))
-                .andExpect(jsonPath("$.stats[0].current").value(8));
+                .andExpect(jsonPath("$.stats[0].current").value(0)); //Il Danno del livello sta fuori dalla tabella
 
         final long setId = createSet("{\"name\": \"Fortuna\", \"itemIds\": [%d, %d]}".formatted(otherHat, glasses));
         mockMvc.perform(get("/api/custom-set").param("id", String.valueOf(setId)))
@@ -117,13 +120,17 @@ class CustomSetFlowIntegrationTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
 
-        //Arma valutata a parte: Danno del set 4 + 4 dell'arma, riga propria in fondo; le armi consigliate seguono solo il set
+        //Arma valutata a parte, riga propria in fondo; il Danno del livello (4 dell'elmo + 4 dell'arma) sta fuori dalla tabella;
+        //le armi consigliate seguono solo il set
         postJson("/api/custom-set/evaluate", "{\"itemIds\": [%d], \"weaponId\": %d}".formatted(hat, pistol))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.weapon.id").value(pistol))
+                .andExpect(jsonPath("$.levelStats.damageNow").value(8))
+                .andExpect(jsonPath("$.levelStats.damageTop").value(792))
+                .andExpect(jsonPath("$.levelStats.hpNow").value(0))
                 .andExpect(jsonPath("$.stats[0].stat").value("DAMAGE"))
-                .andExpect(jsonPath("$.stats[0].current").value(4))
-                .andExpect(jsonPath("$.stats[0].weaponCurrent").value(4))
+                .andExpect(jsonPath("$.stats[0].current").value(0))
+                .andExpect(jsonPath("$.stats[0].weaponCurrent").doesNotExist())
                 .andExpect(jsonPath("$.stats[1].weaponCurrent").doesNotExist())
                 .andExpect(jsonPath("$.stats[22].own").value(true))
                 .andExpect(jsonPath("$.stats[22].top").value(10))

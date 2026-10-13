@@ -170,6 +170,7 @@ export function fullSetAsCustomSet(fullSet: FullSet): CustomSet {
     bonusDescription: fullSet.bonusActive ? fullSet.bonusDescription : null,
     pieces: fullSet.pieces,
     weapon: null,
+    levelStats: fullSet.levelStats,
     stats: fullSet.stats,
     weaponAdvice: fullSet.weaponAdvice,
   };
