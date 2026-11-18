@@ -15,7 +15,6 @@ import java.util.stream.Collectors;
 
 import static com.fcusumano.mpp.infrastructure.repository.jooq.Tables.MPP_CUSTOM_SET;
 import static com.fcusumano.mpp.infrastructure.repository.jooq.Tables.MPP_CUSTOM_SET_PIECE;
-import static org.jooq.impl.DSL.noCondition;
 
 /** Set custom su jOOQ: l'elenco si legge con due query (set con arma e abilità, poi pezzi), mai una per set (R32). */
 @Repository
@@ -29,23 +28,27 @@ public class JooqCustomSetRepository implements CustomSetRepository {
     }
 
     @Override
-    public List<CustomSet> retrieveAll() {
-        return retrieveWhere(noCondition());
+    public List<CustomSet> retrieveAll(long userId) {
+        return retrieveWhere(MPP_CUSTOM_SET.ID_MPP_USER.eq(userId));
     }
 
     @Override
-    public Optional<CustomSet> retrieve(long id) {
-        return retrieveWhere(MPP_CUSTOM_SET.ID.eq(id)).stream().findFirst();
+    public Optional<CustomSet> retrieve(long userId, long id) {
+        return retrieveWhere(MPP_CUSTOM_SET.ID_MPP_USER.eq(userId).and(MPP_CUSTOM_SET.ID.eq(id))).stream().findFirst();
     }
 
     @Override
-    public Optional<Long> retrieveIdByName(String name) {
-        return dsl.select(MPP_CUSTOM_SET.ID).from(MPP_CUSTOM_SET).where(MPP_CUSTOM_SET.NAME.equalIgnoreCase(name)).fetchOptional(MPP_CUSTOM_SET.ID);
+    public Optional<Long> retrieveIdByName(long userId, String name) {
+        return dsl.select(MPP_CUSTOM_SET.ID).from(MPP_CUSTOM_SET)
+                .where(MPP_CUSTOM_SET.ID_MPP_USER.eq(userId))
+                .and(MPP_CUSTOM_SET.NAME.equalIgnoreCase(name))
+                .fetchOptional(MPP_CUSTOM_SET.ID);
     }
 
     @Override
-    public long insert(CustomSetDefinition definition) {
+    public long insert(long userId, CustomSetDefinition definition) {
         final long id = dsl.insertInto(MPP_CUSTOM_SET)
+                .set(MPP_CUSTOM_SET.ID_MPP_USER, userId)
                 .set(MPP_CUSTOM_SET.NAME, definition.name())
                 .set(MPP_CUSTOM_SET.ID_MPP_ITEM_WEAPON, definition.weaponId())
                 .set(MPP_CUSTOM_SET.ID_MPP_ITEM_ABILITY, definition.abilityId())

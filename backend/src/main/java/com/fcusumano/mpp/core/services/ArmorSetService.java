@@ -48,12 +48,12 @@ public class ArmorSetService {
         return new ArmorSetInfo(armorSet, normalized);
     }
 
-    /** Tutti i set nell'ordine del gioco, ciascuno con i pezzi censiti e il confronto attuale/top. */
+    /** Tutti i set nell'ordine del gioco, ciascuno con i pezzi censiti e il confronto attuale (progressi dell'utente) / top. */
     @Transactional(readOnly = true)
-    public List<FullSet> fullSets() {
+    public List<FullSet> fullSets(long userId) {
         final Map<ArmorSet, String> set2description = new EnumMap<>(ArmorSet.class);
         for (ArmorSetInfo info : armorSetRepository.retrieveAll()) set2description.put(info.armorSet(), info.bonusDescription());
-        final Map<ArmorSet, List<Item>> set2pieces = armorPiecesBySet();
+        final Map<ArmorSet, List<Item>> set2pieces = armorPiecesBySet(userId);
         final List<FullSet> fullSets = new ArrayList<>(ArmorSet.values().length);
         for (ArmorSet armorSet : ArmorSet.values()) {
             final List<Item> pieces = set2pieces.getOrDefault(armorSet, List.of());
@@ -63,8 +63,8 @@ public class ArmorSetService {
         return fullSets;
     }
 
-    private Map<ArmorSet, List<Item>> armorPiecesBySet() {
-        return itemRepository.retrieveAll().stream()
+    private Map<ArmorSet, List<Item>> armorPiecesBySet(long userId) {
+        return itemRepository.retrieveAll(userId).stream()
                 .filter(item -> item.type() == ItemType.ARMOR)
                 .sorted(Comparator.comparing(Item::specification))
                 .collect(Collectors.groupingBy(Item::armorSet, () -> new EnumMap<>(ArmorSet.class), Collectors.toList()));

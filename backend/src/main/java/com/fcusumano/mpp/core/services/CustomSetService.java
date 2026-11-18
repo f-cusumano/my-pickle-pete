@@ -45,8 +45,8 @@ import static com.fcusumano.mpp.infrastructure.exception.InternalErrorCode.ITEM_
 import static com.fcusumano.mpp.tools.FunctionUtils.exception;
 
 /**
- * Casi d'uso sui set custom: salvataggio, valutazione di un set non salvato e proposte Best now / Best potential
- * (senza arma né abilità).
+ * Casi d'uso sui set custom dell'utente indicato: salvataggio, valutazione di un set non salvato e proposte
+ * Best now / Best potential (senza arma né abilità), sempre con i suoi progressi.
  */
 @Service
 public class CustomSetService {
@@ -66,64 +66,61 @@ public class CustomSetService {
 
     /** Set custom in ordine di nome. */
     @Transactional(readOnly = true)
-    public List<EvaluatedSet> list() {
-        final Context context = context();
-        return customSetRepository.retrieveAll().stream()
+    public List<EvaluatedSet> list(long userId) {
+        final Context context = context(userId);
+        return customSetRepository.retrieveAll(userId).stream()
                 .sorted(Comparator.comparing(CustomSet::name, String.CASE_INSENSITIVE_ORDER))
                 .map(context::evaluate)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public EvaluatedSet single(long id) {
-        return context().evaluate(retrieve(id));
+    public EvaluatedSet single(long userId, long id) {
+        return context(userId).evaluate(retrieve(userId, id));
     }
 
     @Transactional
-    public EvaluatedSet create(CustomSetDefinition definition) {
-        checkName(definition.name(), null);
-        checkPieces(definition.itemIds());
-        checkWeapon(definition.weaponId());
-        checkAbility(definition.abilityId());
-        final long id = customSetRepository.insert(definition);
-        log.info("Custom set '{}' created with name '{}', {} pieces, weapon '{}' and ability '{}'", id, definition.name(),
+    public EvaluatedSet create(long userId, CustomSetDefinition definition) {
+        checkName(userId, definition.name(), null);
+        checkItems(userId, definition);
+        final long id = customSetRepository.insert(userId, definition);
+        log.info("Custom set '{}' of user '{}' created with name '{}', {} pieces, weapon '{}' and ability '{}'", id, userId, definition.name(),
                  definition.itemIds().size(), definition.weaponId(), definition.abilityId());
-        return single(id);
+        return single(userId, id);
     }
 
     @Transactional
-    public EvaluatedSet update(long id, CustomSetDefinition definition) {
-        retrieve(id);
-        checkName(definition.name(), id);
-        checkPieces(definition.itemIds());
-        checkWeapon(definition.weaponId());
-        checkAbility(definition.abilityId());
+    public EvaluatedSet update(long userId, long id, CustomSetDefinition definition) {
+        retrieve(userId, id);
+        checkName(userId, definition.name(), id);
+        checkItems(userId, definition);
         customSetRepository.update(id, definition);
-        log.info("Custom set '{}' updated with name '{}', {} pieces, weapon '{}' and ability '{}'", id, definition.name(),
+        log.info("Custom set '{}' of user '{}' updated with name '{}', {} pieces, weapon '{}' and ability '{}'", id, userId, definition.name(),
                  definition.itemIds().size(), definition.weaponId(), definition.abilityId());
-        return single(id);
+        return single(userId, id);
     }
 
     @Transactional
-    public void delete(long id) {
-        retrieve(id);
+    public void delete(long userId, long id) {
+        retrieve(userId, id);
         customSetRepository.delete(id);
-        log.info("Custom set '{}' deleted", id);
+        log.info("Custom set '{}' of user '{}' deleted", id, userId);
     }
 
     /** Set non salvato (da zero o in modifica): stessi calcoli di un set salvato. */
     @Transactional(readOnly = true)
-    public EvaluatedSet evaluate(List<Long> itemIds, Long weaponId, Long abilityId) {
-        final List<Item> pieces = checkPieces(itemIds);
-        final Item weapon = checkWeapon(weaponId);
-        final Item ability = checkAbility(abilityId);
-        return context().evaluate(null, null, pieces, weapon, ability);
+    public EvaluatedSet evaluate(long userId, List<Long> itemIds, Long weaponId, Long abilityId) {
+        final Context context = context(userId);
+        final List<Item> pieces = checkPieces(context, itemIds);
+        final Item weapon = checkWeapon(context, weaponId);
+        final Item ability = checkAbility(context, abilityId);
+        return context.evaluate(null, null, pieces, weapon, ability);
     }
 
     /** Al massimo 3 set che massimizzano la caratteristica principale (e a parità la secondaria) nella configurazione scelta. */
     @Transactional(readOnly = true)
-    public List<EvaluatedSet> best(ItemConfiguration configuration, StatKey primary, StatKey secondary) {
-        final Context context = context();
+    public List<EvaluatedSet> best(long userId, ItemConfiguration configuration, StatKey primary, StatKey secondary) {
+        final Context context = context(userId);
         final List<EvaluatedSet> proposals = BestSetFinder.find(context.id2item().values(), configuration, primary, secondary, BEST_SET_PROPOSALS)
                 .stream()
                 .map(pieces -> context.evaluate(null, null, pieces, null, null))
@@ -132,14 +129,15 @@ public class CustomSetService {
         return proposals;
     }
 
-    private CustomSet retrieve(long id) {
-        return customSetRepository.retrieve(id).orElseThrow(exception(message -> new ObjectNotFoundException(CUSTOM_SET_NOT_FOUND, message),
-                                                                      "Custom set '%s' not found.", id));
+    /** Il set di un altro utente risulta inesistente. */
+    private CustomSet retrieve(long userId, long id) {
+        return customSetRepository.retrieve(userId, id)
+                .orElseThrow(exception(message -> new ObjectNotFoundException(CUSTOM_SET_NOT_FOUND, message), "Custom set '%s' not found.", id));
     }
 
-    /** Nome unico senza distinzione di maiuscole; {@code currentId} esclude il set che si sta modificando. */
-    private void checkName(String name, Long currentId) {
-        customSetRepository.retrieveIdByName(name)
+    /** Nome unico tra i set dell'utente senza distinzione di maiuscole; {@code currentId} esclude il set che si sta modificando. */
+    private void checkName(long userId, String name, Long currentId) {
+        customSetRepository.retrieveIdByName(userId, name)
                 .filter(foundId -> !foundId.equals(currentId))
                 .ifPresent(foundId -> {
                     throw new ObjectAlreadyExistsException(CUSTOM_SET_NAME_ALREADY_EXISTS, "A custom set named '%s' already exists (id '%s').",
@@ -147,13 +145,19 @@ public class CustomSetService {
                 });
     }
 
+    private void checkItems(long userId, CustomSetDefinition definition) {
+        final Context context = context(userId);
+        checkPieces(context, definition.itemIds());
+        checkWeapon(context, definition.weaponId());
+        checkAbility(context, definition.abilityId());
+    }
+
     /** Pezzi esistenti, solo armature e al massimo uno per slot; restituisce gli item in ordine di slot. */
-    private List<Item> checkPieces(Collection<Long> itemIds) {
-        final Map<Long, Item> id2item = itemRepository.retrieveAll().stream().collect(Collectors.toMap(Item::id, Function.identity()));
+    private static List<Item> checkPieces(Context context, Collection<Long> itemIds) {
         final Set<Specification> takenSlots = EnumSet.noneOf(Specification.class);
         final List<Item> pieces = new ArrayList<>(itemIds.size());
         for (Long itemId : itemIds) { //Al massimo 5 pezzi: ciclo classico (R30)
-            final Item item = id2item.get(itemId);
+            final Item item = context.id2item().get(itemId);
             if (item == null) throw new ObjectNotFoundException(ITEM_NOT_FOUND, "Item '%s' not found.", itemId);
             if (item.type() != ItemType.ARMOR) {
                 throw new BadRequestException(CUSTOM_SET_INVALID_PIECES, "Item '%s' is not an armor piece.", itemId);
@@ -168,9 +172,9 @@ public class CustomSetService {
     }
 
     /** Arma facoltativa: se indicata deve esistere ed essere un'arma. */
-    private Item checkWeapon(Long weaponId) {
+    private static Item checkWeapon(Context context, Long weaponId) {
         if (weaponId == null) return null;
-        final Item weapon = retrieveItem(weaponId);
+        final Item weapon = retrieveItem(context, weaponId);
         if (weapon.type() != ItemType.WEAPON) {
             throw new BadRequestException(CUSTOM_SET_INVALID_WEAPON, "Item '%s' is not a weapon.", weaponId);
         }
@@ -178,29 +182,30 @@ public class CustomSetService {
     }
 
     /** Abilità facoltativa: se indicata deve esistere ed essere un'abilità. */
-    private Item checkAbility(Long abilityId) {
+    private static Item checkAbility(Context context, Long abilityId) {
         if (abilityId == null) return null;
-        final Item ability = retrieveItem(abilityId);
+        final Item ability = retrieveItem(context, abilityId);
         if (ability.type() != ItemType.ABILITY) {
             throw new BadRequestException(CUSTOM_SET_INVALID_ABILITY, "Item '%s' is not an ability.", abilityId);
         }
         return ability;
     }
 
-    private Item retrieveItem(long itemId) {
-        return itemRepository.retrieve(itemId)
-                .orElseThrow(exception(message -> new ObjectNotFoundException(ITEM_NOT_FOUND, message), "Item '%s' not found.", itemId));
+    private static Item retrieveItem(Context context, long itemId) {
+        final Item item = context.id2item().get(itemId);
+        if (item == null) throw new ObjectNotFoundException(ITEM_NOT_FOUND, "Item '%s' not found.", itemId);
+        return item;
     }
 
-    private Context context() {
+    private Context context(long userId) {
         final Map<ArmorSet, String> set2description = new EnumMap<>(ArmorSet.class);
         for (ArmorSetInfo info : armorSetRepository.retrieveAll()) {
             if (info.bonusDescription() != null) set2description.put(info.armorSet(), info.bonusDescription());
         }
-        return new Context(itemRepository.retrieveAll().stream().collect(Collectors.toMap(Item::id, Function.identity())), set2description);
+        return new Context(itemRepository.retrieveAll(userId).stream().collect(Collectors.toMap(Item::id, Function.identity())), set2description);
     }
 
-    /** Item e descrizioni dei bonus letti una volta sola per tutti i set da valutare. */
+    /** Item con i progressi dell'utente e descrizioni dei bonus, letti una volta sola per tutti i set da valutare. */
     private record Context(Map<Long, Item> id2item, Map<ArmorSet, String> set2description) {
 
         List<Item> items(List<Long> itemIds) {

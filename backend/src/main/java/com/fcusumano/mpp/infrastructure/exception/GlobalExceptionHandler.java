@@ -6,6 +6,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -16,7 +19,9 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 
 import java.util.List;
 
+import static com.fcusumano.mpp.infrastructure.exception.InternalErrorCode.ACCESS_DENIED;
 import static com.fcusumano.mpp.infrastructure.exception.InternalErrorCode.GENERIC;
+import static com.fcusumano.mpp.infrastructure.exception.InternalErrorCode.NOT_AUTHENTICATED;
 import static com.fcusumano.mpp.infrastructure.exception.InternalErrorCode.VALIDATION_FAILED;
 
 /** Unico punto di traduzione delle eccezioni in risposte HTTP (R24). */
@@ -42,6 +47,21 @@ public class GlobalExceptionHandler {
         return respond(HttpStatus.CONFLICT, "alreadyRegisteredObject", exception);
     }
 
+    /** Credenziali errate al login. */
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ErrorResponse> notAuthenticated(AuthenticationException exception) {
+        log.warn("Authentication failed: {}", exception.getMessage());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ErrorResponse.of("notAuthenticated", NOT_AUTHENTICATED, "Wrong nickname or password."));
+    }
+
+    /** Funzione riservata all'altro ruolo (@AdminOnly, @UserOnly). */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> accessDenied(AccessDeniedException exception) {
+        log.warn("Access denied: {}", exception.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ErrorResponse.of("accessDenied", ACCESS_DENIED, "Operation not allowed for this user."));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> invalidBody(MethodArgumentNotValidException exception) {
         final List<String> messages = exception.getBindingResult().getAllErrors().stream()
@@ -60,6 +80,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ErrorResponse> constraintViolation(ConstraintViolationException exception) {
         return validationFailure(exception.getConstraintViolations().stream().map(ConstraintViolation::getMessage).toList());
+    }
+
+    /** Corpo assente, JSON malformato o valori non convertibili (es. null su un campo primitivo). */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> unreadableBody(HttpMessageNotReadableException exception) {
+        return validationFailure(List.of("Request body is not readable: " + exception.getMostSpecificCause().getMessage()));
     }
 
     @ExceptionHandler({MissingServletRequestParameterException.class, MethodArgumentTypeMismatchException.class})

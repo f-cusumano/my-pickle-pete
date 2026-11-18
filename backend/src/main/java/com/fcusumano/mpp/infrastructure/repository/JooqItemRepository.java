@@ -25,9 +25,11 @@ import static com.fcusumano.mpp.infrastructure.repository.EnumColumns.name;
 import static com.fcusumano.mpp.infrastructure.repository.EnumColumns.valueOf;
 import static com.fcusumano.mpp.infrastructure.repository.jooq.Tables.MPP_ITEM;
 import static com.fcusumano.mpp.infrastructure.repository.jooq.Tables.MPP_ITEM_RARITY_BONUS;
+import static com.fcusumano.mpp.infrastructure.repository.jooq.Tables.MPP_USER_ITEM;
 import static org.jooq.impl.DSL.noCondition;
+import static org.jooq.impl.DSL.selectOne;
 
-/** Item su jOOQ: l'elenco si legge con due query (item e potenziamenti), mai una per item (R32). */
+/** Item su jOOQ: l'elenco si legge con due query (item con i progressi dell'utente e potenziamenti), mai una per item (R32). */
 @Repository
 public class JooqItemRepository implements ItemRepository {
 
@@ -39,13 +41,13 @@ public class JooqItemRepository implements ItemRepository {
     }
 
     @Override
-    public List<Item> retrieveAll() {
-        return retrieveWhere(null);
+    public List<Item> retrieveAll(long userId) {
+        return retrieveWhere(userId, noCondition());
     }
 
     @Override
-    public Optional<Item> retrieve(long id) {
-        return retrieveWhere(MPP_ITEM.ID.eq(id)).stream().findFirst();
+    public Optional<Item> retrieve(long userId, long id) {
+        return retrieveWhere(userId, MPP_ITEM.ID.eq(id)).stream().findFirst();
     }
 
     @Override
@@ -69,8 +71,6 @@ public class JooqItemRepository implements ItemRepository {
                 .set(MPP_ITEM.SPECIFICATION, name(definition.specification()))
                 .set(MPP_ITEM.ID_MPP_ARMOR_SET, name(definition.armorSet()))
                 .set(MPP_ITEM.DESCRIPTION, definition.description())
-                .set(MPP_ITEM.RARITY, name(Rarity.base()))
-                .set(MPP_ITEM.LEVEL, 1)
                 .returningResult(MPP_ITEM.ID)
                 .fetchSingle(MPP_ITEM.ID);
         insertBonuses(id, definition.bonuses());
@@ -93,22 +93,31 @@ public class JooqItemRepository implements ItemRepository {
     }
 
     @Override
-    public void updateProgress(long id, Rarity rarity, int level) {
-        dsl.update(MPP_ITEM).set(MPP_ITEM.RARITY, name(rarity)).set(MPP_ITEM.LEVEL, level).where(MPP_ITEM.ID.eq(id)).execute();
+    public void updateProgress(long userId, long id, Rarity rarity, int level) {
+        dsl.mergeInto(MPP_USER_ITEM)
+                .using(selectOne())
+                .on(MPP_USER_ITEM.ID_MPP_USER.eq(userId).and(MPP_USER_ITEM.ID_MPP_ITEM.eq(id)))
+                .whenMatchedThenUpdate().set(MPP_USER_ITEM.RARITY, name(rarity)).set(MPP_USER_ITEM.LEVEL, level)
+                .whenNotMatchedThenInsert(MPP_USER_ITEM.ID_MPP_USER, MPP_USER_ITEM.ID_MPP_ITEM, MPP_USER_ITEM.RARITY, MPP_USER_ITEM.LEVEL)
+                .values(userId, id, name(rarity), level)
+                .execute();
     }
 
     /** Nessun cascade: le righe collegate si cancellano esplicitamente (R28). */
     @Override
     public void delete(long id) {
+        dsl.deleteFrom(MPP_USER_ITEM).where(MPP_USER_ITEM.ID_MPP_ITEM.eq(id)).execute();
         dsl.deleteFrom(MPP_ITEM_RARITY_BONUS).where(MPP_ITEM_RARITY_BONUS.ID_MPP_ITEM.eq(id)).execute();
         dsl.deleteFrom(MPP_ITEM).where(MPP_ITEM.ID.eq(id)).execute();
     }
 
-    private List<Item> retrieveWhere(Condition condition) {
-        final Condition where = condition == null ? noCondition() : condition;
+    /** I progressi dell'utente arrivano con un left join: senza riga l'item vale Comune 1. */
+    private List<Item> retrieveWhere(long userId, Condition where) {
         final Map<Long, List<RarityBonus>> item2bonuses = retrieveBonuses(where);
         return dsl.select(MPP_ITEM.fields())
+                .select(MPP_USER_ITEM.RARITY, MPP_USER_ITEM.LEVEL)
                 .from(MPP_ITEM)
+                .leftJoin(MPP_USER_ITEM).on(MPP_USER_ITEM.ID_MPP_ITEM.eq(MPP_ITEM.ID).and(MPP_USER_ITEM.ID_MPP_USER.eq(userId)))
                 .where(where)
                 .fetch(r -> toModel(r, item2bonuses.getOrDefault(r.get(MPP_ITEM.ID), List.of())));
     }
@@ -152,8 +161,8 @@ public class JooqItemRepository implements ItemRepository {
                         valueOf(Specification.class, r.get(MPP_ITEM.SPECIFICATION)),
                         valueOf(ArmorSet.class, r.get(MPP_ITEM.ID_MPP_ARMOR_SET)),
                         r.get(MPP_ITEM.DESCRIPTION),
-                        valueOf(Rarity.class, r.get(MPP_ITEM.RARITY)),
-                        r.get(MPP_ITEM.LEVEL),
+                        r.get(MPP_USER_ITEM.RARITY) == null ? Rarity.base() : valueOf(Rarity.class, r.get(MPP_USER_ITEM.RARITY)),
+                        r.get(MPP_USER_ITEM.LEVEL) == null ? 1 : r.get(MPP_USER_ITEM.LEVEL),
                         bonuses);
     }
 }
