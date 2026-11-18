@@ -1,4 +1,15 @@
-import type { GameConstants, Item } from '../api/types';
+import type { CurrentUser, GameConstants, Item } from '../api/types';
+
+/** Utente normale della sessione (/api/user): rarità e livello modificabili. */
+export const USER: CurrentUser = {
+  id: 2,
+  nickname: 'francesco',
+  role: 'USER',
+  firstName: null,
+  lastName: null,
+  birthDate: null,
+  email: null,
+};
 
 /** Costanti del gioco come le restituisce il backend (/api/constants/game). */
 export const CONSTANTS: GameConstants = {

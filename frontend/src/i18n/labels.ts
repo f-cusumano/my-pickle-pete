@@ -52,21 +52,6 @@ export const EMPTY_SLOT_LABELS: Record<Specification | 'WEAPON' | 'ABILITY', str
   ABILITY: 'Nessuna',
 };
 
-/** Nome proposto censendo un nuovo item dalla scelta di uno slot, accordato col nome dello slot. */
-export const NEW_ITEM_NAMES: Record<Specification | 'WEAPON' | 'ABILITY', string> = {
-  RANGED: 'Nuova arma',
-  ELEMENTAL: 'Nuova arma',
-  MECHANICAL: 'Nuova arma',
-  MELEE: 'Nuova arma',
-  HAT: 'Nuovo cappello',
-  GLASSES: 'Nuovi occhiali',
-  CHEST: 'Nuovo petto',
-  BACK: 'Nuova schiena',
-  BOOTS: 'Nuovi stivali',
-  WEAPON: 'Nuova arma',
-  ABILITY: 'Nuova abilità',
-};
-
 export const ARMOR_SET_LABELS: Record<ArmorSet, string> = {
   BANDIT: 'Bandito',
   KNIGHT: 'Cavaliere',
@@ -201,4 +186,9 @@ export const ERROR_MESSAGES: Record<InternalErrorCode, string> = {
   CUSTOM_SET_INVALID_PIECES: 'Il set può contenere solo armature, al massimo una per slot.',
   CUSTOM_SET_INVALID_WEAPON: "L'item scelto come arma non è un'arma.",
   CUSTOM_SET_INVALID_ABILITY: "L'item scelto come abilità non è un'abilità.",
+  USER_NOT_FOUND: "L'utente non esiste più.",
+  USER_NICKNAME_ALREADY_EXISTS: 'Questo nickname è già usato.',
+  WRONG_PASSWORD: 'La password attuale non è corretta.',
+  NOT_AUTHENTICATED: 'Nickname o password errati.',
+  ACCESS_DENIED: 'Operazione non consentita al tuo utente.',
 };

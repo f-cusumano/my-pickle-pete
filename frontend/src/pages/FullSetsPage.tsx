@@ -15,10 +15,14 @@ import { SetLevelStats } from '../components/SetLevelStats';
 import { SetStatsTable } from '../components/SetStatsTable';
 import { WeaponAdviceCard } from '../components/WeaponAdviceCard';
 import { armorSlots } from '../domain/customSets';
+import { usePermissions } from '../hooks/usePermissions';
 import { statUnits } from '../domain/units';
 import { ARMOR_SET_LABELS, SPECIFICATION_LABELS } from '../i18n/labels';
 
-/** Set completi: righe espandibili (anche più di una) con bonus, pezzi e confronto attuale/top delle caratteristiche. */
+/**
+ * Set completi: righe espandibili (anche più di una) con bonus, pezzi e confronto attuale/top delle caratteristiche.
+ * L'ADMIN aggiunge i pezzi mancanti, l'utente parte da un set per personalizzarlo.
+ */
 export function FullSetsPage({ onCustomize }: { onCustomize: (fullSet: FullSet) => void }) {
   const constants = useGameConstants();
   const fullSets = useFullSets();
@@ -49,6 +53,7 @@ interface ListProps {
 }
 
 function FullSetList({ constants, fullSets, onCustomize }: ListProps) {
+  const { canCensus, hasProgress } = usePermissions();
   const units = useMemo(() => statUnits(constants), [constants]);
   const rarities = useMemo<Rarity[]>(() => constants.rarities.map((rarity) => rarity.code), [constants]);
   const [openedId, setOpenedId] = useState<number | null>(null);
@@ -100,15 +105,17 @@ function FullSetList({ constants, fullSets, onCustomize }: ListProps) {
                     </Badge>
                   </Group>
                 </Accordion.Control>
-                <SetAction
-                  label="Personalizza"
-                  color="pickle"
-                  icon={<IconAdjustments size={18} />}
-                  ariaLabel={`Personalizza ${ARMOR_SET_LABELS[fullSet.armorSet]}`}
-                  compact={compact}
-                  disabled={fullSet.pieces.length === 0}
-                  onClick={() => onCustomize(fullSet)}
-                />
+                {hasProgress && (
+                  <SetAction
+                    label="Personalizza"
+                    color="pickle"
+                    icon={<IconAdjustments size={18} />}
+                    ariaLabel={`Personalizza ${ARMOR_SET_LABELS[fullSet.armorSet]}`}
+                    compact={compact}
+                    disabled={fullSet.pieces.length === 0}
+                    onClick={() => onCustomize(fullSet)}
+                  />
+                )}
                 <ActionIcon
                   variant="subtle"
                   color="gray"
@@ -133,7 +140,7 @@ function FullSetList({ constants, fullSets, onCustomize }: ListProps) {
                   units={units}
                   threshold={constants.armorSetBonusThreshold}
                   onOpen={setOpenedId}
-                  onAdd={(slot) => setAdding({ armorSet: fullSet.armorSet, slot })}
+                  onAdd={canCensus ? (slot) => setAdding({ armorSet: fullSet.armorSet, slot }) : undefined}
                 />
               </Accordion.Panel>
             </Accordion.Item>
@@ -164,7 +171,8 @@ interface DetailProps {
   units: Record<Stat, StatUnit>;
   threshold: number;
   onOpen: (itemId: number) => void;
-  onAdd: (slot: Specification) => void;
+  /** Censimento del pezzo mancante (solo ADMIN); senza, gli slot vuoti non sono cliccabili. */
+  onAdd?: (slot: Specification) => void;
 }
 
 function FullSetDetail({ fullSet, slots, units, threshold, onOpen, onAdd }: DetailProps) {

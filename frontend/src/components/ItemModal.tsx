@@ -2,6 +2,7 @@ import { Button, Group, Modal } from '@mantine/core';
 import { useEffect, useRef, useState } from 'react';
 import { useFullScreenModal } from '../hooks/useFullScreenModal';
 import { useGameConstants, useItemProgress, useRefreshSets } from '../api/queries';
+import { usePermissions } from '../hooks/usePermissions';
 import type { Item, Rarity, Stat, StatUnit } from '../api/types';
 import { ItemDetail } from './ItemDetail';
 
@@ -13,12 +14,13 @@ interface Props {
 }
 
 /**
- * Modale di un item: rarità cliccabili e livello modificabile.
+ * Modale di un item: rarità cliccabili e livello modificabile (in sola lettura per l'ADMIN, che non ha progressi).
  * I set che contengono l'item si rileggono alla chiusura, se qualcosa è cambiato.
  */
 export function ItemModal({ item, rarities, units, onClose }: Props) {
   const fullScreen = useFullScreenModal();
   const constants = useGameConstants();
+  const { hasProgress } = usePermissions();
   const refreshSets = useRefreshSets();
   // Ultimo salvataggio: la modale lo mostra subito anche se l'elenco da cui è aperta non è ancora riletto
   const [saved, setSaved] = useState<Item | null>(null);
@@ -64,7 +66,8 @@ export function ItemModal({ item, rarities, units, onClose }: Props) {
             rarities={rarities}
             units={units}
             editing={
-              constants.data && {
+              hasProgress && constants.data
+                ? {
                 baseStatPerLevel: constants.data.baseStatPerLevel,
                 busy,
                 onRarityChange: (rarity) => {
@@ -74,6 +77,7 @@ export function ItemModal({ item, rarities, units, onClose }: Props) {
                 },
                 onLevelChange: (level) => progress.level.mutate({ id: shown.id, level }),
               }
+                : undefined
             }
           />
           <Group justify="flex-end" mt="xl">

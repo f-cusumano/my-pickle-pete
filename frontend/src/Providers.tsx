@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState, type ReactNode } from 'react';
 import { createApi, type FetchApi } from './api/client';
 import { ApiContext } from './api/context';
+import { KEYS } from './api/queries';
 import { theme } from './theme';
 
 interface Props {
@@ -14,7 +15,7 @@ interface Props {
   environment?: 'default' | 'test';
 }
 
-/** Tema Mantine, client REST, cache delle query, modali e notifiche. */
+/** Tema Mantine, client REST (con ritorno all'accesso a sessione scaduta), cache delle query, modali e notifiche. */
 export function Providers({ children, fetchApi, environment = 'default' }: Props) {
   const [queryClient] = useState(
     () =>
@@ -24,7 +25,8 @@ export function Providers({ children, fetchApi, environment = 'default' }: Props
         },
       }),
   );
-  const [api] = useState(() => createApi(fetchApi));
+  // Sessione scaduta: l'utente torna null e l'app mostra la pagina di accesso
+  const [api] = useState(() => createApi(fetchApi, () => queryClient.setQueryData(KEYS.user, null)));
   return (
     <MantineProvider theme={theme} defaultColorScheme="light" env={environment}>
       <QueryClientProvider client={queryClient}>

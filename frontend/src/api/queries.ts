@@ -4,17 +4,23 @@ import type {
   ArmorSet,
   BestSetMode,
   BestSetRequest,
+  CurrentUser,
   CustomSetRequest,
   Item,
   ItemRequest,
   ItemSortOrder,
+  LoginRequest,
+  PasswordRequest,
   Rarity,
+  RegisterRequest,
+  UserProfile,
 } from './types';
 import { useApi } from './context';
 import { ApiError } from './client';
 import { ERROR_MESSAGES } from '../i18n/labels';
 
 export const KEYS = {
+  user: ['user'] as const,
   constants: ['constants'] as const,
   items: ['items'] as const,
   itemList: (sortOrder: ItemSortOrder) => ['items', sortOrder] as const,
@@ -36,6 +42,42 @@ export function errorMessage(error: unknown): string {
 
 export function notifyError(error: unknown) {
   notifications.show({ color: 'red', title: 'Operazione non riuscita', message: errorMessage(error) });
+}
+
+/** Utente della sessione: null finché non si accede. */
+export function useCurrentUser() {
+  const api = useApi();
+  return useQuery({ queryKey: KEYS.user, queryFn: api.currentUser, staleTime: Infinity });
+}
+
+/**
+ * Login, registrazione e logout: cambiando utente si buttano i dati in cache (progressi e set sono suoi) e l'utente
+ * nuovo (o null) fa ridisegnare l'app. La query dell'utente resta: è quella che l'app sta osservando.
+ */
+export function useSession() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  const switchTo = (user: CurrentUser | null) => {
+    queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== KEYS.user[0] });
+    queryClient.setQueryData(KEYS.user, user);
+  };
+  return {
+    login: useMutation({ mutationFn: (request: LoginRequest) => api.login(request), onSuccess: switchTo }),
+    register: useMutation({ mutationFn: (request: RegisterRequest) => api.register(request), onSuccess: switchTo }),
+    logout: useMutation({ mutationFn: api.logout, onSuccess: () => switchTo(null), onError: notifyError }),
+  };
+}
+
+export function useProfile() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return {
+    update: useMutation({
+      mutationFn: (profile: UserProfile) => api.updateProfile(profile),
+      onSuccess: (user) => queryClient.setQueryData(KEYS.user, user),
+    }),
+    password: useMutation({ mutationFn: (request: PasswordRequest) => api.changePassword(request) }),
+  };
 }
 
 export function useGameConstants() {

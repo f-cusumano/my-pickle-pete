@@ -1,11 +1,11 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Providers } from '../Providers';
-import { CONSTANTS, ITEMS } from '../test/fixtures';
+import { CONSTANTS, ITEMS, USER } from '../test/fixtures';
 import { ItemsPage } from './ItemsPage';
 
 function fakeBackend(input: string): Promise<Response> {
-  const body = input.includes('/api/constants/game') ? CONSTANTS : ITEMS;
+  const body = input.includes('/api/constants/game') ? CONSTANTS : input.endsWith('/api/user') ? USER : ITEMS;
   return Promise.resolve(
     new Response(JSON.stringify(body), { headers: { 'Content-Type': 'application/json' } }),
   );
@@ -14,7 +14,7 @@ function fakeBackend(input: string): Promise<Response> {
 function renderPage() {
   return render(
     <Providers fetchApi={fakeBackend} environment="test">
-      <ItemsPage onGoToCensus={() => undefined} />
+      <ItemsPage />
     </Providers>,
   );
 }
