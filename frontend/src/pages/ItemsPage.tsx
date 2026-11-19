@@ -182,7 +182,7 @@ function ItemsTable({ constants, items, sortOrder, onSortOrderChange, onGoToCens
                 <Table.Tr>
                   <Table.Th className={classes.stickyImage} />
                   <Table.Th className={classes.stickyName}>
-                    <div className={classes.headerWithFilter}>
+                    <div className={classes.nameHeader}>
                       <span>Nome</span>
                       <TextInput
                         aria-label="Cerca per nome"
