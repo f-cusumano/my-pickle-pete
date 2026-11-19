@@ -16,12 +16,9 @@
   min-width: 64px;
 }
 
-/* Larga quanto il nome più lungo: lo spazio in più va alle altre colonne, non resta vuoto accanto alla ricerca */
 .stickyName {
   left: 64px;
-  width: 1%;
   min-width: 150px;
-  white-space: nowrap;
   box-shadow: 4px 0 6px -4px rgba(0, 0, 0, 0.18);
 }
 
