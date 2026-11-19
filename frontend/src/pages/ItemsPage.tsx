@@ -116,7 +116,6 @@ function ItemsTable({ constants, items, sortOrder, onSortOrderChange, onGoToCens
 
   const header = (label: string, column: FilterColumn) => (
     <div className={classes.headerWithFilter}>
-      <span>{label}</span>
       <ColumnFilter
         label={label}
         options={filterOptions(items, column, constants, sortOrder)}
@@ -124,6 +123,7 @@ function ItemsTable({ constants, items, sortOrder, onSortOrderChange, onGoToCens
         optionLabel={FILTER_LABELS[column]}
         onChange={(values) => changeFilter(column, values)}
       />
+      <span>{label}</span>
     </div>
   );
 

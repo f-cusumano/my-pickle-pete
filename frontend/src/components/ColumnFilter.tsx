@@ -19,13 +19,13 @@ interface Props {
   onChange: (selected: string[]) => void;
 }
 
-/** Imbuto in intestazione: tendina a scelta multipla, colorato quando il filtro della colonna è attivo. */
+/** Imbuto prima del nome della colonna: tendina a scelta multipla, colorato quando il filtro della colonna è attivo. */
 export function ColumnFilter({ label, options, selected, optionLabel, onChange }: Props) {
   const active = selected.length > 0;
   const toggle = (value: string) =>
     onChange(selected.includes(value) ? selected.filter((v) => v !== value) : [...selected, value]);
   return (
-    <Popover position="bottom-end" shadow="md" withinPortal>
+    <Popover position="bottom-start" shadow="md" withinPortal>
       <Popover.Target>
         <ActionIcon
           variant={active ? 'filled' : 'subtle'}

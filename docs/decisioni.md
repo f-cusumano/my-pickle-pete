@@ -123,6 +123,8 @@ Il prompt è chiaro nella struttura generale (header, menu, Items, Full Sets, Cu
   Si modificano dalla pagina Profilo, dove si cambia anche la password; "Esci" sta in fondo al menu.
 - **Censimento in una fase.** Senza progressi per l'ADMIN spariscono la seconda fase "Rarità e livello" (0.5.5) e
   "Censisci nuovo" nella scelta dei pezzi (0.5.4), che si apriva dai Custom Sets dove l'ADMIN non entra.
+- **Imbuto dei filtri a sinistra.** Nella tabella Items l'imbuto sta subito prima del nome della colonna, non ancorato
+  a destra dell'intestazione come diceva la specifica: a destra era scomodo e sembrava appartenere alla colonna accanto.
 
 ## 5. Aspetti tecnici
 16. ✅ **Architettura.** App solo per te con database H2. Regole da Dropbox/MyClaudeProjects/MyCodingStyle (vedi sotto).
