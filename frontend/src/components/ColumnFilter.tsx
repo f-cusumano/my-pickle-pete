@@ -16,11 +16,13 @@ interface Props {
   options: string[];
   selected: string[];
   optionLabel: (value: string) => string;
+  /** Voci mostrate in grigio e non selezionabili (es. specifiche di una tipologia non filtrata). */
+  optionDisabled?: (value: string) => boolean;
   onChange: (selected: string[]) => void;
 }
 
 /** Imbuto prima del nome della colonna: tendina a scelta multipla, colorato quando il filtro della colonna è attivo. */
-export function ColumnFilter({ label, options, selected, optionLabel, onChange }: Props) {
+export function ColumnFilter({ label, options, selected, optionLabel, optionDisabled, onChange }: Props) {
   const active = selected.length > 0;
   const toggle = (value: string) =>
     onChange(selected.includes(value) ? selected.filter((v) => v !== value) : [...selected, value]);
@@ -51,26 +53,32 @@ export function ColumnFilter({ label, options, selected, optionLabel, onChange }
           <Divider />
           <ScrollArea.Autosize mah={280}>
             <Stack gap={2}>
-              {options.map((value) => (
-                <Group
-                  key={value}
-                  justify="space-between"
-                  wrap="nowrap"
-                  px={6}
-                  py={6}
-                  style={{ cursor: 'pointer', borderRadius: 6 }}
-                  onClick={() => toggle(value)}
-                >
-                  <Text size="sm">{optionLabel(value)}</Text>
-                  <Checkbox
-                    checked={selected.includes(value)}
-                    onChange={() => toggle(value)}
-                    onClick={(event) => event.stopPropagation()}
-                    aria-label={optionLabel(value)}
-                    color="pickle"
-                  />
-                </Group>
-              ))}
+              {options.map((value) => {
+                const disabled = optionDisabled?.(value) ?? false;
+                return (
+                  <Group
+                    key={value}
+                    justify="space-between"
+                    wrap="nowrap"
+                    px={6}
+                    py={6}
+                    style={{ cursor: disabled ? 'default' : 'pointer', borderRadius: 6 }}
+                    onClick={disabled ? undefined : () => toggle(value)}
+                  >
+                    <Text size="sm" c={disabled ? 'dimmed' : undefined}>
+                      {optionLabel(value)}
+                    </Text>
+                    <Checkbox
+                      checked={selected.includes(value)}
+                      disabled={disabled}
+                      onChange={() => toggle(value)}
+                      onClick={(event) => event.stopPropagation()}
+                      aria-label={optionLabel(value)}
+                      color="pickle"
+                    />
+                  </Group>
+                );
+              })}
               {options.length === 0 && (
                 <Text size="sm" c="dimmed" px={6}>
                   Nessun valore
