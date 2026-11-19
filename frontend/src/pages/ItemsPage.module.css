@@ -25,6 +25,13 @@
   box-shadow: 4px 0 6px -4px rgba(0, 0, 0, 0.18);
 }
 
+/* In intestazione Mantine disegna la linea sotto le celle con un'ombra interna: va tenuta insieme all'ombra laterale */
+th.stickyName {
+  box-shadow:
+    4px 0 6px -4px rgba(0, 0, 0, 0.18),
+    inset 0 -1px 0 var(--table-border-color);
+}
+
 .row:hover .stickyImage,
 .row:hover .stickyName {
   background: var(--table-hover-color, var(--mantine-color-gray-1));
