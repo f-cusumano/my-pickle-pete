@@ -1,13 +1,15 @@
 package com.fcusumano.mpp.application;
 
+import com.fcusumano.mpp.TestUsers;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.web.context.WebApplicationContext;
 
 import static com.fcusumano.mpp.TestItems.abilityBonusesJson;
 import static com.fcusumano.mpp.TestItems.allBonusesJson;
@@ -21,11 +23,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /** Flusso completo dei set custom su H2 in memoria: salvataggio, valutazione, proposte e pulizia alla cancellazione degli item. */
 @SpringBootTest(properties = {"spring.datasource.url=jdbc:h2:mem:mpp-custom-set;DB_CLOSE_DELAY=-1", "mpp.frontend.dist-path=target/no-frontend"})
-@AutoConfigureMockMvc
 class CustomSetFlowIntegrationTest {
 
     @Autowired
+    private WebApplicationContext context;
     private MockMvc mockMvc;
+
+
+    @BeforeEach
+    void setUp() {
+        mockMvc = TestUsers.censusByAdminOthersByOwner(context);
+    }
 
 
     @Test

@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!-- Utenze: ADMIN censisce i dati del gioco, USER salva progressi e set custom; password nulla finche' non la imposta l'avvio -->
+    <changeSet id="20261118_create_mpp_user" author="f.cusumano">
+        <preConditions onFail="MARK_RAN">
+            <not><tableExists tableName="mpp_user"/></not>
+        </preConditions>
+        <createTable tableName="mpp_user">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="mpp_user_pkey"/>
+            </column>
+            <column name="nickname" type="VARCHAR(30)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="password_hash" type="VARCHAR(100)"/>
+            <column name="role" type="VARCHAR(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="first_name" type="VARCHAR(50)"/>
+            <column name="last_name" type="VARCHAR(50)"/>
+            <column name="birth_date" type="DATE"/>
+            <column name="email" type="VARCHAR(100)"/>
+        </createTable>
+        <addUniqueConstraint tableName="mpp_user" columnNames="nickname" constraintName="uk1_mpp_user_nickname"/>
+    </changeSet>
+
+    <!-- Utenze iniziali: l'admin e l'utente personale a cui vanno i progressi e i set custom gia' registrati -->
+    <changeSet id="20261118_insert_mpp_user" author="f.cusumano">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM mpp_user</sqlCheck>
+        </preConditions>
+        <insert tableName="mpp_user">
+            <column name="nickname" value="admin"/>
+            <column name="role" value="ADMIN"/>
+        </insert>
+        <insert tableName="mpp_user">
+            <column name="nickname" value="francesco"/>
+            <column name="role" value="USER"/>
+        </insert>
+    </changeSet>
+
+    <!-- Rarita' e livello raggiunti da ogni utente: un item senza riga vale Comune 1 -->
+    <changeSet id="20261118_create_mpp_user_item" author="f.cusumano">
+        <preConditions onFail="MARK_RAN">
+            <not><tableExists tableName="mpp_user_item"/></not>
+        </preConditions>
+        <createTable tableName="mpp_user_item">
+            <column name="id_mpp_user" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="id_mpp_item" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="rarity" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="level" type="INT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addPrimaryKey tableName="mpp_user_item" columnNames="id_mpp_user, id_mpp_item" constraintName="mpp_user_item_pkey"/>
+        <addForeignKeyConstraint baseTableName="mpp_user_item" baseColumnNames="id_mpp_user" constraintName="mpp_user_item_fk1"
+                                 referencedTableName="mpp_user" referencedColumnNames="id" onDelete="NO ACTION"/>
+        <addForeignKeyConstraint baseTableName="mpp_user_item" baseColumnNames="id_mpp_item" constraintName="mpp_user_item_fk2"
+                                 referencedTableName="mpp_item" referencedColumnNames="id" onDelete="NO ACTION"/>
+        <createIndex tableName="mpp_user_item" indexName="mpp_user_item_id_mpp_item_idx">
+            <column name="id_mpp_item"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- I progressi registrati finora sono dell'utente personale; Comune 1 non serve salvarlo -->
+    <changeSet id="20261118_backfill_mpp_user_item" author="f.cusumano">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="mpp_item" columnName="rarity"/>
+        </preConditions>
+        <sql>
+            INSERT INTO mpp_user_item (id_mpp_user, id_mpp_item, rarity, level)
+            SELECT u.id, i.id, i.rarity, i.level
+            FROM mpp_item i, mpp_user u
+            WHERE u.nickname = 'francesco' AND (i.rarity &lt;&gt; 'COMMON' OR i.level &lt;&gt; 1)
+        </sql>
+    </changeSet>
+
+    <changeSet id="20261118_drop_mpp_item_progress" author="f.cusumano">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="mpp_item" columnName="rarity"/>
+        </preConditions>
+        <dropColumn tableName="mpp_item" columnName="rarity"/>
+        <dropColumn tableName="mpp_item" columnName="level"/>
+    </changeSet>
+
+    <!-- Ogni set custom e' di un utente (quelli esistenti dell'utente personale); il nome e' unico per utente -->
+    <changeSet id="20261118_add_mpp_custom_set_user" author="f.cusumano">
+        <preConditions onFail="MARK_RAN">
+            <not><columnExists tableName="mpp_custom_set" columnName="id_mpp_user"/></not>
+        </preConditions>
+        <addColumn tableName="mpp_custom_set">
+            <column name="id_mpp_user" type="BIGINT"/>
+        </addColumn>
+        <sql>UPDATE mpp_custom_set SET id_mpp_user = (SELECT id FROM mpp_user WHERE nickname = 'francesco')</sql>
+        <addNotNullConstraint tableName="mpp_custom_set" columnName="id_mpp_user" columnDataType="BIGINT"/>
+        <addForeignKeyConstraint baseTableName="mpp_custom_set" baseColumnNames="id_mpp_user" constraintName="mpp_custom_set_fk3"
+                                 referencedTableName="mpp_user" referencedColumnNames="id" onDelete="NO ACTION"/>
+        <dropUniqueConstraint tableName="mpp_custom_set" constraintName="uk1_mpp_custom_set_name"/>
+        <addUniqueConstraint tableName="mpp_custom_set" columnNames="id_mpp_user, name" constraintName="uk1_mpp_custom_set_user_name"/>
+    </changeSet>
+
+</databaseChangeLog>

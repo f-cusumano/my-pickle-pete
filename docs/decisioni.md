@@ -105,6 +105,27 @@ Il prompt è chiaro nella struttura generale (header, menu, Items, Full Sets, Cu
   chiesto (es. lo slot del set custom) con la rarità e il livello scelti. Vale ovunque si censisca un item nuovo
   (Censimento, "+" dei Full Sets, "Censisci nuovo"); la modifica di un item esistente resta in una fase.
 
+### Utenze (0.6.0)
+- **Due ruoli.** L'ADMIN censisce i dati del gioco: item, composizione dei Full Set (pezzi assegnati a set e slot, anche
+  dal "+" sui pezzi mancanti) ed effetti dei set. Non ha progressi né Custom Sets: vede Items e Full Sets in sola
+  lettura, a Comune 1 e al massimo. Gli utenti normali (USER) salvano rarità e livello degli item e i propri Custom Set;
+  non vedono il Censimento né il "+" dei Full Set. I set restano un elenco fisso (enum).
+- **Progressi per utente.** Rarità e livello stanno in `mpp_user_item`; un item senza riga vale Comune 1. I Custom Set
+  hanno un proprietario e il nome è unico per utente. Cancellando un item lo si toglie dai progressi e dai set di tutti.
+- **Migrazione.** Liquibase crea `admin` e l'utente personale `francesco`, a cui vanno tutti i progressi e i Custom Set
+  registrati prima della 0.6.0. Le password non stanno nel changelog: all'avvio arrivano da `MPP_ADMIN_PASSWORD` e
+  `MPP_OWNER_PASSWORD`, solo per le utenze che non ne hanno ancora una; poi si cambiano dal Profilo.
+- **Accesso.** Nickname (unico, senza distinzione di maiuscole) e password (8–72 caratteri, BCrypt). Sessione su cookie,
+  "Ricordami" attivo di default per 30 giorni (la chiave del cookie è `MPP_REMEMBER_ME_KEY`; senza, vale fino al riavvio);
+  cambiando password i "Ricordami" già emessi decadono. Registrazione libera dalla pagina di accesso, solo per utenti
+  normali, con accesso immediato. Protezione CSRF con il cookie `XSRF-TOKEN`.
+- **Dati dell'utente.** Id di sistema, nickname e dati anagrafici facoltativi: nome, cognome, data di nascita, email.
+  Si modificano dalla pagina Profilo, dove si cambia anche la password; "Esci" sta in fondo al menu.
+- **Censimento in una fase.** Senza progressi per l'ADMIN spariscono la seconda fase "Rarità e livello" (0.5.5) e
+  "Censisci nuovo" nella scelta dei pezzi (0.5.4), che si apriva dai Custom Sets dove l'ADMIN non entra.
+- **Imbuto dei filtri a sinistra.** Nella tabella Items l'imbuto sta subito prima del nome della colonna, non ancorato
+  a destra dell'intestazione come diceva la specifica: a destra era scomodo e sembrava appartenere alla colonna accanto.
+
 ## 5. Aspetti tecnici
 16. ✅ **Architettura.** App solo per te con database H2. Regole da Dropbox/MyClaudeProjects/MyCodingStyle (vedi sotto).
 17. ✅ **Lingua.** Interfaccia in italiano.

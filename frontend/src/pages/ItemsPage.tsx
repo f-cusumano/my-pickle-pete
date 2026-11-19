@@ -54,7 +54,8 @@ const FILTER_LABELS: Record<FilterColumn, (value: string) => string> = {
 };
 
 interface Props {
-  onGoToCensus: () => void;
+  /** Solo per l'ADMIN, che censisce gli item. */
+  onGoToCensus?: () => void;
 }
 
 /** Elenco non paginato di tutti gli item indossabili, con ordinamenti, filtri per colonna e selezione. */
@@ -89,7 +90,7 @@ interface TableProps {
   items: Item[];
   sortOrder: ItemSortOrder;
   onSortOrderChange: (sortOrder: ItemSortOrder) => void;
-  onGoToCensus: () => void;
+  onGoToCensus?: () => void;
 }
 
 function ItemsTable({ constants, items, sortOrder, onSortOrderChange, onGoToCensus }: TableProps) {
@@ -115,7 +116,6 @@ function ItemsTable({ constants, items, sortOrder, onSortOrderChange, onGoToCens
 
   const header = (label: string, column: FilterColumn) => (
     <div className={classes.headerWithFilter}>
-      <span>{label}</span>
       <ColumnFilter
         label={label}
         options={filterOptions(items, column, constants, sortOrder)}
@@ -123,6 +123,7 @@ function ItemsTable({ constants, items, sortOrder, onSortOrderChange, onGoToCens
         optionLabel={FILTER_LABELS[column]}
         onChange={(values) => changeFilter(column, values)}
       />
+      <span>{label}</span>
     </div>
   );
 
@@ -148,12 +149,14 @@ function ItemsTable({ constants, items, sortOrder, onSortOrderChange, onGoToCens
 
       {items.length === 0 ? (
         <Alert icon={<IconInfoCircle />} title="Nessun item censito" color="pickle">
-          <Text size="sm" mb="sm">
-            Gli item si inseriscono una volta sola dalla sezione Censimento.
+          <Text size="sm" mb={onGoToCensus ? 'sm' : 0}>
+            Gli item si inseriscono una volta sola dalla sezione Censimento, riservata all'amministratore.
           </Text>
-          <Button size="xs" onClick={onGoToCensus}>
-            Vai al censimento
-          </Button>
+          {onGoToCensus && (
+            <Button size="xs" onClick={onGoToCensus}>
+              Vai al censimento
+            </Button>
+          )}
         </Alert>
       ) : (
         <Paper withBorder radius="md">

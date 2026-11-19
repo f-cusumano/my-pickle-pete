@@ -21,7 +21,10 @@ import static com.fcusumano.mpp.infrastructure.exception.InternalErrorCode.ITEM_
 import static com.fcusumano.mpp.infrastructure.exception.InternalErrorCode.ITEM_NOT_FOUND;
 import static com.fcusumano.mpp.tools.FunctionUtils.exception;
 
-/** Casi d'uso sugli item: censimento, consultazione e avanzamento di rarità e livello. */
+/**
+ * Casi d'uso sugli item: censimento (dati comuni a tutti), consultazione e avanzamento di rarità e livello
+ * (progressi dell'utente indicato).
+ */
 @Service
 public class ItemService {
 
@@ -37,57 +40,53 @@ public class ItemService {
     }
 
     @Transactional(readOnly = true)
-    public List<Item> list(ItemSortOrder sortOrder) {
-        return itemRepository.retrieveAll().stream().sorted(sortOrder.comparator()).toList();
+    public List<Item> list(long userId, ItemSortOrder sortOrder) {
+        return itemRepository.retrieveAll(userId).stream().sorted(sortOrder.comparator()).toList();
     }
 
     @Transactional(readOnly = true)
-    public List<Item> list() {
-        return list(ItemSortOrder.defaultOrder());
-    }
-
-    @Transactional(readOnly = true)
-    public Item single(long id) {
-        return itemRepository.retrieve(id).orElseThrow(exception(message -> new ObjectNotFoundException(ITEM_NOT_FOUND, message),
-                                                                 "Item '%s' not found.", id));
+    public Item single(long userId, long id) {
+        return itemRepository.retrieve(userId, id).orElseThrow(exception(message -> new ObjectNotFoundException(ITEM_NOT_FOUND, message),
+                                                                         "Item '%s' not found.", id));
     }
 
     @Transactional
-    public Item create(ItemDefinition definition) {
+    public Item create(long userId, ItemDefinition definition) {
         checkUniqueness(definition, null);
         final long id = itemRepository.insert(definition);
         log.info("Item '{}' created with name '{}'", id, definition.name());
-        return single(id);
+        return single(userId, id);
     }
 
     @Transactional
-    public Item update(long id, ItemDefinition definition) {
-        final Item current = single(id);
+    public Item update(long userId, long id, ItemDefinition definition) {
+        final Item current = single(userId, id);
         checkUniqueness(definition, id);
         //Cambiando tipologia (o slot di armatura) l'item non può più stare nei set custom che lo usavano; armi e abilità restano tali
         if (current.type() != definition.type()) removeFromCustomSets(id);
         else if (current.specification() != definition.specification()) removePieces(id);
         itemRepository.update(id, definition);
         log.info("Item '{}' updated with name '{}'", id, definition.name());
-        return single(id);
+        return single(userId, id);
     }
 
+    /** L'item sparisce dai set custom e dai progressi di tutti gli utenti. */
     @Transactional
-    public void delete(long id) {
-        single(id);
+    public void delete(long userId, long id) {
+        single(userId, id);
         removeFromCustomSets(id);
         itemRepository.delete(id);
         log.info("Item '{}' deleted", id);
     }
 
     @Transactional
-    public Item updateRarity(long id, Rarity rarity) {
-        return saveProgress(single(id).withRarity(rarity));
+    public Item updateRarity(long userId, long id, Rarity rarity) {
+        return saveProgress(userId, single(userId, id).withRarity(rarity));
     }
 
     @Transactional
-    public Item updateLevel(long id, int level) {
-        return saveProgress(single(id).withLevel(level));
+    public Item updateLevel(long userId, long id, int level) {
+        return saveProgress(userId, single(userId, id).withLevel(level));
     }
 
     private void removeFromCustomSets(long id) {
@@ -103,9 +102,9 @@ public class ItemService {
         if (removed > 0) log.info("Item '{}' removed from {} custom sets", id, removed);
     }
 
-    private Item saveProgress(Item item) {
-        itemRepository.updateProgress(item.id(), item.rarity(), item.level());
-        log.info("Item '{}' now at rarity '{}' and level {}/{}", item.id(), item.rarity(), item.level(), item.maxLevel());
+    private Item saveProgress(long userId, Item item) {
+        itemRepository.updateProgress(userId, item.id(), item.rarity(), item.level());
+        log.info("Item '{}' of user '{}' now at rarity '{}' and level {}/{}", item.id(), userId, item.rarity(), item.level(), item.maxLevel());
         return item;
     }
 

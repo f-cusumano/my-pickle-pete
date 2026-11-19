@@ -1,5 +1,5 @@
 # =====================================================================================================
-# My Pickle Pete - app personale, nessun login.
+# My Pickle Pete - app personale con utenze (ADMIN per il censimento, USER per progressi e set custom).
 # Le variabili MPP_* (d'ambiente) cambiano i default senza toccare questo file.
 # =====================================================================================================
 
@@ -53,3 +53,11 @@ mpp:
   frontend:
     # Cartella del frontend compilato, relativa alla cartella di avvio del backend
     dist-path: ${MPP_FRONTEND_DIST:../frontend/dist}
+  security:
+    # Firma del cookie "ricordami": senza chiave i cookie valgono fino al riavvio
+    remember-me-key: ${MPP_REMEMBER_ME_KEY:}
+    remember-me-days: 30
+    # Password iniziali delle utenze create da Liquibase, usate solo finche' non ne hanno una
+    initial-passwords:
+      admin: ${MPP_ADMIN_PASSWORD:}
+      francesco: ${MPP_OWNER_PASSWORD:}

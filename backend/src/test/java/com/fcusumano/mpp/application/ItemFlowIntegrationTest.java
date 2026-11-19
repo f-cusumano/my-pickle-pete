@@ -1,12 +1,14 @@
 package com.fcusumano.mpp.application;
 
+import com.fcusumano.mpp.TestUsers;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.web.context.WebApplicationContext;
 
 import static com.fcusumano.mpp.TestItems.allBonusesJson;
 import static org.hamcrest.Matchers.hasSize;
@@ -19,11 +21,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /** Flusso completo su H2 in memoria: censimento, avanzamento e set completi. */
 @SpringBootTest(properties = {"spring.datasource.url=jdbc:h2:mem:mpp-flow;DB_CLOSE_DELAY=-1", "mpp.frontend.dist-path=target/no-frontend"})
-@AutoConfigureMockMvc
 class ItemFlowIntegrationTest {
 
     @Autowired
+    private WebApplicationContext context;
     private MockMvc mockMvc;
+
+
+    @BeforeEach
+    void setUp() {
+        mockMvc = TestUsers.censusByAdminOthersByOwner(context);
+    }
 
 
     @Test

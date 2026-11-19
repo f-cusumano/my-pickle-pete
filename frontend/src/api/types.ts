@@ -205,10 +205,49 @@ export type InternalErrorCode =
   | 'CUSTOM_SET_NAME_ALREADY_EXISTS'
   | 'CUSTOM_SET_INVALID_PIECES'
   | 'CUSTOM_SET_INVALID_WEAPON'
-  | 'CUSTOM_SET_INVALID_ABILITY';
+  | 'CUSTOM_SET_INVALID_ABILITY'
+  | 'USER_NOT_FOUND'
+  | 'USER_NICKNAME_ALREADY_EXISTS'
+  | 'WRONG_PASSWORD'
+  | 'NOT_AUTHENTICATED'
+  | 'ACCESS_DENIED';
 
 export interface ErrorResponse {
   key: string;
   code: InternalErrorCode;
   messages: string[];
+}
+
+/** ADMIN censisce i dati del gioco, USER salva i propri progressi e i propri set custom. */
+export type UserRole = 'ADMIN' | 'USER';
+
+/** Dati anagrafici facoltativi (null se non indicati); la data è ISO (aaaa-mm-gg). */
+export interface UserProfile {
+  firstName: string | null;
+  lastName: string | null;
+  birthDate: string | null;
+  email: string | null;
+}
+
+export interface CurrentUser extends UserProfile {
+  id: number;
+  nickname: string;
+  role: UserRole;
+}
+
+export interface LoginRequest {
+  nickname: string;
+  password: string;
+  rememberMe: boolean;
+}
+
+export interface RegisterRequest {
+  nickname: string;
+  password: string;
+  profile: UserProfile;
+}
+
+export interface PasswordRequest {
+  currentPassword: string;
+  newPassword: string;
 }

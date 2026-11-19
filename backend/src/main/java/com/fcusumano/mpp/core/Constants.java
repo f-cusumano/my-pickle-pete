@@ -13,6 +13,13 @@ public final class Constants {
     public static final int MAX_ITEM_DESCRIPTION_LENGTH = 1000;
     public static final int MAX_BONUS_DESCRIPTION_LENGTH = 500;
     public static final int MAX_CUSTOM_SET_NAME_LENGTH = 100;
+    public static final int MIN_NICKNAME_LENGTH = 3;
+    public static final int MAX_NICKNAME_LENGTH = 30;
+    public static final int MIN_PASSWORD_LENGTH = 8;
+    /** Oltre 72 byte BCrypt ignora il resto della password. */
+    public static final int MAX_PASSWORD_LENGTH = 72;
+    public static final int MAX_PERSON_NAME_LENGTH = 50;
+    public static final int MAX_EMAIL_LENGTH = 100;
     /** Proposte restituite da Best now e Best potential. */
     public static final int BEST_SET_PROPOSALS = 3;
 

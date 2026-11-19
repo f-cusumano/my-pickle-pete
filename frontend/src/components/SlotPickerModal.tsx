@@ -7,8 +7,6 @@ import type { Item, Specification } from '../api/types';
 import {
   abilityCandidates,
   slotCandidates,
-  slotSpecification,
-  slotType,
   swapPreview,
   weaponCandidates,
 } from '../domain/customSets';
@@ -47,8 +45,6 @@ interface Props {
   /** Item già nello slot, null se è vuoto. */
   selected: Item | null;
   onPick: (item: Item | null) => void;
-  /** "Censisci nuovo" in fondo all'elenco: censimento di un item per lo slot. */
-  onCensus: () => void;
   onClose: () => void;
 }
 
@@ -56,7 +52,7 @@ interface Props {
  * Scelta del pezzo di uno slot tra le armature censite, per rarità decrescente e poi per nome;
  * per l'arma, tra le armi censite per categoria; per l'abilità, tra le abilità censite.
  * Passando col mouse su un candidato, o tenendoci il dito sopra, si vedono le caratteristiche che cambierebbero
- * scegliendolo. In fondo, "Censisci nuovo" porta al censimento di un item per lo slot.
+ * scegliendolo. Gli item nuovi li censisce l'ADMIN.
  */
 export function SlotPickerModal({
   slot,
@@ -64,7 +60,6 @@ export function SlotPickerModal({
   weaponCategories,
   selected,
   onPick,
-  onCensus,
   onClose,
 }: Props) {
   const fullScreen = useFullScreenModal();
@@ -174,27 +169,6 @@ export function SlotPickerModal({
             </UnstyledButton>
           );
         })}
-        {slot !== null && (
-          <UnstyledButton
-            onClick={() => {
-              setHovered(null);
-              onCensus();
-            }}
-            p="xs"
-            style={{ borderRadius: 8 }}
-          >
-            <Group gap="sm" wrap="nowrap">
-              <ItemThumbnail
-                type={slotType(slot)}
-                specification={slotSpecification(slot)}
-                label="Nuovo item"
-                size={48}
-                action="add"
-              />
-              <Text fw={700}>Censisci nuovo</Text>
-            </Group>
-          </UnstyledButton>
-        )}
       </Stack>
       {hovered && slot !== null && constants.data && (
         <SwapPreview
