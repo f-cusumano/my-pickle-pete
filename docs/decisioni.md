@@ -138,6 +138,10 @@ Il prompt è chiaro nella struttura generale (header, menu, Items, Full Sets, Cu
   segue la caratteristica e si vede nel campo del valore (`+2` / `+2%`); il backend rifiuta l'altra unità. Se un giorno
   il gioco usasse l'altra unità, basta cambiare l'unità della caratteristica nel codice (enum `Stat`).
 
+### Items per l'ADMIN (0.6.2)
+- **Niente rarità e livello.** L'ADMIN non ha progressi, quindi nella tabella Items non vede le colonne Rarità e Livello
+  (sempre Comune 1) né l'ordinamento per rarità.
+
 ## 5. Aspetti tecnici
 16. ✅ **Architettura.** App solo per te con database H2. Regole da Dropbox/MyClaudeProjects/MyCodingStyle (vedi sotto).
 17. ✅ **Lingua.** Interfaccia in italiano.

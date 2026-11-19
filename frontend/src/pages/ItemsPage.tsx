@@ -34,6 +34,7 @@ import {
 import { formatLevel } from '../domain/format';
 import { keepVisible, toggleAll, toggleOne } from '../domain/selection';
 import { statUnits } from '../domain/units';
+import { usePermissions } from '../hooks/usePermissions';
 import {
   ARMOR_SET_LABELS,
   ITEM_TYPE_LABELS,
@@ -102,6 +103,8 @@ function ItemsTable({ constants, items, sortOrder, onSortOrderChange, onGoToCens
   const rarities = useMemo(() => constants.rarities.map((rarity) => rarity.code), [constants]);
   const visible = useMemo(() => applyFilters(items, filters), [items, filters]);
   const visibleIds = visible.map((item) => item.id);
+  // Senza progressi (ADMIN) rarità e livello sono sempre al minimo: niente colonne né ordinamento per rarità
+  const { hasProgress } = usePermissions();
 
   const changeFilter = (column: FilterColumn, values: string[]) => {
     const next = { ...filters, [column]: values };
@@ -138,10 +141,9 @@ function ItemsTable({ constants, items, sortOrder, onSortOrderChange, onGoToCens
           label="Ordinamento"
           value={sortOrder}
           onChange={(value) => value && onSortOrderChange(value)}
-          data={constants.sortOrders.map((order) => ({
-            value: order.code,
-            label: SORT_ORDER_LABELS[order.code],
-          }))}
+          data={constants.sortOrders
+            .filter((order) => hasProgress || order.code !== 'RARITY')
+            .map((order) => ({ value: order.code, label: SORT_ORDER_LABELS[order.code] }))}
           allowDeselect={false}
           w={200}
         />
@@ -160,14 +162,14 @@ function ItemsTable({ constants, items, sortOrder, onSortOrderChange, onGoToCens
         </Alert>
       ) : (
         <Paper withBorder radius="md">
-          <Table.ScrollContainer minWidth={980} type="native">
+          <Table.ScrollContainer minWidth={hasProgress ? 980 : 800} type="native">
             <Table stickyHeader highlightOnHover verticalSpacing="xs">
               <Table.Thead>
                 <Table.Tr>
                   <Table.Th className={classes.stickyImage} />
                   <Table.Th className={classes.stickyName}>Nome</Table.Th>
-                  <Table.Th>{header('Rarità', 'rarity')}</Table.Th>
-                  <Table.Th>Livello</Table.Th>
+                  {hasProgress && <Table.Th>{header('Rarità', 'rarity')}</Table.Th>}
+                  {hasProgress && <Table.Th>Livello</Table.Th>}
                   <Table.Th>Caratteristica</Table.Th>
                   <Table.Th>{header('Tipologia', 'type')}</Table.Th>
                   <Table.Th>{header('Specifica', 'specification')}</Table.Th>
@@ -207,12 +209,16 @@ function ItemsTable({ constants, items, sortOrder, onSortOrderChange, onGoToCens
                         {item.name}
                       </Text>
                     </Table.Td>
-                    <Table.Td>
-                      <RarityBadge rarity={item.rarity} />
-                    </Table.Td>
-                    <Table.Td style={{ whiteSpace: 'nowrap' }}>
-                      {formatLevel(item.level, item.maxLevel)}
-                    </Table.Td>
+                    {hasProgress && (
+                      <Table.Td>
+                        <RarityBadge rarity={item.rarity} />
+                      </Table.Td>
+                    )}
+                    {hasProgress && (
+                      <Table.Td style={{ whiteSpace: 'nowrap' }}>
+                        {formatLevel(item.level, item.maxLevel)}
+                      </Table.Td>
+                    )}
                     <Table.Td>{STAT_LABELS[item.baseStat]}</Table.Td>
                     <Table.Td>{ITEM_TYPE_LABELS[item.type]}</Table.Td>
                     <Table.Td>
