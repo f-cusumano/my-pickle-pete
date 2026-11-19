@@ -9,19 +9,20 @@ import static com.fcusumano.mpp.core.enums.StatUnit.SECONDS;
 
 /**
  * Elenco fisso delle caratteristiche del gioco, nell'ordine in cui si mostrano.
- * L'unità è quella predefinita, proposta in censimento e usata per la statistica base del livello:
- * ogni potenziamento di armature e armi può comunque essere a valore o in percentuale.
+ * L'unità è quella predefinita, proposta in censimento e sempre presente nelle tabelle dei set (l'altra solo se usata):
+ * va scelta quella che gli item usano davvero. Ogni potenziamento di armature e armi può comunque essere a valore o
+ * in percentuale.
  * Le caratteristiche generali valgono per armature e armi e sono le righe delle tabelle dei set; le altre valgono solo
  * come potenziamento proprio di un'arma (Perforare) o solo per le abilità.
  * Il Tempo di recupero si censisce in positivo ma è una riduzione: si mostra con il segno meno.
  */
 public enum Stat {
     DAMAGE(PERCENT),
-    MAX_HP(FLAT),
+    MAX_HP(PERCENT),
     ATTACK_SPEED(PERCENT),
     REGENERATION(FLAT),
     ARMOR(FLAT),
-    PICK_UP_HEAL(FLAT),
+    PICK_UP_HEAL(PERCENT),
     PICK_UP_RADIUS(PERCENT),
     MOVE_SPEED(PERCENT),
     XP_GAIN(PERCENT),
@@ -34,10 +35,10 @@ public enum Stat {
     ELEMENTAL_DAMAGE(FLAT),
     MECHANICAL_DAMAGE(FLAT),
     LUCK(FLAT),
-    PATROL_EARNINGS(FLAT),
+    PATROL_EARNINGS(PERCENT),
     BOSS_DAMAGE(PERCENT),
     INTEREST(PERCENT),
-    KNOCKBACK(FLAT),
+    KNOCKBACK(PERCENT),
     PIERCE(FLAT, Scope.WEAPON_OWN),
     COOLDOWN(SECONDS, Scope.ABILITY),
     DURATION(SECONDS, Scope.ABILITY),

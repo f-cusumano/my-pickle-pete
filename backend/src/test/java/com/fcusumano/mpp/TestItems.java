@@ -58,7 +58,7 @@ public final class TestItems {
         final List<String> bonuses = new ArrayList<>(List.of(given));
         for (Rarity rarity : Rarity.bonusRarities()) {
             if (Arrays.stream(given).noneMatch(json -> json.contains("\"%s\"".formatted(rarity)))) {
-                bonuses.add("{\"rarity\": \"%s\", \"stat\": \"KNOCKBACK\", \"unit\": \"FLAT\", \"amount\": 1}".formatted(rarity));
+                bonuses.add("{\"rarity\": \"%s\", \"stat\": \"KNOCKBACK\", \"unit\": \"PERCENT\", \"amount\": 1}".formatted(rarity));
             }
         }
         return "[" + String.join(", ", bonuses) + "]";

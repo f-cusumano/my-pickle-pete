@@ -130,6 +130,9 @@ Il prompt è chiaro nella struttura generale (header, menu, Items, Full Sets, Cu
 - **Caratteristica solo propria dell'arma.** "Proprio perforare +1" (Fucile a pompa, rarità Leggendaria) si censisce solo
   sulle armi e solo come potenziamento proprio, a valore. Non è una caratteristica generale: le armature non la hanno e
   non è una riga fissa delle tabelle dei set, dove compare solo come riga propria dell'arma del Custom Set.
+- **Unità predefinite ripulite.** HP, Cura alla raccolta, Guadagni pattuglia e Contraccolpo esistono negli item solo in
+  percentuale: l'unità predefinita passa da valore a percentuale, così le tabelle dei set non mostrano più le loro righe
+  a valore, sempre a zero (comparirebbero solo se un item le usasse), e il censimento propone già la percentuale.
 
 ## 5. Aspetti tecnici
 16. ✅ **Architettura.** App solo per te con database H2. Regole da Dropbox/MyClaudeProjects/MyCodingStyle (vedi sotto).
