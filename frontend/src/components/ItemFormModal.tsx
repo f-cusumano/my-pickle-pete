@@ -238,10 +238,11 @@ function BonusRowInput({
   units,
   constants,
 }: BonusRowProps) {
-  // Scegliendo la caratteristica si propone la sua unità predefinita, poi modificabile
+  // Scegliendo la caratteristica si propone la sua unità predefinita, poi modificabile; Perforare è sempre "proprio"
+  const ownOnly = (stat: Stat | null) => constants.stats.some((s) => s.code === stat && s.weaponOwnOnly);
   const changeStat = (value: string | null) => {
     const stat = value as Stat | null;
-    onChange({ ...row, stat, unit: stat ? units[stat] : row.unit });
+    onChange({ ...row, stat, unit: stat ? units[stat] : row.unit, own: ownOnly(stat) || row.own });
   };
   // Elenco chiuso: la scelta fissa caratteristica, unità e "proprio"
   const changeFixed = (value: string | null) => {
@@ -273,7 +274,7 @@ function BonusRowInput({
           aria-label={`Caratteristica ${rarity}`}
           placeholder="Caratteristica"
           data={constants.stats
-            .filter((stat) => stat.general)
+            .filter((stat) => stat.general || (weapon && stat.weaponOwnOnly))
             .map((stat) => ({ value: stat.code, label: STAT_LABELS[stat.code] }))}
           value={row.stat}
           onChange={changeStat}
@@ -325,6 +326,7 @@ function BonusRowInput({
         <Checkbox
           label="Proprio dell'arma (es. +10% al proprio danno)"
           checked={row.own}
+          disabled={ownOnly(row.stat)}
           onChange={(event) => onChange({ ...row, own: event.currentTarget.checked })}
           size="xs"
           className={classes.bonusOwn}

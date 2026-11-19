@@ -76,13 +76,26 @@ export function fixedBonuses(constants: GameConstants, type: ItemType | null): F
   return constants.itemTypes.find((t) => t.code === type)?.fixedBonuses ?? [];
 }
 
-/** Il potenziamento della riga è tra quelli ammessi dalla tipologia (caratteristiche generali per armature e armi). */
+/**
+ * Il potenziamento della riga è tra quelli ammessi dalla tipologia: caratteristiche generali per armature e armi, più
+ * quelle solo proprie dell'arma (Perforare) se la riga è "proprio".
+ */
 function allowedBonus(row: BonusRow, constants: GameConstants, type: ItemType): boolean {
   const fixed = fixedBonuses(constants, type);
   if (fixed.length > 0) {
     return fixed.some((key) => key.stat === row.stat && key.unit === row.unit && key.own === row.own);
   }
-  return constants.stats.some((stat) => stat.code === row.stat && stat.general) && row.unit !== 'SECONDS';
+  return (
+    constants.stats.some(
+      (stat) => stat.code === row.stat && (stat.general || (stat.weaponOwnOnly && row.own && type === 'WEAPON')),
+    ) && row.unit !== 'SECONDS'
+  );
+}
+
+function notAllowedMessage(row: BonusRow, constants: GameConstants, type: ItemType): string {
+  if (type === 'ABILITY') return "Non vale per un'abilità";
+  const weaponOwnOnly = constants.stats.some((stat) => stat.code === row.stat && stat.weaponOwnOnly);
+  return weaponOwnOnly ? "Solo come proprio dell'arma" : 'Vale solo per le abilità';
 }
 
 /** Rarità che sbloccano un potenziamento (tutte tranne la base, Comune). */
@@ -114,8 +127,7 @@ export function validateForm(values: ItemFormValues, constants: GameConstants): 
     if (row.stat === null) {
       errors[`bonuses.${rarity}.stat`] = 'Scegli la caratteristica';
     } else if (row.unit !== null && !allowedBonus(row, constants, type.code)) {
-      errors[`bonuses.${rarity}.stat`] =
-        type.code === 'ABILITY' ? "Non vale per un'abilità" : 'Vale solo per le abilità';
+      errors[`bonuses.${rarity}.stat`] = notAllowedMessage(row, constants, type.code);
     }
     if (row.unit === null) {
       errors[`bonuses.${rarity}.unit`] = 'Scegli valore o percentuale';

@@ -136,7 +136,10 @@ class ItemFlowIntegrationTest {
     void constantsAndSetBonusCensus() throws Exception {
         mockMvc.perform(get("/api/constants/game"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.stats", hasSize(25)))
+                .andExpect(jsonPath("$.stats", hasSize(26)))
+                .andExpect(jsonPath("$.stats[22].code").value("PIERCE"))
+                .andExpect(jsonPath("$.stats[22].general").value(false))
+                .andExpect(jsonPath("$.stats[22].weaponOwnOnly").value(true))
                 .andExpect(jsonPath("$.rarities[5].maxLevel").value(99))
                 .andExpect(jsonPath("$.sortOrders[1].typeOrder[0]").value("WEAPON"));
         mockMvc.perform(put("/api/armor-set").param("armorSet", "VAMPIRE").contentType(MediaType.APPLICATION_JSON)

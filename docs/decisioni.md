@@ -126,6 +126,11 @@ Il prompt è chiaro nella struttura generale (header, menu, Items, Full Sets, Cu
 - **Imbuto dei filtri a sinistra.** Nella tabella Items l'imbuto sta subito prima del nome della colonna, non ancorato
   a destra dell'intestazione come diceva la specifica: a destra era scomodo e sembrava appartenere alla colonna accanto.
 
+### Perforare (0.6.1)
+- **Caratteristica solo propria dell'arma.** "Proprio perforare +1" (Fucile a pompa, rarità Leggendaria) si censisce solo
+  sulle armi e solo come potenziamento proprio, a valore. Non è una caratteristica generale: le armature non la hanno e
+  non è una riga fissa delle tabelle dei set, dove compare solo come riga propria dell'arma del Custom Set.
+
 ## 5. Aspetti tecnici
 16. ✅ **Architettura.** App solo per te con database H2. Regole da Dropbox/MyClaudeProjects/MyCodingStyle (vedi sotto).
 17. ✅ **Lingua.** Interfaccia in italiano.

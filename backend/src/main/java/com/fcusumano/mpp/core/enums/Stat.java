@@ -11,7 +11,8 @@ import static com.fcusumano.mpp.core.enums.StatUnit.SECONDS;
  * Elenco fisso delle caratteristiche del gioco, nell'ordine in cui si mostrano.
  * L'unità è quella predefinita, proposta in censimento e usata per la statistica base del livello:
  * ogni potenziamento di armature e armi può comunque essere a valore o in percentuale.
- * Le caratteristiche non generali valgono solo per le abilità e non entrano nelle tabelle dei set.
+ * Le caratteristiche generali valgono per armature e armi e sono le righe delle tabelle dei set; le altre valgono solo
+ * come potenziamento proprio di un'arma (Perforare) o solo per le abilità.
  * Il Tempo di recupero si censisce in positivo ma è una riduzione: si mostra con il segno meno.
  */
 public enum Stat {
@@ -37,23 +38,27 @@ public enum Stat {
     BOSS_DAMAGE(PERCENT),
     INTEREST(PERCENT),
     KNOCKBACK(FLAT),
-    COOLDOWN(SECONDS, false),
-    DURATION(SECONDS, false),
-    ACTION_RADIUS(PERCENT, false);
+    PIERCE(FLAT, Scope.WEAPON_OWN),
+    COOLDOWN(SECONDS, Scope.ABILITY),
+    DURATION(SECONDS, Scope.ABILITY),
+    ACTION_RADIUS(PERCENT, Scope.ABILITY);
+
+    /** Dove si può usare la caratteristica. */
+    private enum Scope { GENERAL, WEAPON_OWN, ABILITY }
 
     private static final List<Stat> GENERAL = Arrays.stream(values()).filter(Stat::isGeneral).toList();
 
     private final StatUnit defaultUnit;
-    private final boolean general;
+    private final Scope scope;
 
 
     Stat(StatUnit defaultUnit) {
-        this(defaultUnit, true);
+        this(defaultUnit, Scope.GENERAL);
     }
 
-    Stat(StatUnit defaultUnit, boolean general) {
+    Stat(StatUnit defaultUnit, Scope scope) {
         this.defaultUnit = defaultUnit;
-        this.general = general;
+        this.scope = scope;
     }
 
     public StatUnit defaultUnit() {
@@ -62,7 +67,12 @@ public enum Stat {
 
     /** {@code true} per le caratteristiche di armature e armi, mostrate nelle tabelle dei set. */
     public boolean isGeneral() {
-        return general;
+        return scope == Scope.GENERAL;
+    }
+
+    /** {@code true} per le caratteristiche che esistono solo come potenziamento proprio di un'arma. */
+    public boolean isWeaponOwnOnly() {
+        return scope == Scope.WEAPON_OWN;
     }
 
     /** Caratteristiche di armature e armi, nell'ordine fisso. */

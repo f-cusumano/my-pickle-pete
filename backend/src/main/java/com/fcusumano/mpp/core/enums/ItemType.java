@@ -53,11 +53,14 @@ public enum ItemType {
         return this == ABILITY ? ABILITY_BONUS_KEYS : List.of();
     }
 
-    /** Armature: caratteristiche generali; armi: anche le proprie; abilità: solo il loro elenco chiuso. */
+    /**
+     * Armature: caratteristiche generali; armi: anche come potenziamento proprio, più quelle solo proprie dell'arma
+     * (Perforare); abilità: solo il loro elenco chiuso.
+     */
     public boolean allowsBonus(StatKey key) {
         return switch (this) {
             case ARMOR -> key.stat().isGeneral() && StatUnit.GENERAL.contains(key.unit()) && !key.own();
-            case WEAPON -> key.stat().isGeneral() && StatUnit.GENERAL.contains(key.unit());
+            case WEAPON -> StatUnit.GENERAL.contains(key.unit()) && (key.stat().isGeneral() || key.stat().isWeaponOwnOnly() && key.own());
             case ABILITY -> ABILITY_BONUS_KEYS.contains(key);
         };
     }

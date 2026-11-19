@@ -66,7 +66,7 @@ toolkit in `toolkit/src/tools`). Se la cartella è raggiungibile leggila prima d
 
 - Commit di una riga in italiano: `Area - Descrizione.` (es. `Censimento - Seconda fase con rarità e livello.`).
 - Branch `<versione>/<tema>` (es. `0.5.4/census-from-picker`); merge, mai rebase.
-- La versione sta nel `pom.xml` e nel `package.json` del frontend (oggi 0.6.0): avanzala a ogni rilascio.
+- La versione sta nel `pom.xml` e nel `package.json` del frontend (oggi 0.6.1): avanzala a ogni rilascio.
 - Merge su `main` solo quando lo chiedo. Se scrivo "lavora direttamente su main", niente branch né PR.
 
 ## Regole di dominio da non perdere

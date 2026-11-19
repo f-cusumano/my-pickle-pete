@@ -162,6 +162,22 @@ describe('item form', () => {
     ).toBe('Vale solo per le abilità');
   });
 
+  it('allows Pierce only as own bonus of a weapon', () => {
+    const pierce: BonusRow = { stat: 'PIERCE', unit: 'FLAT', amount: 1, own: true };
+    const weapon: ItemFormValues = {
+      ...emptyForm(),
+      name: 'Fucile a pompa',
+      type: 'WEAPON',
+      specification: 'RANGED',
+      bonuses: allBonuses({ LEGENDARY: pierce }),
+    };
+    expect(validateForm(weapon, CONSTANTS)).toEqual({});
+    const notOwn = { ...weapon, bonuses: allBonuses({ LEGENDARY: { ...pierce, own: false } }) };
+    expect(validateForm(notOwn, CONSTANTS)).toEqual({ 'bonuses.LEGENDARY.stat': "Solo come proprio dell'arma" });
+    const armor = { ...weapon, type: 'ARMOR' as const, specification: 'HAT' as const, armorSet: 'VIKING' as const };
+    expect(validateForm(armor, CONSTANTS)).toEqual({ 'bonuses.LEGENDARY.stat': "Solo come proprio dell'arma" });
+  });
+
   it('names the missing piece of a full set after slot and set', () => {
     expect(missingPieceName('HAT', 'KNIGHT')).toBe('Cappello da Cavaliere');
     expect(missingPieceName('BOOTS', 'SUPERMAN')).toBe('Stivali da Superman');
