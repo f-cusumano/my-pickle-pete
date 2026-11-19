@@ -13,7 +13,7 @@
 
     <groupId>com.fcusumano.mpp</groupId>
     <artifactId>my-pickle-pete</artifactId>
-    <version>0.6.2</version>
+    <version>0.7.0-SNAPSHOT</version>
     <name>my-pickle-pete</name>
     <description>My Pickle Pete - inventario e set degli item di Pickle Pete: Survivor</description>
 
@@ -55,6 +55,12 @@
             <artifactId>h2</artifactId>
             <scope>runtime</scope>
         </dependency>
+        <!-- PostgreSQL per le release (profilo prod); H2 resta il database di sviluppo e la sorgente del porting -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
 
         <!-- OpenAPI -->
         <dependency>
@@ -83,6 +89,22 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- PostgreSQL vero in Docker per i test dello schema e del porting -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-testcontainers</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers-postgresql</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers-junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

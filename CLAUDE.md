@@ -16,7 +16,10 @@ Rispondi sempre in italiano.
 
 ## Struttura
 
-- `backend/` Spring Boot 4.0.8, Java 25, jOOQ, Liquibase, H2 su file (`backend/data/`, escluso da git).
+- `backend/` Spring Boot 4.0.8, Java 25, jOOQ, Liquibase. In sviluppo H2 su file (`backend/data/`, escluso da git),
+  nelle release PostgreSQL con il profilo `prod` (`MPP_DB_URL`, `MPP_DB_USERNAME`, `MPP_DB_PASSWORD`). Lo stesso
+  codice va su entrambi: niente SQL specifico di un database, nomi jOOQ senza virgolette (`JooqSettingsConfig`).
+  Porting una tantum H2 → PostgreSQL con i profili `prod,porting` (`infrastructure.porting`, `MPP_PORTING_H2_PATH`).
   Package `com.fcusumano.mpp`: `application` (endpoint REST e DTO), `core` (modello, enum, service, calcoli,
   validazione), `infrastructure` (repository jOOQ, gestione eccezioni, Spring Security), `tools` (utility copiate dal
   toolkit).
@@ -39,7 +42,8 @@ cd frontend && npm run dev          # http://localhost:5173/my-pickle-pete/ con 
 ```
 
 Prima di dire che una modifica è finita: test del backend se tocchi `backend/`, typecheck, lint e test del frontend
-se tocchi `frontend/`.
+se tocchi `frontend/`. I test su PostgreSQL (`PostgresFlowIntegrationTest`, `DatabasePortingIntegrationTest`) usano
+Testcontainers e richiedono Docker avviato.
 
 ## Regole di codice
 
@@ -65,9 +69,14 @@ toolkit in `toolkit/src/tools`). Se la cartella è raggiungibile leggila prima d
 ## Git
 
 - Commit di una riga in italiano: `Area - Descrizione.` (es. `Censimento - Seconda fase con rarità e livello.`).
-- Branch `<versione>/<tema>` (es. `0.5.4/census-from-picker`); merge, mai rebase.
-- La versione sta nel `pom.xml` e nel `package.json` del frontend (oggi 0.6.2): avanzala a ogni rilascio.
-- Merge su `main` solo quando lo chiedo. Se scrivo "lavora direttamente su main", niente branch né PR.
+- `main` è il branch di sviluppo, con la prossima versione in `-SNAPSHOT` (oggi `0.7.0-SNAPSHOT`, nel `pom.xml` e nel
+  `package.json` del frontend). Le modifiche nascono su branch `<versione>/<tema>` (es. `0.7.0/postgresql`) e si
+  uniscono in `main`; merge, mai rebase.
+- Ogni release ha un branch `release/x.y.z` da `main`: toglie `-SNAPSHOT`, si chiude con il tag `vx.y.z` e da lì non
+  si tocca più (una correzione è una nuova release con versione più alta). Dopo il taglio `main` passa alla versione
+  successiva in `-SNAPSHOT`.
+- Merge su `main`, branch di release e tag solo quando lo chiedo. Se scrivo "lavora direttamente su main", niente
+  branch né PR.
 
 ## Regole di dominio da non perdere
 

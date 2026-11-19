@@ -22,10 +22,10 @@ A personal companion web app for the Android game *Pickle Pete: Survivor*: it ke
 ## Architecture
 
 ```
-React SPA (TypeScript)  ──  JSON over HTTP /my-pickle-pete/api/**  ──>  Spring Boot (Java)  ──  jOOQ  ──>  H2 (file)
+React SPA (TypeScript)  ──  JSON over HTTP /my-pickle-pete/api/**  ──>  Spring Boot (Java)  ──  jOOQ  ──>  H2 (dev) / PostgreSQL (releases)
 ```
 
-- **Backend** (`backend/`, Java / Spring Boot): REST API for items, armor sets, custom sets and game constants. Owns all the domain logic: per-rarity bonus validation, set statistics, set-bonus activation, weapon advice and the best-set search. Layered as `application` (REST endpoints, request/response DTOs), `core` (domain model, enums, services, calculators) and `infrastructure` (jOOQ repositories, exception handling, Spring Security). Authentication is session-based (cookie, optional remember-me, CSRF token for the SPA); role checks (`@AdminOnly`, `@UserOnly`) sit on the endpoints. The schema is managed with Liquibase, and jOOQ classes are generated from the Liquibase changelog at build time. OpenAPI docs via springdoc.
+- **Backend** (`backend/`, Java / Spring Boot): REST API for items, armor sets, custom sets and game constants. Owns all the domain logic: per-rarity bonus validation, set statistics, set-bonus activation, weapon advice and the best-set search. Layered as `application` (REST endpoints, request/response DTOs), `core` (domain model, enums, services, calculators) and `infrastructure` (jOOQ repositories, exception handling, Spring Security). Authentication is session-based (cookie, optional remember-me, CSRF token for the SPA); role checks (`@AdminOnly`, `@UserOnly`) sit on the endpoints. The schema is managed with Liquibase, and jOOQ classes are generated from the Liquibase changelog at build time; the same code runs on H2 in development and on PostgreSQL in releases (`prod` Spring profile). OpenAPI docs via springdoc.
 - **Frontend** (`frontend/`, TypeScript / React): single-page app built with Vite and Mantine. It renders the pages and calls the backend through a small typed fetch client with TanStack Query for caching.
 - **How they talk**: in production the backend serves the built frontend as static files from the same origin, so the whole app lives at a single URL (`http://localhost:8080/my-pickle-pete/`). In development the Vite dev server proxies `/my-pickle-pete/api` to the backend.
 
@@ -33,9 +33,9 @@ React SPA (TypeScript)  ──  JSON over HTTP /my-pickle-pete/api/**  ──>  
 
 | Layer    | Technology |
 |----------|------------|
-| Backend  | **Java 25**, Spring Boot 4.0.8 (Web MVC, Validation, Security, virtual threads), jOOQ, Liquibase, H2 2.5.252, springdoc-openapi 3.0.3, Maven (wrapper included) |
+| Backend  | **Java 25**, Spring Boot 4.0.8 (Web MVC, Validation, Security, virtual threads), jOOQ, Liquibase, H2 2.5.252 (dev), PostgreSQL (releases), springdoc-openapi 3.0.3, Maven (wrapper included) |
 | Frontend | **TypeScript 5.9**, React 19.3, Vite 8.3, Mantine 9.7, TanStack Query 5, Tabler Icons |
-| Tooling  | JUnit 5 + Spring Boot Test; Vitest 5 + Testing Library + jsdom; ESLint 10, Prettier 3 |
+| Tooling  | JUnit 5 + Spring Boot Test + Testcontainers; Vitest 5 + Testing Library + jsdom; ESLint 10, Prettier 3 |
 
 ## Getting started
 
@@ -62,10 +62,26 @@ On first start Liquibase creates two accounts, `admin` and the owner's personal 
 
 Data is stored in an H2 file under `backend/data/` (git-ignored). Optional environment variables: `MPP_PORT` (default `8080`), `MPP_SERVER_ADDRESS` (default `127.0.0.1`; set `0.0.0.0` to reach it from a phone on the same Wi-Fi), `MPP_DB_PATH`, `MPP_FRONTEND_DIST`.
 
+## Releases and PostgreSQL
+
+`main` is the development branch (version `x.y.z-SNAPSHOT`, H2). Each release gets a `release/x.y.z` branch that drops `-SNAPSHOT` and ends with a `vx.y.z` tag; once tagged the branch is frozen, and a fix means a new release with a higher version.
+
+Releases run on PostgreSQL with the `prod` profile:
+
+```bash
+SPRING_PROFILES_ACTIVE=prod MPP_DB_URL=jdbc:postgresql://host:5432/mpp MPP_DB_USERNAME=mpp MPP_DB_PASSWORD=... java -jar my-pickle-pete.jar
+```
+
+To move the data of the H2 file (census, users with their passwords, progress and custom sets) into a new PostgreSQL database, run the app once with the `porting` profile too. With the app that uses the H2 file stopped, Liquibase creates the schema, the data is copied, sequences are realigned and the process exits. It refuses to run if the target already contains items or custom sets.
+
+```bash
+SPRING_PROFILES_ACTIVE=prod,porting MPP_PORTING_H2_PATH=/path/to/my-pickle-pete MPP_DB_URL=... MPP_DB_USERNAME=... MPP_DB_PASSWORD=... java -jar my-pickle-pete.jar
+```
+
 ## Testing
 
 ```bash
-cd backend && ./mvnw test     # unit tests + Spring Boot integration tests on in-memory H2
+cd backend && ./mvnw test     # unit tests + integration tests on in-memory H2; PostgreSQL tests via Testcontainers (Docker)
 cd frontend && npm test       # Vitest: domain logic and page tests
 ```
 

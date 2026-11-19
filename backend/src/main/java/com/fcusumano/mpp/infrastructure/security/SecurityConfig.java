@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -74,7 +75,9 @@ public class SecurityConfig {
         return services;
     }
 
+    /** Solo con il server web: il porting (profilo porting) gira senza e non ha richieste da proteggere. */
     @Bean
+    @ConditionalOnWebApplication
     public SecurityFilterChain securityFilterChain(HttpSecurity http, RememberMeServices rememberMeServices,
                                                    SecurityContextRepository securityContextRepository) {
         http.authorizeHttpRequests(requests -> requests

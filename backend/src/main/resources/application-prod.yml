@@ -1,0 +1,13 @@
+# =====================================================================================================
+# Profilo delle release (SPRING_PROFILES_ACTIVE=prod): PostgreSQL al posto del file H2 di sviluppo.
+# Senza le variabili MPP_DB_* l'avvio si ferma subito.
+# =====================================================================================================
+
+spring:
+  datasource:
+    url: ${MPP_DB_URL}
+    username: ${MPP_DB_USERNAME}
+    password: ${MPP_DB_PASSWORD}
+
+  jooq:
+    sql-dialect: POSTGRES
