@@ -4,11 +4,11 @@ A personal companion web app for the Android game *Pickle Pete: Survivor*: it ke
 
 ## Features
 
-- **Items**: inventory of armor pieces, weapons and abilities with filters; each item tracks its rarity and level, which can be changed in place with live Danno/HP updates.
+- **Items**: inventory of armor pieces, weapons and abilities with search-as-you-type by name and per-column filters (the slot filter follows the type filter); regular users track each item's rarity and level, changed in place with live Danno/HP updates, while the admin sees the plain catalogue.
 - **Full Sets**: the game's 11 armor sets, each showing owned pieces, the 4-of-5 set bonus (active or not), recommended and discouraged weapon types, and a stat table comparing current values with the maximum reachable ("Top").
 - **Custom Sets**: user-built loadouts of five armor pieces plus one weapon and one ability, with a stat-delta preview when hovering (or long-pressing) a candidate piece.
 - **Best now / Best potential**: exhaustive search over owned armor for the combination that maximises a chosen primary stat (and optional secondary stat), at current rarity or at maximum rarity.
-- **Census**: there is no public item database for the game, so an admin enters items by hand: type, slot, set and the five per-rarity bonuses (flat or %), with validation.
+- **Census**: there is no public item database for the game, so an admin enters items by hand: type, slot, set and the five per-rarity bonuses, with validation. Each stat comes in the single unit the game uses (flat or %), set automatically; some bonuses exist only as a weapon's own bonus (e.g. Pierce).
 - **Users**: nickname/password login with "remember me", open sign-up and a profile page. The admin maintains the shared game data; every regular user keeps their own item progress and custom sets.
 - **Responsive**: the side menu collapses into a burger menu and modals go full screen on phones.
 
@@ -33,7 +33,7 @@ React SPA (TypeScript)  ──  JSON over HTTP /my-pickle-pete/api/**  ──>  
 
 | Layer    | Technology |
 |----------|------------|
-| Backend  | **Java 25**, Spring Boot 4.0.8 (Web MVC, Validation, Security, virtual threads), jOOQ, Liquibase, H2 2.5.252 (dev), PostgreSQL (releases), springdoc-openapi 3.0.3, Maven (wrapper included) |
+| Backend  | **Java 25**, Spring Boot 4.0.8 (Web MVC, Validation, Security, virtual threads), jOOQ, Liquibase, H2 2.5.252 (dev), PostgreSQL 17 (releases), springdoc-openapi 3.0.3, Maven (wrapper included) |
 | Frontend | **TypeScript 5.9**, React 19.3, Vite 8.3, Mantine 9.7, TanStack Query 5, Tabler Icons |
 | Tooling  | JUnit 5 + Spring Boot Test + Testcontainers; Vitest 5 + Testing Library + jsdom; ESLint 10, Prettier 3 |
 
@@ -64,18 +64,22 @@ Data is stored in an H2 file under `backend/data/` (git-ignored). Optional envir
 
 ## Releases and PostgreSQL
 
-`main` is the development branch (version `x.y.z-SNAPSHOT`, H2). Each release gets a `release/x.y.z` branch that drops `-SNAPSHOT` and ends with a `vx.y.z` tag; once tagged the branch is frozen, and a fix means a new release with a higher version.
+`main` is the development branch (version `x.y.z-SNAPSHOT`). Each release gets a `release/x.y.z` branch that drops `-SNAPSHOT` and ends with a `vx.y.z` tag; once tagged the branch is frozen, and a fix means a new release with a higher version.
 
-Releases run on PostgreSQL with the `prod` profile:
+**Development vs production database.** Development uses an embedded H2 file (`backend/data/`): nothing to install, and it is what `avvia.bat` and `./mvnw spring-boot:run` use by default. Releases use PostgreSQL. The code is the same on both: the Liquibase changelog contains no database-specific SQL, jOOQ renders unquoted names, and the `prod` Spring profile only switches the datasource (`MPP_DB_URL`, `MPP_DB_USERNAME`, `MPP_DB_PASSWORD`) and the jOOQ dialect. Everyday tests run on in-memory H2; two integration tests run the main flows and the porting on a real PostgreSQL through Testcontainers.
+
+The release packaging (a self-contained jar with the frontend inside, or a Docker image) is still to be defined. Today `./mvnw package` produces `backend/target/my-pickle-pete-<version>.jar`, which serves the built frontend from `MPP_FRONTEND_DIST` (default `../frontend/dist`). Started with the `prod` profile it runs on PostgreSQL:
 
 ```bash
-SPRING_PROFILES_ACTIVE=prod MPP_DB_URL=jdbc:postgresql://host:5432/mpp MPP_DB_USERNAME=mpp MPP_DB_PASSWORD=... java -jar my-pickle-pete.jar
+SPRING_PROFILES_ACTIVE=prod MPP_DB_URL=jdbc:postgresql://host:5432/mpp MPP_DB_USERNAME=mpp MPP_DB_PASSWORD=... \
+MPP_FRONTEND_DIST=/path/to/frontend/dist java -jar my-pickle-pete-<version>.jar
 ```
 
-To move the data of the H2 file (census, users with their passwords, progress and custom sets) into a new PostgreSQL database, run the app once with the `porting` profile too. With the app that uses the H2 file stopped, Liquibase creates the schema, the data is copied, sequences are realigned and the process exits. It refuses to run if the target already contains items or custom sets.
+To move the data of the H2 file (census, users with their passwords, progress and custom sets) into a new PostgreSQL database, run the app once with the `porting` profile too. With the app that uses the H2 file stopped, Liquibase creates the schema, the data is copied with the same ids, sequences are realigned and the process exits without starting the web server. It refuses to run if the target already contains items or custom sets.
 
 ```bash
-SPRING_PROFILES_ACTIVE=prod,porting MPP_PORTING_H2_PATH=/path/to/my-pickle-pete MPP_DB_URL=... MPP_DB_USERNAME=... MPP_DB_PASSWORD=... java -jar my-pickle-pete.jar
+SPRING_PROFILES_ACTIVE=prod,porting MPP_PORTING_H2_PATH=/path/to/my-pickle-pete \
+MPP_DB_URL=... MPP_DB_USERNAME=... MPP_DB_PASSWORD=... java -jar my-pickle-pete-<version>.jar
 ```
 
 ## Testing
