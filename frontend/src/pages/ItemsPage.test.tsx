@@ -55,6 +55,17 @@ describe('ItemsPage', () => {
     expect(screen.getByText('Cappellaccio')).toBeInTheDocument();
   });
 
+  it('greys out the specifications of the types left out by the filter', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByText('Cappellaccio');
+    await user.click(screen.getByRole('button', { name: 'Filtra Tipologia' }));
+    await user.click(await screen.findByRole('checkbox', { name: 'Arma' }));
+    await user.click(screen.getByRole('button', { name: 'Filtra Specifica' }));
+    expect(await screen.findByRole('checkbox', { name: 'Cappello' })).toBeDisabled();
+    expect(screen.getByRole('checkbox', { name: 'A distanza' })).toBeEnabled();
+  });
+
   it('header check selects visible rows and enables the eye', async () => {
     const user = userEvent.setup();
     renderPage();

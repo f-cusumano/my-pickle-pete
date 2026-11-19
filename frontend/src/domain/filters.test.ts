@@ -1,5 +1,5 @@
 import { CONSTANTS, HAT, ITEMS, JAR, PISTOL } from '../test/fixtures';
-import { applyFilters, filterOptions, NO_FILTERS, NONE } from './filters';
+import { applyFilters, filterOptions, NO_FILTERS, NONE, specificationAllowed, withTypes } from './filters';
 
 describe('filters', () => {
   it('no selected value means no filter', () => {
@@ -22,6 +22,20 @@ describe('filters', () => {
   it('filters items without specification or set with -nessuno-', () => {
     expect(applyFilters(ITEMS, { ...NO_FILTERS, specification: [NONE] })).toEqual([JAR]);
     expect(applyFilters(ITEMS, { ...NO_FILTERS, armorSet: [NONE, 'COWBOY'] })).toEqual([HAT, PISTOL, JAR]);
+  });
+
+  it('specifications follow the filtered types', () => {
+    expect(specificationAllowed('HAT', [], CONSTANTS)).toBe(true);
+    expect(specificationAllowed('HAT', ['WEAPON'], CONSTANTS)).toBe(false);
+    expect(specificationAllowed('RANGED', ['WEAPON'], CONSTANTS)).toBe(true);
+    expect(specificationAllowed(NONE, ['WEAPON'], CONSTANTS)).toBe(false);
+    expect(specificationAllowed(NONE, ['WEAPON', 'ABILITY'], CONSTANTS)).toBe(true);
+    // Filtrando le armi si perdono le specifiche delle armature già scelte
+    expect(withTypes({ ...NO_FILTERS, specification: ['HAT', 'RANGED'] }, ['WEAPON'], CONSTANTS)).toEqual({
+      ...NO_FILTERS,
+      type: ['WEAPON'],
+      specification: ['RANGED'],
+    });
   });
 
   it('lists only present values, in the order of the sort orders', () => {

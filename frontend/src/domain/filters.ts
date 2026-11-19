@@ -63,6 +63,27 @@ export function applyFilters(items: Item[], filters: ColumnFilters): Item[] {
 }
 
 /**
+ * La specifica è compatibile con le tipologie filtrate: le specifiche della tipologia, "-nessuno-" per quelle senza
+ * specifica (abilità); senza filtro sulla tipologia vanno bene tutte.
+ */
+export function specificationAllowed(value: string, types: ItemType[], constants: GameConstants): boolean {
+  if (types.length === 0) return true;
+  if (value === NONE) {
+    return constants.itemTypes.some((type) => types.includes(type.code) && !type.specified);
+  }
+  return constants.specifications.some((spec) => spec.code === value && types.includes(spec.itemType));
+}
+
+/** Cambiando le tipologie si tolgono dal filtro le specifiche diventate incompatibili (resterebbero non deselezionabili). */
+export function withTypes(filters: ColumnFilters, types: ItemType[], constants: GameConstants): ColumnFilters {
+  return {
+    ...filters,
+    type: types,
+    specification: filters.specification.filter((value) => specificationAllowed(value, types, constants)),
+  };
+}
+
+/**
  * Voci della tendina di una colonna: solo i valori presenti negli item, nell'ordine degli ordinamenti
  * (rarità decrescente, tipologie secondo l'ordinamento scelto, specifiche per tipologia, set del gioco),
  * con "-nessuno-" in fondo per Specifica e Set.

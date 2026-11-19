@@ -17,7 +17,7 @@ import {
 import { IconEye, IconInfoCircle, IconSearch } from '@tabler/icons-react';
 import { useMemo, useState } from 'react';
 import { useGameConstants, useItems } from '../api/queries';
-import type { GameConstants, Item, ItemSortOrder } from '../api/types';
+import type { GameConstants, Item, ItemSortOrder, ItemType } from '../api/types';
 import { ColumnFilter } from '../components/ColumnFilter';
 import { ItemModal } from '../components/ItemModal';
 import { ItemThumbnail } from '../components/ItemThumbnail';
@@ -30,6 +30,8 @@ import {
   filterOptions,
   NO_FILTERS,
   NONE,
+  specificationAllowed,
+  withTypes,
   type ColumnFilters,
   type FilterColumn,
 } from '../domain/filters';
@@ -125,7 +127,18 @@ function ItemsTable({ constants, items, sortOrder, onSortOrderChange, onGoToCens
         options={filterOptions(items, column, constants, sortOrder)}
         selected={filters[column]}
         optionLabel={FILTER_LABELS[column]}
-        onChange={(values) => changeFilters({ ...filters, [column]: values })}
+        optionDisabled={
+          column === 'specification'
+            ? (value) => !specificationAllowed(value, filters.type, constants)
+            : undefined
+        }
+        onChange={(values) =>
+          changeFilters(
+            column === 'type'
+              ? withTypes(filters, values as ItemType[], constants)
+              : { ...filters, [column]: values },
+          )
+        }
       />
       <span>{label}</span>
     </div>
