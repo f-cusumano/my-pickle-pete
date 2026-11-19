@@ -74,12 +74,6 @@ export const STAT_UNIT_LABELS: Record<StatUnit, string> = {
 };
 
 /** Descrizione dell'unità, mostrata al passaggio del mouse. */
-export const STAT_UNIT_DESCRIPTIONS: Record<StatUnit, string> = {
-  FLAT: 'Aumento in valore',
-  PERCENT: 'Aumento in percentuale',
-  SECONDS: 'Secondi',
-};
-
 export const STAT_LABELS: Record<Stat, string> = {
   DAMAGE: 'Danno',
   MAX_HP: 'HP',

@@ -9,9 +9,8 @@ import static com.fcusumano.mpp.core.enums.StatUnit.SECONDS;
 
 /**
  * Elenco fisso delle caratteristiche del gioco, nell'ordine in cui si mostrano.
- * L'unità è quella predefinita, proposta in censimento e sempre presente nelle tabelle dei set (l'altra solo se usata):
- * va scelta quella che gli item usano davvero. Ogni potenziamento di armature e armi può comunque essere a valore o
- * in percentuale.
+ * L'unità è l'unica con cui il gioco usa la caratteristica: il censimento di armature e armi la impone e le tabelle
+ * dei set la mostrano sempre.
  * Le caratteristiche generali valgono per armature e armi e sono le righe delle tabelle dei set; le altre valgono solo
  * come potenziamento proprio di un'arma (Perforare) o solo per le abilità.
  * Il Tempo di recupero si censisce in positivo ma è una riduzione: si mostra con il segno meno.

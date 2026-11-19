@@ -21,6 +21,17 @@ class ItemTypeTest {
     }
 
     @Test
+    void armorsAndWeaponsOnlyInTheUnitTheGameUses() {
+        Arrays.stream(ItemType.values()).forEach(type -> {
+            Assertions.assertEquals(switch (type) {
+                case ARMOR, WEAPON -> true;
+                case ABILITY -> false;
+            }, type.allowsBonus(StatKey.defaultOf(Stat.LUCK)), type.name());
+            Assertions.assertFalse(type.allowsBonus(StatKey.otherUnitOf(Stat.LUCK)), type.name());
+        });
+    }
+
+    @Test
     void pierceIsNotARowOfTheSetTables() {
         Assertions.assertFalse(Stat.general().contains(Stat.PIERCE));
         Assertions.assertTrue(Stat.PIERCE.isWeaponOwnOnly());

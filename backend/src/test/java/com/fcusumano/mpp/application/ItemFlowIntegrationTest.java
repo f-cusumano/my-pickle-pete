@@ -39,7 +39,7 @@ class ItemFlowIntegrationTest {
         final long hatId = create("""
                 {"name": "Cappello da cowboy", "type": "ARMOR", "specification": "HAT", "armorSet": "COWBOY", "bonuses": %s}"""
                                           .formatted(allBonusesJson("{\"rarity\": \"UNCOMMON\", \"stat\": \"CRIT_CHANCE\", \"unit\": \"PERCENT\", \"amount\": 2}",
-                                                                    "{\"rarity\": \"RARE\", \"stat\": \"LUCK\", \"unit\": \"PERCENT\", \"amount\": 3}")));
+                                                                    "{\"rarity\": \"RARE\", \"stat\": \"LUCK\", \"unit\": \"FLAT\", \"amount\": 3}")));
 
         //Parte da Comune 1/10 con +4% Danno
         mockMvc.perform(get("/api/item").param("id", String.valueOf(hatId)))
@@ -76,11 +76,11 @@ class ItemFlowIntegrationTest {
                 .andExpect(jsonPath("$[8].stats[0].stat").value("DAMAGE"))
                 .andExpect(jsonPath("$[8].stats[0].current").value(0))
                 .andExpect(jsonPath("$[8].stats[0].top").value(0))
-                //Fortuna in percentuale: riga in più subito dopo la Fortuna a valore
-                .andExpect(jsonPath("$[8].stats", hasSize(23)))
-                .andExpect(jsonPath("$[8].stats[18].stat").value("LUCK"))
-                .andExpect(jsonPath("$[8].stats[18].unit").value("PERCENT"))
-                .andExpect(jsonPath("$[8].stats[18].top").value(3));
+                //Una riga per caratteristica generale, nella sua unità
+                .andExpect(jsonPath("$[8].stats", hasSize(22)))
+                .andExpect(jsonPath("$[8].stats[17].stat").value("LUCK"))
+                .andExpect(jsonPath("$[8].stats[17].unit").value("FLAT"))
+                .andExpect(jsonPath("$[8].stats[17].top").value(3));
 
         //Rarità più alta: livello invariato; poi di nuovo Comune: livello al nuovo massimo
         mockMvc.perform(put("/api/item/rarity").param("id", String.valueOf(hatId)).param("rarity", "ARTIFACT"))
@@ -118,6 +118,12 @@ class ItemFlowIntegrationTest {
         mockMvc.perform(post("/api/item").contentType(MediaType.APPLICATION_JSON).content("""
                         {"name": "Barattolo", "type": "ABILITY",
                          "bonuses": [{"rarity": "RARE", "stat": "LUCK", "unit": "FLAT", "amount": 0.5}]}"""))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
+        //Ogni caratteristica solo nell'unità che il gioco usa: la Fortuna è a valore
+        mockMvc.perform(post("/api/item").contentType(MediaType.APPLICATION_JSON).content("""
+                        {"name": "Cappello fortunato", "type": "ARMOR", "specification": "HAT", "armorSet": "VIKING", "bonuses": %s}"""
+                                                                                   .formatted(allBonusesJson("{\"rarity\": \"RARE\", \"stat\": \"LUCK\", \"unit\": \"PERCENT\", \"amount\": 3}"))))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
     }

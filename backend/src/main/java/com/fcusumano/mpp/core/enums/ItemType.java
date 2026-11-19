@@ -55,12 +55,12 @@ public enum ItemType {
 
     /**
      * Armature: caratteristiche generali; armi: anche come potenziamento proprio, più quelle solo proprie dell'arma
-     * (Perforare); abilità: solo il loro elenco chiuso.
+     * (Perforare); sempre nell'unità predefinita, l'unica che il gioco usa. Abilità: solo il loro elenco chiuso.
      */
     public boolean allowsBonus(StatKey key) {
         return switch (this) {
-            case ARMOR -> key.stat().isGeneral() && StatUnit.GENERAL.contains(key.unit()) && !key.own();
-            case WEAPON -> StatUnit.GENERAL.contains(key.unit()) && (key.stat().isGeneral() || key.stat().isWeaponOwnOnly() && key.own());
+            case ARMOR -> key.stat().isGeneral() && key.isDefault() && !key.own();
+            case WEAPON -> key.isDefault() && (key.stat().isGeneral() || key.stat().isWeaponOwnOnly() && key.own());
             case ABILITY -> ABILITY_BONUS_KEYS.contains(key);
         };
     }

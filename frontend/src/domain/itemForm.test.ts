@@ -56,11 +56,25 @@ describe('item form', () => {
       },
       CONSTANTS,
     );
-    expect(Object.keys(errors).sort()).toEqual([
-      'bonuses.EPIC.amount',
-      'bonuses.RARE.stat',
-      'bonuses.RARE.unit',
-    ]);
+    expect(Object.keys(errors).sort()).toEqual(['bonuses.EPIC.amount', 'bonuses.RARE.stat']);
+  });
+
+  it('accepts every stat only in the unit the game uses', () => {
+    const values: ItemFormValues = {
+      ...emptyForm(),
+      name: 'Elmo',
+      type: 'ARMOR',
+      specification: 'HAT',
+      armorSet: 'VIKING',
+      bonuses: allBonuses({
+        RARE: { stat: 'LUCK', unit: 'PERCENT', amount: 2, own: false },
+        EPIC: { stat: 'DAMAGE', unit: 'FLAT', amount: 2, own: false },
+      }),
+    };
+    expect(validateForm(values, CONSTANTS)).toEqual({
+      'bonuses.RARE.stat': 'Solo a valore',
+      'bonuses.EPIC.stat': 'Solo in percentuale',
+    });
   });
 
   it('requires a bonus for every rarity above Common', () => {

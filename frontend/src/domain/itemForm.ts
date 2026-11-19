@@ -17,7 +17,7 @@ export const MIN_BONUS_AMOUNT = 1;
 
 export interface BonusRow {
   stat: Stat | null;
-  /** Valore o percentuale: alla scelta della caratteristica si propone la sua unità predefinita. */
+  /** Valore o percentuale: segue la caratteristica scelta (l'unica unità con cui il gioco la usa). */
   unit: StatUnit | null;
   amount: number | string;
   /** Armi e abilità: potenziamento del solo item ("+10% al proprio danno"). */
@@ -87,15 +87,21 @@ function allowedBonus(row: BonusRow, constants: GameConstants, type: ItemType): 
   }
   return (
     constants.stats.some(
-      (stat) => stat.code === row.stat && (stat.general || (stat.weaponOwnOnly && row.own && type === 'WEAPON')),
-    ) && row.unit !== 'SECONDS'
+      (stat) =>
+        stat.code === row.stat &&
+        stat.defaultUnit === row.unit &&
+        (stat.general || (stat.weaponOwnOnly && row.own && type === 'WEAPON')),
+    )
   );
 }
 
 function notAllowedMessage(row: BonusRow, constants: GameConstants, type: ItemType): string {
   if (type === 'ABILITY') return "Non vale per un'abilità";
-  const weaponOwnOnly = constants.stats.some((stat) => stat.code === row.stat && stat.weaponOwnOnly);
-  return weaponOwnOnly ? "Solo come proprio dell'arma" : 'Vale solo per le abilità';
+  const stat = constants.stats.find((candidate) => candidate.code === row.stat);
+  if (stat && stat.defaultUnit !== row.unit && stat.defaultUnit !== 'SECONDS') {
+    return stat.defaultUnit === 'PERCENT' ? 'Solo in percentuale' : 'Solo a valore';
+  }
+  return stat?.weaponOwnOnly ? "Solo come proprio dell'arma" : 'Vale solo per le abilità';
 }
 
 /** Rarità che sbloccano un potenziamento (tutte tranne la base, Comune). */
@@ -126,11 +132,8 @@ export function validateForm(values: ItemFormValues, constants: GameConstants): 
     const amount = amountOf(row);
     if (row.stat === null) {
       errors[`bonuses.${rarity}.stat`] = 'Scegli la caratteristica';
-    } else if (row.unit !== null && !allowedBonus(row, constants, type.code)) {
+    } else if (!allowedBonus(row, constants, type.code)) {
       errors[`bonuses.${rarity}.stat`] = notAllowedMessage(row, constants, type.code);
-    }
-    if (row.unit === null) {
-      errors[`bonuses.${rarity}.unit`] = 'Scegli valore o percentuale';
     }
     if (amount === null || amount < MIN_BONUS_AMOUNT) {
       errors[`bonuses.${rarity}.amount`] = `Almeno ${String(MIN_BONUS_AMOUNT)}`;

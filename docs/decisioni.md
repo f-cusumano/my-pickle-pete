@@ -133,6 +133,10 @@ Il prompt è chiaro nella struttura generale (header, menu, Items, Full Sets, Cu
 - **Unità predefinite ripulite.** HP, Cura alla raccolta, Guadagni pattuglia e Contraccolpo esistono negli item solo in
   percentuale: l'unità predefinita passa da valore a percentuale, così le tabelle dei set non mostrano più le loro righe
   a valore, sempre a zero (comparirebbero solo se un item le usasse), e il censimento propone già la percentuale.
+- **Unità bloccata nel censimento.** Nel gioco ogni caratteristica compare sempre in una sola unità (verificato sui 73
+  item censiti), quindi il censimento di armature e armi non offre più la scelta tra valore e percentuale: l'unità
+  segue la caratteristica e si vede nel campo del valore (`+2` / `+2%`); il backend rifiuta l'altra unità. Se un giorno
+  il gioco usasse l'altra unità, basta cambiare l'unità della caratteristica nel codice (enum `Stat`).
 
 ## 5. Aspetti tecnici
 16. ✅ **Architettura.** App solo per te con database H2. Regole da Dropbox/MyClaudeProjects/MyCodingStyle (vedi sotto).
