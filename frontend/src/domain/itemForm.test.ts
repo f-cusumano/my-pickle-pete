@@ -56,11 +56,25 @@ describe('item form', () => {
       },
       CONSTANTS,
     );
-    expect(Object.keys(errors).sort()).toEqual([
-      'bonuses.EPIC.amount',
-      'bonuses.RARE.stat',
-      'bonuses.RARE.unit',
-    ]);
+    expect(Object.keys(errors).sort()).toEqual(['bonuses.EPIC.amount', 'bonuses.RARE.stat']);
+  });
+
+  it('accepts every stat only in the unit the game uses', () => {
+    const values: ItemFormValues = {
+      ...emptyForm(),
+      name: 'Elmo',
+      type: 'ARMOR',
+      specification: 'HAT',
+      armorSet: 'VIKING',
+      bonuses: allBonuses({
+        RARE: { stat: 'LUCK', unit: 'PERCENT', amount: 2, own: false },
+        EPIC: { stat: 'DAMAGE', unit: 'FLAT', amount: 2, own: false },
+      }),
+    };
+    expect(validateForm(values, CONSTANTS)).toEqual({
+      'bonuses.RARE.stat': 'Solo a valore',
+      'bonuses.EPIC.stat': 'Solo in percentuale',
+    });
   });
 
   it('requires a bonus for every rarity above Common', () => {
@@ -160,6 +174,22 @@ describe('item form', () => {
         CONSTANTS,
       )['bonuses.RARE.stat'],
     ).toBe('Vale solo per le abilità');
+  });
+
+  it('allows Pierce only as own bonus of a weapon', () => {
+    const pierce: BonusRow = { stat: 'PIERCE', unit: 'FLAT', amount: 1, own: true };
+    const weapon: ItemFormValues = {
+      ...emptyForm(),
+      name: 'Fucile a pompa',
+      type: 'WEAPON',
+      specification: 'RANGED',
+      bonuses: allBonuses({ LEGENDARY: pierce }),
+    };
+    expect(validateForm(weapon, CONSTANTS)).toEqual({});
+    const notOwn = { ...weapon, bonuses: allBonuses({ LEGENDARY: { ...pierce, own: false } }) };
+    expect(validateForm(notOwn, CONSTANTS)).toEqual({ 'bonuses.LEGENDARY.stat': "Solo come proprio dell'arma" });
+    const armor = { ...weapon, type: 'ARMOR' as const, specification: 'HAT' as const, armorSet: 'VIKING' as const };
+    expect(validateForm(armor, CONSTANTS)).toEqual({ 'bonuses.LEGENDARY.stat': "Solo come proprio dell'arma" });
   });
 
   it('names the missing piece of a full set after slot and set', () => {

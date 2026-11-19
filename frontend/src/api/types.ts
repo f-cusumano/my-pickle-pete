@@ -39,6 +39,7 @@ export type Stat =
   | 'BOSS_DAMAGE'
   | 'INTEREST'
   | 'KNOCKBACK'
+  | 'PIERCE'
   | 'COOLDOWN'
   | 'DURATION'
   | 'ACTION_RADIUS';
@@ -187,8 +188,11 @@ export interface GameConstants {
   specifications: { code: Specification; itemType: ItemType; baseStat: Stat }[];
   armorSets: ArmorSet[];
   statUnits: StatUnit[];
-  /** general: caratteristica di armature e armi (le altre valgono solo per le abilità). */
-  stats: { code: Stat; defaultUnit: StatUnit; general: boolean }[];
+  /**
+   * general: caratteristica di armature e armi, riga delle tabelle dei set; weaponOwnOnly: solo come potenziamento
+   * proprio di un'arma (Perforare); le altre valgono solo per le abilità.
+   */
+  stats: { code: Stat; defaultUnit: StatUnit; general: boolean; weaponOwnOnly: boolean }[];
   sortOrders: { code: ItemSortOrder; typeOrder: ItemType[]; preselected: boolean }[];
   baseStatPerLevel: number;
   armorSetBonusThreshold: number;

@@ -35,7 +35,7 @@ public record GameConstantsResponse(List<RarityConstant> rarities,
     public record SpecificationConstant(Specification code, ItemType itemType, Stat baseStat) {}
 
     /** {@code general}: caratteristica di armature e armi (le altre valgono solo per le abilità). */
-    public record StatConstant(Stat code, StatUnit defaultUnit, boolean general) {}
+    public record StatConstant(Stat code, StatUnit defaultUnit, boolean general, boolean weaponOwnOnly) {}
 
     public record SortOrderConstant(ItemSortOrder code, List<ItemType> typeOrder, boolean preselected) {}
 
@@ -50,7 +50,7 @@ public record GameConstantsResponse(List<RarityConstant> rarities,
                 Arrays.stream(Specification.values()).map(s -> new SpecificationConstant(s, s.itemType(), s.baseStat())).toList(),
                 List.of(ArmorSet.values()),
                 List.of(StatUnit.values()),
-                Arrays.stream(Stat.values()).map(s -> new StatConstant(s, s.defaultUnit(), s.isGeneral())).toList(),
+                Arrays.stream(Stat.values()).map(s -> new StatConstant(s, s.defaultUnit(), s.isGeneral(), s.isWeaponOwnOnly())).toList(),
                 Arrays.stream(ItemSortOrder.values()).map(o -> new SortOrderConstant(o, o.typeOrder(), o == ItemSortOrder.defaultOrder())).toList(),
                 BASE_STAT_PER_LEVEL,
                 ARMOR_SET_BONUS_THRESHOLD);

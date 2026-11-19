@@ -66,7 +66,7 @@ toolkit in `toolkit/src/tools`). Se la cartella è raggiungibile leggila prima d
 
 - Commit di una riga in italiano: `Area - Descrizione.` (es. `Censimento - Seconda fase con rarità e livello.`).
 - Branch `<versione>/<tema>` (es. `0.5.4/census-from-picker`); merge, mai rebase.
-- La versione sta nel `pom.xml` e nel `package.json` del frontend (oggi 0.6.0): avanzala a ogni rilascio.
+- La versione sta nel `pom.xml` e nel `package.json` del frontend (oggi 0.6.1): avanzala a ogni rilascio.
 - Merge su `main` solo quando lo chiedo. Se scrivo "lavora direttamente su main", niente branch né PR.
 
 ## Regole di dominio da non perdere
@@ -77,8 +77,8 @@ toolkit in `toolkit/src/tools`). Se la cartella è raggiungibile leggila prima d
   propri Custom Set (nome unico per utente). I permessi stanno negli endpoint (`@AdminOnly`, `@UserOnly`) e in
   `frontend/src/domain/permissions.ts`. Password iniziali da `MPP_ADMIN_PASSWORD` / `MPP_OWNER_PASSWORD`.
 - Ogni item ha 5 bonus, uno per rarità (Incomune → Artefatto), tutti obbligatori, minimo +1, unità `#` (valore)
-  o `%`, mostrati come `+2` / `+2%`. Stessa caratteristica in unità diverse = righe separate. I bonus delle armi
-  possono essere "Proprio dell'arma".
+  o `%`, mostrati come `+2` / `+2%`. Ogni caratteristica ha una sola unità, quella dell'enum `Stat` (il censimento
+  non la fa scegliere). I bonus delle armi possono essere "Proprio dell'arma"; Perforare esiste solo così.
 - I set riguardano solo le armature. Un Custom Set può avere anche un'arma e un'abilità, mostrate a parte; l'arma non
   influisce sui tipi d'arma consigliati/sconsigliati. I nomi dei Custom Set sono unici (senza distinzione maiuscole).
 - Le tabelle delle statistiche dei set mostrano solo i bonus di rarità e devono essere il più compatte possibile in

@@ -74,12 +74,6 @@ export const STAT_UNIT_LABELS: Record<StatUnit, string> = {
 };
 
 /** Descrizione dell'unità, mostrata al passaggio del mouse. */
-export const STAT_UNIT_DESCRIPTIONS: Record<StatUnit, string> = {
-  FLAT: 'Aumento in valore',
-  PERCENT: 'Aumento in percentuale',
-  SECONDS: 'Secondi',
-};
-
 export const STAT_LABELS: Record<Stat, string> = {
   DAMAGE: 'Danno',
   MAX_HP: 'HP',
@@ -103,6 +97,7 @@ export const STAT_LABELS: Record<Stat, string> = {
   BOSS_DAMAGE: 'Danno ai boss',
   INTEREST: 'Interessi',
   KNOCKBACK: 'Contraccolpo',
+  PIERCE: 'Perforare',
   COOLDOWN: 'Tempo di recupero',
   DURATION: 'Durata',
   ACTION_RADIUS: "Raggio d'azione",
@@ -132,6 +127,7 @@ const OWN_ADJECTIVES: Record<Stat, 'Proprio' | 'Propria' | 'Propri'> = {
   BOSS_DAMAGE: 'Proprio',
   INTEREST: 'Propri',
   KNOCKBACK: 'Proprio',
+  PIERCE: 'Proprio',
   COOLDOWN: 'Proprio',
   DURATION: 'Propria',
   ACTION_RADIUS: 'Proprio',

@@ -4,13 +4,11 @@ import {
   Group,
   Modal,
   NumberInput,
-  SegmentedControl,
   Select,
   Stack,
   Text,
   TextInput,
   Textarea,
-  Tooltip,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useFullScreenModal } from '../hooks/useFullScreenModal';
@@ -37,8 +35,6 @@ import {
   ITEM_TYPE_LABELS,
   SPECIFICATION_LABELS,
   STAT_LABELS,
-  STAT_UNIT_DESCRIPTIONS,
-  STAT_UNIT_LABELS,
   ownStatLabel,
 } from '../i18n/labels';
 import { ItemThumbnail } from './ItemThumbnail';
@@ -176,12 +172,11 @@ export function ItemFormModal({ constants, item, preset, onClose }: Props) {
               weapon={form.values.type === 'WEAPON'}
               fixed={fixed}
               statError={form.errors[`bonuses.${rarity}.stat`]}
-              unitError={form.errors[`bonuses.${rarity}.unit`]}
               amountError={form.errors[`bonuses.${rarity}.amount`]}
               onChange={(row) => {
                 form.setFieldValue(`bonuses.${rarity}`, row);
                 // Gli errori della riga si ricalcolano al prossimo salvataggio
-                (['stat', 'unit', 'amount'] as const).forEach((field) =>
+                (['stat', 'amount'] as const).forEach((field) =>
                   form.clearFieldError(`bonuses.${rarity}.${field}`),
                 );
               }}
@@ -217,7 +212,6 @@ interface BonusRowProps {
   /** Potenziamenti possibili quando sono un elenco chiuso (abilità): unità fissa, "Proprio danno" tra le scelte. */
   fixed: FixedBonus[];
   statError: ReactNode;
-  unitError: ReactNode;
   amountError: ReactNode;
   onChange: (row: BonusRow) => void;
   units: Record<Stat, StatUnit>;
@@ -232,16 +226,16 @@ function BonusRowInput({
   weapon,
   fixed,
   statError,
-  unitError,
   amountError,
   onChange,
   units,
   constants,
 }: BonusRowProps) {
-  // Scegliendo la caratteristica si propone la sua unità predefinita, poi modificabile
+  // La caratteristica porta con sé la sua unità (l'unica usata dal gioco); Perforare è sempre "proprio"
+  const ownOnly = (stat: Stat | null) => constants.stats.some((s) => s.code === stat && s.weaponOwnOnly);
   const changeStat = (value: string | null) => {
     const stat = value as Stat | null;
-    onChange({ ...row, stat, unit: stat ? units[stat] : row.unit });
+    onChange({ ...row, stat, unit: stat ? units[stat] : null, own: ownOnly(stat) || row.own });
   };
   // Elenco chiuso: la scelta fissa caratteristica, unità e "proprio"
   const changeFixed = (value: string | null) => {
@@ -250,7 +244,7 @@ function BonusRowInput({
   };
   const closed = fixed.length > 0;
   return (
-    <div className={closed ? `${classes.bonusRow} ${classes.bonusRowFixed}` : classes.bonusRow}>
+    <div className={classes.bonusRow}>
       <div className={classes.bonusBadge}>
         <RarityBadge rarity={rarity} />
       </div>
@@ -273,7 +267,7 @@ function BonusRowInput({
           aria-label={`Caratteristica ${rarity}`}
           placeholder="Caratteristica"
           data={constants.stats
-            .filter((stat) => stat.general)
+            .filter((stat) => stat.general || (weapon && stat.weaponOwnOnly))
             .map((stat) => ({ value: stat.code, label: STAT_LABELS[stat.code] }))}
           value={row.stat}
           onChange={changeStat}
@@ -282,29 +276,6 @@ function BonusRowInput({
           clearable
           className={classes.bonusStat}
         />
-      )}
-      {!closed && (
-        <div className={classes.bonusUnit}>
-          <SegmentedControl
-            aria-label={`Unità ${rarity}`}
-            data={(['FLAT', 'PERCENT'] as const).map((unit) => ({
-              value: unit,
-              label: (
-                <Tooltip label={STAT_UNIT_DESCRIPTIONS[unit]} withinPortal>
-                  <span aria-label={STAT_UNIT_DESCRIPTIONS[unit]}>{STAT_UNIT_LABELS[unit]}</span>
-                </Tooltip>
-              ),
-            }))}
-            value={row.unit ?? ''}
-            onChange={(value) => onChange({ ...row, unit: value as StatUnit })}
-            fullWidth
-          />
-          {unitError && (
-            <Text c="red" size="xs" mt={2}>
-              {unitError}
-            </Text>
-          )}
-        </div>
       )}
       <NumberInput
         aria-label={`Quantità ${rarity}`}
@@ -325,6 +296,7 @@ function BonusRowInput({
         <Checkbox
           label="Proprio dell'arma (es. +10% al proprio danno)"
           checked={row.own}
+          disabled={ownOnly(row.stat)}
           onChange={(event) => onChange({ ...row, own: event.currentTarget.checked })}
           size="xs"
           className={classes.bonusOwn}
