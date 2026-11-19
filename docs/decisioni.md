@@ -148,6 +148,21 @@ Il prompt è chiaro nella struttura generale (header, menu, Items, Full Sets, Cu
   tutte le voci, ma quelle delle altre tipologie (e "-nessuno-" se non c'è Abilità) sono in grigio e non selezionabili;
   cambiando tipologia le specifiche già scelte e diventate incompatibili si tolgono dal filtro.
 
+### Release e PostgreSQL (0.7.0)
+- **Branch.** `main` è lo sviluppo (versione `x.y.z-SNAPSHOT`); ogni release ha un branch `release/x.y.z` che toglie
+  `-SNAPSHOT` e si chiude con il tag `vx.y.z`. Dopo il tag il branch non si tocca più: una correzione è una release
+  nuova con versione più alta. La prima release con questo schema è la 0.7.0.
+- **Database.** In sviluppo resta H2 su file; le release usano PostgreSQL. Il codice è lo stesso: il profilo Spring
+  `prod` sceglie PostgreSQL (`MPP_DB_URL`, `MPP_DB_USERNAME`, `MPP_DB_PASSWORD`), così le release non divergono da
+  `main`. jOOQ scrive i nomi senza virgolette, perché le classi generate da H2 sono in maiuscolo e PostgreSQL usa il
+  minuscolo.
+- **Porting.** Un comando del backend (profili `prod,porting`) copia nel PostgreSQL appena creato da Liquibase tutto il
+  contenuto del file H2: censimento, effetti dei set, utenze con le password, progressi e Custom Set, con gli stessi id.
+  Rifiuta un database di destinazione che ha già item o Custom Set. Provato sui dati reali: stessi conteggi e stessa
+  somma dei livelli.
+- **Test.** I test normali restano su H2 in memoria; due test di integrazione girano su PostgreSQL con Testcontainers
+  (flussi principali e porting) e richiedono Docker.
+
 ## 5. Aspetti tecnici
 16. ✅ **Architettura.** App solo per te con database H2. Regole da Dropbox/MyClaudeProjects/MyCodingStyle (vedi sotto).
 17. ✅ **Lingua.** Interfaccia in italiano.

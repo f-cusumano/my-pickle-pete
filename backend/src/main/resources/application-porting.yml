@@ -1,0 +1,13 @@
+# =====================================================================================================
+# Porting una tantum dal file H2 di sviluppo al PostgreSQL di produzione (SPRING_PROFILES_ACTIVE=prod,porting):
+# Liquibase crea lo schema, poi si copiano tutti i dati e l'applicazione termina senza avviare il server web.
+# =====================================================================================================
+
+spring:
+  main:
+    web-application-type: none
+
+mpp:
+  porting:
+    # File H2 da copiare (senza estensione); l'applicazione che lo usa deve essere ferma
+    h2-path: ${MPP_PORTING_H2_PATH}
