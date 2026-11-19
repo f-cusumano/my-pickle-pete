@@ -13,10 +13,13 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
+import java.util.Arrays;
+
 import static com.fcusumano.mpp.TestItems.allBonusesJson;
 import static com.fcusumano.mpp.TestUsers.ADMIN;
 import static com.fcusumano.mpp.TestUsers.OWNER;
 import static com.fcusumano.mpp.TestUsers.as;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -66,6 +69,13 @@ class UserFlowIntegrationTest {
         //"Ricordami" è facoltativo; un corpo illeggibile è una richiesta errata, non un errore interno
         postJson("/api/auth/login", "{\"nickname\": \"admin\", \"password\": \"admin-secret\"}").andExpect(status().isOk());
         postJson("/api/auth/login", "{\"nickname\": ").andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
+    }
+
+    @Test
+    void logoutIssuesANewCsrfToken() throws Exception {
+        //Senza un token nuovo il login successivo sarebbe rifiutato (403) e riuscirebbe solo al secondo tentativo
+        final MvcResult logout = mockMvc.perform(post("/api/auth/logout").with(as(OWNER))).andExpect(status().isOk()).andReturn();
+        assertThat(lastCsrfCookie(logout)).isNotBlank();
     }
 
     @Test
@@ -150,6 +160,15 @@ class UserFlowIntegrationTest {
 
     private ResultActions login(String nickname, String password, boolean rememberMe) throws Exception {
         return postJson("/api/auth/login", "{\"nickname\": \"%s\", \"password\": \"%s\", \"rememberMe\": %s}".formatted(nickname, password, rememberMe));
+    }
+
+    /** Ultimo cookie XSRF-TOKEN della risposta (il logout prima lo cancella): è quello che il browser tiene. */
+    private static String lastCsrfCookie(MvcResult result) {
+        return Arrays.stream(result.getResponse().getCookies())
+                     .filter(c -> c.getName().equals("XSRF-TOKEN"))
+                     .reduce((first, second) -> second)
+                     .orElseThrow()
+                     .getValue();
     }
 
     private ResultActions postJson(String path, String json) throws Exception {

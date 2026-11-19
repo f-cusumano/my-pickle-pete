@@ -1,5 +1,7 @@
 package com.fcusumano.mpp.infrastructure.security;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -12,18 +14,19 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.config.annotation.web.configurers.CsrfConfigurer;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.RememberMeServices;
-import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
 import org.springframework.security.web.authentication.rememberme.TokenBasedRememberMeServices;
 import org.springframework.security.web.authentication.rememberme.TokenBasedRememberMeServices.RememberMeTokenAlgorithm;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRepository;
 
 import java.time.Duration;
 import java.util.UUID;
@@ -39,6 +42,7 @@ public class SecurityConfig {
 
     private static final Logger log = LoggerFactory.getLogger(SecurityConfig.class);
     private static final String REMEMBER_ME_COOKIE = "mpp-remember-me";
+    private static final CsrfTokenRepository CSRF_TOKENS = CookieCsrfTokenRepository.withHttpOnlyFalse();
 
 
     /** BCrypt con prefisso {bcrypt}: un domani si cambia algoritmo senza invalidare le password salvate. */
@@ -77,14 +81,20 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**", "/api/constants/**").permitAll()
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().permitAll())
-                .csrf(CsrfConfigurer::spa)
+                .csrf(csrf -> csrf.spa().csrfTokenRepository(CSRF_TOKENS))
                 .securityContext(context -> context.securityContextRepository(securityContextRepository))
                 .rememberMe(rememberMe -> rememberMe.rememberMeServices(rememberMeServices))
-                .logout(logout -> logout.logoutUrl("/api/auth/logout").logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler()))
+                .logout(logout -> logout.logoutUrl("/api/auth/logout").logoutSuccessHandler(SecurityConfig::logoutSucceeded))
                 .exceptionHandling(exceptions -> exceptions.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable);
         return http.build();
+    }
+
+    /** Il logout cancella il token CSRF: se ne emette subito uno nuovo, altrimenti il login successivo sarebbe rifiutato. */
+    private static void logoutSucceeded(HttpServletRequest request, HttpServletResponse response, Authentication authentication) {
+        CSRF_TOKENS.saveToken(CSRF_TOKENS.generateToken(request), request, response);
+        response.setStatus(HttpStatus.OK.value());
     }
 
     /** Senza chiave configurata se ne genera una a ogni avvio: i cookie "ricordami" valgono fino al riavvio. */

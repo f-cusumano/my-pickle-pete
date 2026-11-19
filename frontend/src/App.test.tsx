@@ -33,11 +33,13 @@ function renderApp(fetchApi: (input: string) => Promise<Response>) {
 describe('App', () => {
   it('without a session shows the login, then the app of the logged-in user', async () => {
     const user = userEvent.setup();
+    window.location.hash = '#/profile'; //l'ultima sezione aperta non conta: si atterra sugli Items
     renderApp(fakeBackend(null));
     await user.type(await screen.findByLabelText('Nickname'), 'francesco');
     await user.type(screen.getByLabelText('Password'), 'segreta123');
     await user.click(screen.getByRole('button', { name: 'Accedi' }));
     expect(await screen.findByText('Cappellaccio')).toBeInTheDocument();
+    expect(window.location.hash).toBe('#/items');
     expect(screen.getByText('Custom Sets')).toBeInTheDocument();
     expect(screen.queryByText('Censimento')).not.toBeInTheDocument();
   });

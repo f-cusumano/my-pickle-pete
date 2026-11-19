@@ -1,9 +1,10 @@
 import { Button, Checkbox, Center, Paper, PasswordInput, Stack, Tabs, Text, TextInput } from '@mantine/core';
 import { useForm } from '@mantine/form';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { errorMessage, useSession } from '../api/queries';
 import { PickleLogo } from '../components/PickleLogo';
 import { ProfileFields } from '../components/ProfileFields';
+import { HOME, hashOf } from '../domain/navigation';
 import {
   confirmationError,
   nicknameError,
@@ -15,6 +16,9 @@ import {
 
 /** Accesso all'app: login con "Ricordami" (attivo di default, comodo da cellulare) o registrazione di un nuovo utente. */
 export function AuthPage() {
+  useEffect(() => {
+    window.history.replaceState(null, '', hashOf(HOME)); // dopo l'accesso si parte sempre dagli Items, non dall'ultima sezione aperta
+  }, []);
   return (
     <Center mih="100dvh" p="md" bg="#fbf8ee">
       <Paper withBorder radius="lg" p="lg" w="100%" maw={480}>
