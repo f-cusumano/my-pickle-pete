@@ -3,16 +3,18 @@ import {
   Alert,
   Button,
   Checkbox,
+  CloseButton,
   Group,
   Loader,
   Paper,
   Select,
   Table,
   Text,
+  TextInput,
   Title,
   Tooltip,
 } from '@mantine/core';
-import { IconEye, IconInfoCircle } from '@tabler/icons-react';
+import { IconEye, IconInfoCircle, IconSearch } from '@tabler/icons-react';
 import { useMemo, useState } from 'react';
 import { useGameConstants, useItems } from '../api/queries';
 import type { GameConstants, Item, ItemSortOrder } from '../api/types';
@@ -106,8 +108,7 @@ function ItemsTable({ constants, items, sortOrder, onSortOrderChange, onGoToCens
   // Senza progressi (ADMIN) rarità e livello sono sempre al minimo: niente colonne né ordinamento per rarità
   const { hasProgress } = usePermissions();
 
-  const changeFilter = (column: FilterColumn, values: string[]) => {
-    const next = { ...filters, [column]: values };
+  const changeFilters = (next: ColumnFilters) => {
     setFilters(next);
     setSelected((current) =>
       keepVisible(
@@ -124,7 +125,7 @@ function ItemsTable({ constants, items, sortOrder, onSortOrderChange, onGoToCens
         options={filterOptions(items, column, constants, sortOrder)}
         selected={filters[column]}
         optionLabel={FILTER_LABELS[column]}
-        onChange={(values) => changeFilter(column, values)}
+        onChange={(values) => changeFilters({ ...filters, [column]: values })}
       />
       <span>{label}</span>
     </div>
@@ -167,7 +168,29 @@ function ItemsTable({ constants, items, sortOrder, onSortOrderChange, onGoToCens
               <Table.Thead>
                 <Table.Tr>
                   <Table.Th className={classes.stickyImage} />
-                  <Table.Th className={classes.stickyName}>Nome</Table.Th>
+                  <Table.Th className={classes.stickyName}>
+                    <div className={classes.headerWithFilter}>
+                      <span>Nome</span>
+                      <TextInput
+                        aria-label="Cerca per nome"
+                        placeholder="Cerca"
+                        size="xs"
+                        w={130}
+                        value={filters.name}
+                        onChange={(event) => changeFilters({ ...filters, name: event.currentTarget.value })}
+                        leftSection={<IconSearch size={14} />}
+                        rightSection={
+                          filters.name && (
+                            <CloseButton
+                              size="xs"
+                              aria-label="Cancella la ricerca"
+                              onClick={() => changeFilters({ ...filters, name: '' })}
+                            />
+                          )
+                        }
+                      />
+                    </div>
+                  </Table.Th>
                   {hasProgress && <Table.Th>{header('Rarità', 'rarity')}</Table.Th>}
                   {hasProgress && <Table.Th>Livello</Table.Th>}
                   <Table.Th>Caratteristica</Table.Th>

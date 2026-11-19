@@ -141,6 +141,9 @@ Il prompt è chiaro nella struttura generale (header, menu, Items, Full Sets, Cu
 ### Items per l'ADMIN (0.6.2)
 - **Niente rarità e livello.** L'ADMIN non ha progressi, quindi nella tabella Items non vede le colonne Rarità e Livello
   (sempre Comune 1) né l'ordinamento per rarità.
+- **Ricerca per nome.** Accanto a "Nome" nella tabella Items c'è un campo di testo che filtra mentre si digita: parte del
+  nome, senza distinzione di maiuscole e accenti, insieme agli altri filtri. Solo nel frontend: gli item arrivano già
+  tutti (elenco non paginato), quindi non serve chiamare il server a ogni tasto.
 
 ## 5. Aspetti tecnici
 16. ✅ **Architettura.** App solo per te con database H2. Regole da Dropbox/MyClaudeProjects/MyCodingStyle (vedi sotto).

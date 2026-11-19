@@ -14,15 +14,16 @@ export type Optional<T> = T | typeof NONE;
 
 export type FilterColumn = 'rarity' | 'type' | 'specification' | 'armorSet';
 
-/** Valori scelti per colonna: nessun valore scelto = nessun filtro. */
+/** Valori scelti per colonna: nessun valore scelto = nessun filtro. Il nome si filtra col testo digitato. */
 export interface ColumnFilters {
+  name: string;
   rarity: Rarity[];
   type: ItemType[];
   specification: Optional<Specification>[];
   armorSet: Optional<ArmorSet>[];
 }
 
-export const NO_FILTERS: ColumnFilters = { rarity: [], type: [], specification: [], armorSet: [] };
+export const NO_FILTERS: ColumnFilters = { name: '', rarity: [], type: [], specification: [], armorSet: [] };
 
 export function filterActive(filters: ColumnFilters, column: FilterColumn): boolean {
   return filters[column].length > 0;
@@ -42,14 +43,22 @@ export function columnValue(item: Item, column: FilterColumn): string {
   }
 }
 
+/** Testo confrontabile: minuscolo e senza accenti, così "perche" trova anche "Perché". */
+function searchable(text: string): string {
+  return text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
+}
+
 export function applyFilters(items: Item[], filters: ColumnFilters): Item[] {
   const columns: FilterColumn[] = ['rarity', 'type', 'specification', 'armorSet'];
   const active = columns.filter((column) => filterActive(filters, column));
-  if (active.length === 0) {
+  const name = searchable(filters.name.trim());
+  if (active.length === 0 && name === '') {
     return items;
   }
-  return items.filter((item) =>
-    active.every((column) => (filters[column] as string[]).includes(columnValue(item, column))),
+  return items.filter(
+    (item) =>
+      searchable(item.name).includes(name) &&
+      active.every((column) => (filters[column] as string[]).includes(columnValue(item, column))),
   );
 }
 

@@ -44,6 +44,17 @@ describe('ItemsPage', () => {
     expect(screen.getByRole('button', { name: 'Filtra Tipologia' })).toBeInTheDocument();
   });
 
+  it('filters by name while typing', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByText('Cappellaccio');
+    await user.type(screen.getByRole('textbox', { name: 'Cerca per nome' }), 'pist');
+    expect(screen.getByText('Pistola')).toBeInTheDocument();
+    expect(screen.queryByText('Cappellaccio')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Cancella la ricerca' }));
+    expect(screen.getByText('Cappellaccio')).toBeInTheDocument();
+  });
+
   it('header check selects visible rows and enables the eye', async () => {
     const user = userEvent.setup();
     renderPage();

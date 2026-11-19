@@ -13,6 +13,12 @@ describe('filters', () => {
     ]);
   });
 
+  it('filters by part of the name, ignoring case and accents', () => {
+    expect(applyFilters(ITEMS, { ...NO_FILTERS, name: ' pist ' })).toEqual([PISTOL]);
+    expect(applyFilters(ITEMS, { ...NO_FILTERS, name: 'PISTÒ' })).toEqual([PISTOL]);
+    expect(applyFilters(ITEMS, { ...NO_FILTERS, name: 'pist', type: ['ARMOR'] })).toEqual([]);
+  });
+
   it('filters items without specification or set with -nessuno-', () => {
     expect(applyFilters(ITEMS, { ...NO_FILTERS, specification: [NONE] })).toEqual([JAR]);
     expect(applyFilters(ITEMS, { ...NO_FILTERS, armorSet: [NONE, 'COWBOY'] })).toEqual([HAT, PISTOL, JAR]);
